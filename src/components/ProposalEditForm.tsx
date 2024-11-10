@@ -1,0 +1,71 @@
+'use client'
+
+import { useEffect, useState } from 'react'
+import { useRouter } from 'next/navigation'
+import { useToast } from '@/hooks/use-toast'
+import { CreateProposal } from './CreateProposal'
+import type { ProposalWithAccess } from '@/types/proposals'
+import { useFeedback } from '@/contexts/FeedbackContext'
+
+interface Props {
+  proposalId: string
+}
+
+export function ProposalEditForm({ proposalId }: Props) {
+  const router = useRouter()
+  const { toast } = useToast()
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const [proposal, setProposal] = useState<ProposalWithAccess | null>(null)
+  const { error: showError } = useFeedback()
+
+  useEffect(() => {
+    async function fetchProposal() {
+      try {
+        const response = await fetch(`/api/proposals/${proposalId}`)
+        if (!response.ok) {
+          throw new Error('Failed to fetch proposal')
+        }
+        const data = await response.json()
+        
+        // Check if user can edit
+        if (!data.canEdit) {
+          showError("You cannot edit this proposal")
+          router.push('/proposals')
+          return
+        }
+
+        // Check if proposal is in draft state
+        if (data.status !== 'DRAFT') {
+          showError("Only draft proposals can be edited")
+          router.push('/proposals')
+          return
+        }
+
+        setProposal(data)
+      } catch (error) {
+        setError('Failed to load proposal')
+        showError("Failed to load proposal")
+        router.push('/proposals')
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchProposal()
+  }, [proposalId, router, showError])
+
+  if (loading) {
+    return <div className="text-center py-8">Loading proposal...</div>
+  }
+
+  if (error) {
+    return <div className="text-center py-8 text-red-500">{error}</div>
+  }
+
+  if (!proposal) {
+    return <div className="text-center py-8">Proposal not found</div>
+  }
+
+  return <CreateProposal mode="edit" proposalId={proposalId} />
+} 

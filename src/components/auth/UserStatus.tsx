@@ -1,0 +1,144 @@
+'use client'
+
+import { Button } from "@/components/ui/button"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+} from "@/components/ui/dropdown-menu"
+import { useAuth } from "@/contexts/AuthContext"
+import { cn } from "@/lib/utils"
+import { Loader2, LogOut, User, Wallet } from "lucide-react"
+import { 
+  DiscordLogoIcon, 
+  ChatBubbleIcon,
+} from "@radix-ui/react-icons"
+import type { AuthProvider } from '@/types/auth'
+import { useState } from 'react'
+
+const AUTH_PROVIDER_ICONS = {
+  discord: DiscordLogoIcon,
+  telegram: ChatBubbleIcon,
+  wallet: Wallet,
+} as const
+
+const AUTH_PROVIDER_NAMES = {
+  discord: 'Discord',
+  telegram: 'Telegram',
+  wallet: 'Wallet',
+} as const
+
+export function UserStatus() {
+  const { user, isLoading, login, logout } = useAuth()
+  const [isLoggingOut, setIsLoggingOut] = useState(false)
+
+  const handleLogout = async () => {
+    try {
+      setIsLoggingOut(true)
+      await logout()
+    } finally {
+      setIsLoggingOut(false)
+    }
+  }
+
+  if (isLoading) {
+    return (
+      <Button variant="ghost" size="icon" disabled>
+        <Loader2 className="h-4 w-4 animate-spin" />
+        <span className="sr-only">Loading</span>
+      </Button>
+    )
+  }
+
+  if (!user) {
+    return (
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button variant="ghost" size="icon">
+            <User className="h-4 w-4" />
+            <span className="sr-only">User menu</span>
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end" className="w-56">
+          <DropdownMenuLabel>Sign In</DropdownMenuLabel>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem onClick={() => login('discord')}>
+            <DiscordLogoIcon className="mr-2 h-4 w-4 text-[#5865F2]" />
+            Login with Discord
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={() => login('telegram')}>
+            <ChatBubbleIcon className="mr-2 h-4 w-4 text-[#0088cc]" />
+            Login with Telegram
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={() => login('wallet')}>
+            <Wallet className="mr-2 h-4 w-4 text-orange-500" />
+            Login with Wallet
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+    )
+  }
+
+  // Get the correct icon component for the auth provider
+  const authType = user.authSource?.type as AuthProvider
+  const ProviderIcon = authType ? AUTH_PROVIDER_ICONS[authType] : User
+  const providerName = authType ? AUTH_PROVIDER_NAMES[authType] : 'Unknown'
+
+  return (
+    <div className="flex items-center gap-2">
+      <span className="text-sm text-muted-foreground hidden md:inline-block">
+        {user.username}
+      </span>
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button 
+            variant="ghost" 
+            size="icon"
+            className={cn(
+              "relative",
+              authType === 'discord' && "text-[#5865F2]",
+              authType === 'telegram' && "text-[#0088cc]",
+              authType === 'wallet' && "text-orange-500"
+            )}
+            disabled={isLoggingOut}
+          >
+            {isLoggingOut ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <ProviderIcon className="h-4 w-4" />
+            )}
+            <span className="sr-only">
+              Logged in as {user.username}
+            </span>
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end" className="w-56">
+          <DropdownMenuLabel className="font-normal">
+            <div className="flex flex-col space-y-1">
+              <p className="text-sm font-medium leading-none">{user.username}</p>
+              <p className="text-xs leading-none text-muted-foreground">
+                Connected via {providerName}
+              </p>
+            </div>
+          </DropdownMenuLabel>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem 
+            onClick={handleLogout}
+            disabled={isLoggingOut}
+            className="text-red-600 focus:text-red-600"
+          >
+            {isLoggingOut ? (
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            ) : (
+              <LogOut className="mr-2 h-4 w-4" />
+            )}
+            Logout
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+    </div>
+  )
+} 

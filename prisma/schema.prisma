@@ -1,0 +1,60 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+  previewFeatures = ["jsonProtocol"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+    id        String   @id @db.Uuid  // UUID v5 derived from authSource
+    linkId    String   @db.Uuid      // UUID v4 for account linking
+    createdAt DateTime @default(now()) @db.Timestamptz(6)  // Timezone-aware timestamp
+    updatedAt DateTime @updatedAt @db.Timestamptz(6)       // Timezone-aware timestamp
+    metadata  Json     // Flexible storage for user data
+    proposals Proposal[] // Add relation to Proposal
+
+    @@index([id])
+    @@index([linkId])
+}
+
+model Proposal {
+  id                    String   @id @default(uuid()) @db.Uuid
+  userId               String   @db.Uuid
+  status               ProposalStatus @default(DRAFT)
+  proposalName         String   @db.VarChar(100)
+  abstract             String   @db.Text
+  motivation           String   @db.Text
+  rationale            String   @db.Text
+  deliveryRequirements String   @db.Text
+  securityAndPerformance String @db.Text
+  budgetRequest        Decimal  @db.Decimal(16,2)
+  discord              String   @db.VarChar(32)
+  email                String   @db.VarChar(254)
+  createdAt            DateTime @default(now()) @db.Timestamptz(6)
+  updatedAt            DateTime @updatedAt @db.Timestamptz(6)
+  
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Restrict)
+  
+  // Indexes
+  @@index([userId])
+  @@index([status])
+  @@index([proposalName])
+  @@index([createdAt])
+}
+
+enum ProposalStatus {
+  DRAFT
+  CONSIDERATION
+  DELIBERATION
+  VOTING
+  APPROVED
+  REJECTED
+  WITHDRAWN
+}
