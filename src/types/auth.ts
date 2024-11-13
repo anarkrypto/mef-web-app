@@ -5,5 +5,14 @@ export interface UserInfo {
   authSource: {
     type: AuthProvider;
     id: string;
+    username: string;
+  };
+  metadata: {
+    username: string;
+    authSource: {
+      type: AuthProvider;
+      id: string;
+      username: string;
+    };
   };
 }

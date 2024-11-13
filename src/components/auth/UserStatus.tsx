@@ -82,63 +82,63 @@ export function UserStatus() {
     )
   }
 
-  // Get the correct icon component for the auth provider
-  const authType = user.authSource?.type as AuthProvider
-  const ProviderIcon = authType ? AUTH_PROVIDER_ICONS[authType] : User
-  const providerName = authType ? AUTH_PROVIDER_NAMES[authType] : 'Unknown'
+  // Get auth info from user metadata
+  const authSource = user.metadata.authSource
+  const username = user.metadata.username
+  const ProviderIcon = AUTH_PROVIDER_ICONS[authSource.type]
+  const providerName = AUTH_PROVIDER_NAMES[authSource.type]
 
   return (
-    <div className="flex items-center gap-2">
-      <span className="text-sm text-muted-foreground hidden md:inline-block">
-        {user.username}
-      </span>
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Button 
-            variant="ghost" 
-            size="icon"
-            className={cn(
-              "relative",
-              authType === 'discord' && "text-[#5865F2]",
-              authType === 'telegram' && "text-[#0088cc]",
-              authType === 'wallet' && "text-orange-500"
-            )}
-            disabled={isLoggingOut}
-          >
-            {isLoggingOut ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
-            ) : (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button 
+          variant="ghost" 
+          className={cn(
+            "flex items-center gap-2 px-3 py-2 h-auto",
+            authSource.type === 'discord' && "text-[#5865F2]",
+            authSource.type === 'telegram' && "text-[#0088cc]",
+            authSource.type === 'wallet' && "text-orange-500"
+          )}
+          disabled={isLoggingOut}
+        >
+          {isLoggingOut ? (
+            <Loader2 className="h-4 w-4 animate-spin" />
+          ) : (
+            <>
               <ProviderIcon className="h-4 w-4" />
-            )}
-            <span className="sr-only">
-              Logged in as {user.username}
-            </span>
-          </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" className="w-56">
-          <DropdownMenuLabel className="font-normal">
-            <div className="flex flex-col space-y-1">
-              <p className="text-sm font-medium leading-none">{user.username}</p>
-              <p className="text-xs leading-none text-muted-foreground">
-                Connected via {providerName}
-              </p>
-            </div>
-          </DropdownMenuLabel>
-          <DropdownMenuSeparator />
-          <DropdownMenuItem 
-            onClick={handleLogout}
-            disabled={isLoggingOut}
-            className="text-red-600 focus:text-red-600"
-          >
-            {isLoggingOut ? (
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-            ) : (
-              <LogOut className="mr-2 h-4 w-4" />
-            )}
-            Logout
-          </DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
-    </div>
+              <span className="text-sm text-muted-foreground hidden md:inline-block">
+                {username}
+              </span>
+            </>
+          )}
+          <span className="sr-only">
+            Logged in as {username}
+          </span>
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="w-56">
+        <DropdownMenuLabel className="font-normal">
+          <div className="flex flex-col space-y-1">
+            <p className="text-sm font-medium leading-none">{username}</p>
+            <p className="text-xs leading-none text-muted-foreground">
+              Connected via {providerName}
+            </p>
+          </div>
+        </DropdownMenuLabel>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem 
+          onClick={handleLogout}
+          disabled={isLoggingOut}
+          className="text-red-600 focus:text-red-600"
+        >
+          {isLoggingOut ? (
+            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+          ) : (
+            <LogOut className="mr-2 h-4 w-4" />
+          )}
+          Logout
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
   )
 } 
