@@ -1,17 +1,16 @@
-# syntax=docker/dockerfile:1
-FROM node:20-alpine
-
+### Building stage
+FROM node:20-alpine as builder
 WORKDIR /app
 
 COPY package*.json ./
 RUN npm ci
 
-COPY prisma ./prisma/
 COPY src ./src
 COPY next.config.js .
 COPY tsconfig.json .
 COPY tailwind.config.ts .
 COPY postcss.config.mjs .
+COPY prisma ./prisma/
 
 RUN npx prisma generate
 
@@ -19,14 +18,24 @@ RUN npm run build && \
     npm prune --production && \
     npm cache clean --force
 
+### Production stage
+FROM node:20-alpine
+WORKDIR /app
+
+RUN addgroup --system --gid 1001 nodejs
+RUN adduser --system --uid 1001 nextjs
+RUN mkdir .next
+RUN chown nextjs:nodejs .next
+
+RUN npm install prisma -g && rm -rf /root/.npm /root/.cache
+
+COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
+COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
+COPY --from=builder --chown=nextjs:nodejs /app/prisma ./prisma
+
 ENV NODE_ENV=production \
     PORT=3000 \
     HOSTNAME="0.0.0.0"
 
-RUN addgroup --system --gid 1001 nodejs && \
-    adduser --system --uid 1001 nextjs && \
-    chown -R nextjs:nodejs .
-
 USER nextjs
-
-CMD ["npm", "start"] 
+CMD ["npm", "run", "start:prod"]
