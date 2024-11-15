@@ -29,7 +29,7 @@ export const JWTUtils = {
     if (!privateKey) await initializeKeys();
 
     const iat = Math.floor(Date.now() / 1000);
-    const exp = iat + 3000; // 30 seconds
+    const exp = iat + 30; // 30 seconds
 
     const jwt = await new jose.SignJWT({
       authSource,
