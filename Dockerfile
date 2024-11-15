@@ -8,7 +8,6 @@ RUN npm ci
 
 COPY prisma ./prisma/
 COPY src ./src
-COPY public ./public
 COPY next.config.js .
 COPY tsconfig.json .
 COPY tailwind.config.ts .
