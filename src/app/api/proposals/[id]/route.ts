@@ -8,7 +8,7 @@ const proposalService = new ProposalService(prisma);
 
 export async function GET(
   req: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const user = await getUserFromRequest(req);
@@ -20,7 +20,9 @@ export async function GET(
     }
 
     const proposal = await proposalService.getProposalById(
-      params.id,
+      (
+        await params
+      ).id,
       user.id,
       user.linkId
     );
@@ -44,7 +46,7 @@ export async function GET(
 
 export async function DELETE(
   req: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const user = await getUserFromRequest(req);
@@ -55,7 +57,7 @@ export async function DELETE(
       );
     }
 
-    await proposalService.deleteProposal(params.id, user.id);
+    await proposalService.deleteProposal((await params).id, user.id);
 
     return NextResponse.json({ success: true });
   } catch (error) {
@@ -69,7 +71,7 @@ export async function DELETE(
 
 export async function PUT(
   req: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const user = await getUserFromRequest(req);
@@ -84,7 +86,9 @@ export async function PUT(
 
     // Verify user can edit this proposal
     const existing = await proposalService.getProposalById(
-      params.id,
+      (
+        await params
+      ).id,
       user.id,
       user.linkId
     );
@@ -104,7 +108,12 @@ export async function PUT(
     }
 
     // Update proposal
-    const updated = await proposalService.updateProposal(params.id, data);
+    const updated = await proposalService.updateProposal(
+      (
+        await params
+      ).id,
+      data
+    );
 
     return NextResponse.json(updated);
   } catch (error) {

@@ -16,20 +16,20 @@ import {
   DiscordLogoIcon, 
   ChatBubbleIcon,
 } from "@radix-ui/react-icons"
-import type { AuthProvider } from '@/types/auth'
 import { useState } from 'react'
+import type { AuthSource } from '@/contexts/AuthContext'
 
 const AUTH_PROVIDER_ICONS = {
   discord: DiscordLogoIcon,
   telegram: ChatBubbleIcon,
   wallet: Wallet,
-} as const
+} as const satisfies Record<AuthSource['type'], React.ComponentType>
 
 const AUTH_PROVIDER_NAMES = {
   discord: 'Discord',
   telegram: 'Telegram',
   wallet: 'Wallet',
-} as const
+} as const satisfies Record<AuthSource['type'], string>
 
 export function UserStatus() {
   const { user, isLoading, login, logout } = useAuth()

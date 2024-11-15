@@ -5,20 +5,27 @@ import type { AuthProvider } from '@/types/auth'
 import { useFeedback } from './FeedbackContext'
 import { useRouter, useSearchParams } from 'next/navigation'
 
+export interface AuthSource {
+  type: 'discord' | 'telegram' | 'wallet';
+  id: string;
+}
+
+interface UserMetadata {
+  username: string;
+  authSource: AuthSource;
+}
+
 interface UserInfo {
-  username: string
-  authSource: {
-    type: AuthProvider
-    id: string
-  }
+  id: string;
+  metadata: UserMetadata;
 }
 
 interface AuthContextValue {
-  user: UserInfo | null
-  isLoading: boolean
-  login: (provider: AuthProvider) => Promise<void>
-  logout: () => Promise<void>
-  refreshUser: () => Promise<void>
+  user: UserInfo | null;
+  isLoading: boolean;
+  login: (provider: AuthSource['type']) => Promise<void>;
+  logout: () => Promise<void>;
+  refreshUser: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined)
@@ -88,7 +95,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     refreshUser()
   }, [])
 
-  const login = async (provider: AuthProvider) => {
+  const login = async (provider: AuthSource['type']) => {
     // Placeholder for future implementation
     showError('Login functionality will be implemented soon')
   }

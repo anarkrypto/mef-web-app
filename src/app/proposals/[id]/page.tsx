@@ -1,5 +1,5 @@
 import { ProposalDetails } from "@/components/ProposalDetails"
 
-export default function ProposalPage({ params }: { params: { id: string } }) {
-  return <ProposalDetails proposalId={params.id} />
-} 
+export default async function ProposalPage({ params }: { params: Promise<{ id: string }> }) {
+  return <ProposalDetails proposalId={(await params).id} />
+}
