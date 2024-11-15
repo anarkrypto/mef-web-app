@@ -122,7 +122,7 @@ export function ProposalDetails({ proposalId }: Props) {
 
               <div>
                 <h3 className="text-xl font-semibold mb-2">Budget request</h3>
-                <p className="text-muted-foreground">{proposal.budgetRequest} MINA</p>
+                <p className="text-muted-foreground">{proposal.budgetRequest.toString()} MINA</p>
               </div>
 
               <div>

@@ -116,7 +116,9 @@ export default function AuthPage() {
           </CardContent>
         </Card>
       }>
-        <AuthContent />
+        <Suspense fallback={<div>Loading...</div>}>
+          <AuthContent />
+        </Suspense>
       </Suspense>
     </div>
   );

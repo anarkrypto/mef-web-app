@@ -6,6 +6,7 @@ import { ThemeProvider } from "@/components/theme-provider"
 import { FeedbackProvider } from "@/contexts/FeedbackContext"
 import { Toaster } from "@/components/ui/toaster"
 import { AuthProvider } from "@/contexts/AuthContext"
+import { Suspense } from "react";
 
 const geistSans = localFont({
   src: "./fonts/GeistVF.woff",
@@ -38,11 +39,13 @@ export default function RootLayout({
           disableTransitionOnChange
         >
           <FeedbackProvider>
-            <AuthProvider>
-              <Header />
+            <Suspense fallback={<div>Loading...</div>}>
+              <AuthProvider>
+                <Header />
               <main>{children}</main>
               <Toaster />
-            </AuthProvider>
+              </AuthProvider>
+            </Suspense>
           </FeedbackProvider>
         </ThemeProvider>
       </body>
