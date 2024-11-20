@@ -10,6 +10,7 @@ type Action = {
   description: string
   action: string
   route?: string
+  implemented: boolean
 }
 
 export default function WhatsNext() {
@@ -20,35 +21,43 @@ export default function WhatsNext() {
       title: "Create a proposal", 
       description: "Draft and submit your ideas for consideration.",
       action: "Start creating",
-      route: "/proposals/create"
+      route: "/proposals/create",
+      implemented: true
     },
     { 
-      title: "Check submitted proposals", 
-      description: "Review proposals from the community or submit your own to the active funding round.",
+      title: "Submit to funding round", 
+      description: "Submit your draft proposal to an active funding round.",
       action: "View proposals",
-      route: "/proposals"
+      route: "/proposals",
+      implemented: true
     },
     { 
-      title: "See a summary", 
-      description: "Get an overview of previous funding phases and outcomes.",
-      action: "View summary",
-      route: "/summary"
+      title: "View active funding rounds", 
+      description: "See which funding rounds are currently accepting proposals.",
+      action: "View funding rounds",
+      route: "/funding-rounds",
+      implemented: true
     },
     { 
       title: "Proposal review", 
       description: "Evaluate and provide feedback on community proposals to help them move forward.",
       action: "Start reviewing",
-      route: "/proposals/review"
+      route: "/proposals/review",
+      implemented: false
     },
     { 
       title: "Join the proposal discussion", 
       description: "Engage in conversations about submitted proposals and share your insights.",
       action: "Join discussion",
-      route: "/proposals/discussions"
+      route: "/proposals/discussions",
+      implemented: false
     },
   ]
 
-  const handleActionClick = (route?: string) => {
+  const handleActionClick = (route?: string, implemented: boolean = false) => {
+    if (!implemented) {
+      return;
+    }
     if (route) {
       router.push(route)
     }
@@ -67,11 +76,14 @@ export default function WhatsNext() {
             <CardContent className="mt-auto">
               <Button 
                 className="w-full group" 
-                variant="outline"
-                onClick={() => handleActionClick(action.route)}
+                variant={action.implemented ? "outline" : "secondary"}
+                onClick={() => handleActionClick(action.route, action.implemented)}
+                disabled={!action.implemented}
               >
-                {action.action}
-                <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
+                {action.implemented ? action.action : "Coming soon"}
+                {action.implemented && (
+                  <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
+                )}
               </Button>
             </CardContent>
           </Card>
