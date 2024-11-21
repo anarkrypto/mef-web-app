@@ -8,6 +8,9 @@ import { ChevronDownIcon, ChevronUpIcon } from "@radix-ui/react-icons"
 import { useToast } from "@/hooks/use-toast"
 import type { Proposal } from "@prisma/client"
 import { useActionFeedback } from '@/hooks/use-action-feedback'
+import { SelectFundingRoundDialog } from "@/components/dialogs/SelectFundingRoundDialog"
+import { ViewFundingRoundDialog } from "@/components/dialogs/ViewFundingRoundDialog"
+import { Badge } from "@/components/ui/badge"
 
 interface ProposalWithAccess extends Proposal {
   canEdit: boolean;
@@ -15,6 +18,26 @@ interface ProposalWithAccess extends Proposal {
   user: {
     metadata: {
       username: string;
+    };
+  };
+  fundingRound?: {
+    id: string;
+    name: string;
+    description: string;
+    status: string;
+    startDate: string;
+    endDate: string;
+    considerationPhase: {
+      startDate: string;
+      endDate: string;
+    };
+    deliberationPhase: {
+      startDate: string;
+      endDate: string;
+    };
+    votingPhase: {
+      startDate: string;
+      endDate: string;
     };
   };
 }
@@ -29,18 +52,57 @@ export function ProposalDetails({ proposalId }: Props) {
   const [isExpanded, setIsExpanded] = useState(false)
   const [proposal, setProposal] = useState<ProposalWithAccess | null>(null)
   const [loading, setLoading] = useState(true)
+  const [selectFundingRoundOpen, setSelectFundingRoundOpen] = useState(false);
+  const [viewFundingRoundOpen, setViewFundingRoundOpen] = useState(false);
 
   const { handleAction } = useActionFeedback({
     successMessage: "Action will be implemented soon",
     errorMessage: "Failed to perform action"
   })
 
-  const handleSubmitToFunding = async () => {
-    await handleAction(async () => {
-      // Placeholder for future implementation
-      throw new Error("This feature will be implemented soon")
-    })
-  }
+  const handleSubmitToFunding = async (roundId: string) => {
+    try {
+      const response = await fetch(`/api/proposals/${proposalId}/submit`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ fundingRoundId: roundId }),
+      });
+
+      if (!response.ok) throw new Error('Failed to submit proposal');
+
+      toast({
+        title: "Success",
+        description: "Proposal submitted to funding round",
+      });
+
+      // Refresh proposal data
+      fetchProposal();
+    } catch (error) {
+      throw error; // Let the dialog handle the error
+    }
+  };
+
+  const handleWithdrawFromFunding = async () => {
+    try {
+      const response = await fetch(`/api/proposals/${proposalId}/withdraw`, {
+        method: 'POST',
+      });
+
+      if (!response.ok) throw new Error('Failed to withdraw proposal');
+
+      toast({
+        title: "Success",
+        description: "Proposal withdrawn from funding round",
+      });
+
+      // Refresh proposal data
+      fetchProposal();
+    } catch (error) {
+      throw error; // Let the dialog handle the error
+    }
+  };
 
   useEffect(() => {
     fetchProposal()
@@ -89,6 +151,17 @@ export function ProposalDetails({ proposalId }: Props) {
             <span className="px-2 py-1 rounded-full bg-muted text-sm">
               Status: {proposal.status.toLowerCase()}
             </span>
+            {proposal.fundingRound && (
+              <Button
+                variant="link"
+                className="p-0 h-auto"
+                onClick={() => setViewFundingRoundOpen(true)}
+              >
+                <Badge variant="outline" className="cursor-pointer">
+                  Submitted to {proposal.fundingRound.name}
+                </Badge>
+              </Button>
+            )}
           </div>
         </div>
 
@@ -160,16 +233,40 @@ export function ProposalDetails({ proposalId }: Props) {
                   <Button variant="outline">Edit</Button>
                 </Link>
               )}
-              <Button
-                onClick={handleSubmitToFunding}
-                disabled={loading}
-              >
-                Submit to funding round
-              </Button>
+              {proposal.fundingRound ? (
+                <Button
+                  onClick={() => setViewFundingRoundOpen(true)}
+                  variant="secondary"
+                >
+                  View Funding Round Details
+                </Button>
+              ) : (
+                <Button
+                  onClick={() => setSelectFundingRoundOpen(true)}
+                  disabled={loading}
+                >
+                  Submit to funding round
+                </Button>
+              )}
             </div>
           )}
         </div>
       </div>
+
+      <SelectFundingRoundDialog
+        open={selectFundingRoundOpen}
+        onOpenChange={setSelectFundingRoundOpen}
+        onSubmit={handleSubmitToFunding}
+      />
+      
+      {proposal.fundingRound && (
+        <ViewFundingRoundDialog
+          open={viewFundingRoundOpen}
+          onOpenChange={setViewFundingRoundOpen}
+          fundingRound={proposal.fundingRound}
+          onWithdraw={handleWithdrawFromFunding}
+        />
+      )}
     </div>
   )
 }

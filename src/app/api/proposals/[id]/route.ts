@@ -6,26 +6,36 @@ import { ZodError } from "zod";
 
 const proposalService = new ProposalService(prisma);
 
-export async function GET(
-  req: Request,
-  { params }: { params: Promise<{ id: string }> }
-) {
+interface RouteContext {
+  params: Promise<{
+    id: string;
+  }>;
+}
+
+export async function GET(request: Request, context: RouteContext) {
   try {
-    const user = await getUserFromRequest(req);
+    const user = await getUserFromRequest(request);
     if (!user) {
-      return NextResponse.json(
-        { error: "Please log in to view proposals" },
-        { status: 401 }
-      );
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const proposal = await proposalService.getProposalById(
-      (
-        await params
-      ).id,
-      user.id,
-      user.linkId
-    );
+    const proposal = await prisma.proposal.findUnique({
+      where: { id: (await context.params).id },
+      include: {
+        user: {
+          select: {
+            metadata: true,
+          },
+        },
+        fundingRound: {
+          include: {
+            considerationPhase: true,
+            deliberationPhase: true,
+            votingPhase: true,
+          },
+        },
+      },
+    });
 
     if (!proposal) {
       return NextResponse.json(
@@ -34,9 +44,16 @@ export async function GET(
       );
     }
 
-    return NextResponse.json(proposal);
+    // Add access control flags
+    const response = {
+      ...proposal,
+      canEdit: proposal.userId === user.id && proposal.status === "DRAFT",
+      canDelete: proposal.userId === user.id && proposal.status === "DRAFT",
+    };
+
+    return NextResponse.json(response);
   } catch (error) {
-    console.error("Failed to get proposal:", error);
+    console.error("Failed to fetch proposal:", error);
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 }

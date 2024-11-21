@@ -6,6 +6,8 @@ import { Button } from "@/components/ui/button"
 import { Trash2 } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import type { Proposal } from "@prisma/client"
+import { SelectFundingRoundDialog } from "@/components/dialogs/SelectFundingRoundDialog"
+import { ViewFundingRoundDialog } from "@/components/dialogs/ViewFundingRoundDialog"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -17,6 +19,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
 import { useActionFeedback } from '@/hooks/use-action-feedback'
+import { Badge } from "@/components/ui/badge"
 
 interface ProposalWithUser extends Proposal {
   user: {
@@ -31,6 +34,26 @@ interface ProposalWithUser extends Proposal {
       };
     };
   };
+  fundingRound?: {
+    id: string;
+    name: string;
+    description: string;
+    status: string;
+    startDate: string;
+    endDate: string;
+    considerationPhase: {
+      startDate: string;
+      endDate: string;
+    };
+    deliberationPhase: {
+      startDate: string;
+      endDate: string;
+    };
+    votingPhase: {
+      startDate: string;
+      endDate: string;
+    };
+  };
 }
 
 export function ProposalsList() {
@@ -38,6 +61,9 @@ export function ProposalsList() {
   const [proposals, setProposals] = useState<ProposalWithUser[]>([])
   const [loading, setLoading] = useState(true)
   const [deleteId, setDeleteId] = useState<string | null>(null)
+  const [selectedProposalId, setSelectedProposalId] = useState<string | null>(null)
+  const [viewFundingRoundOpen, setViewFundingRoundOpen] = useState(false)
+  const [selectFundingRoundOpen, setSelectFundingRoundOpen] = useState(false)
 
   const { handleAction, loading: deleteLoading } = useActionFeedback({
     successMessage: "Proposal deleted successfully",
@@ -81,6 +107,60 @@ export function ProposalsList() {
     })
   }
 
+  const handleSubmitToFunding = async (roundId: string) => {
+    if (!selectedProposalId) return;
+
+    try {
+      const response = await fetch(`/api/proposals/${selectedProposalId}/submit`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ fundingRoundId: roundId }),
+      });
+
+      if (!response.ok) throw new Error('Failed to submit proposal');
+
+      toast({
+        title: "Success",
+        description: "Proposal submitted to funding round",
+      });
+
+      // Refresh proposals list
+      fetchProposals();
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to submit proposal to funding round",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleWithdrawFromFunding = async (proposalId: string) => {
+    try {
+      const response = await fetch(`/api/proposals/${proposalId}/withdraw`, {
+        method: 'POST',
+      });
+
+      if (!response.ok) throw new Error('Failed to withdraw proposal');
+
+      toast({
+        title: "Success",
+        description: "Proposal withdrawn from funding round",
+      });
+
+      // Refresh proposals list
+      fetchProposals();
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to withdraw proposal",
+        variant: "destructive",
+      });
+    }
+  };
+
   if (loading) {
     return <div className="text-center py-8">Loading proposals...</div>
   }
@@ -95,6 +175,10 @@ export function ProposalsList() {
       </div>
     )
   }
+
+  const selectedProposal = selectedProposalId 
+    ? proposals.find(p => p.id === selectedProposalId)
+    : null;
 
   return (
     <div className="max-w-4xl mx-auto p-6">
@@ -120,48 +204,77 @@ export function ProposalsList() {
               >
                 {proposal.proposalName}
               </Link>
-              <span className="text-sm text-muted-foreground">
-                by {proposal.user.metadata.username} • Status: {proposal.status.toLowerCase()}
-              </span>
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <span>by {proposal.user.metadata.username}</span>
+                <span>•</span>
+                <span>Status: {proposal.status.toLowerCase()}</span>
+                {proposal.fundingRound && (
+                  <>
+                    <span>•</span>
+                    <Button
+                      variant="link"
+                      className="p-0 h-auto text-sm"
+                      onClick={() => {
+                        setSelectedProposalId(proposal.id);
+                        setViewFundingRoundOpen(true);
+                      }}
+                    >
+                      <Badge variant="outline" className="cursor-pointer">
+                        Submitted to {proposal.fundingRound.name}
+                      </Badge>
+                    </Button>
+                  </>
+                )}
+              </div>
             </div>
             
             <div className="flex items-center gap-4">
               {proposal.status === 'DRAFT' && (
-                <Link
-                  href={`/proposals/${proposal.id}/edit`}
-                  className="text-muted-foreground hover:text-foreground underline"
-                >
-                  Edit
-                </Link>
-              )}
-              
-              {proposal.status === 'DRAFT' && (
-                <Button
-                  variant="secondary"
-                  className="bg-muted hover:bg-muted/80"
-                  onClick={() => toast({
-                    description: "Submitting to funding round will be implemented soon"
-                  })}
-                >
-                  Submit to funding round
-                </Button>
-              )}
-              
-              {proposal.status === 'DRAFT' && (
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => handleDelete(proposal.id)}
-                  disabled={deleteLoading}
-                  className="text-muted-foreground hover:text-foreground"
-                >
-                  {deleteLoading ? (
-                    <span className="animate-spin">⌛</span>
+                <>
+                  <Link
+                    href={`/proposals/${proposal.id}/edit`}
+                    className="text-muted-foreground hover:text-foreground underline"
+                  >
+                    Edit
+                  </Link>
+                  
+                  {proposal.fundingRound ? (
+                    <Button
+                      variant="secondary"
+                      onClick={() => {
+                        setSelectedProposalId(proposal.id);
+                        setViewFundingRoundOpen(true);
+                      }}
+                    >
+                      Submitted to {proposal.fundingRound.name}
+                    </Button>
                   ) : (
-                    <Trash2 className="h-5 w-5" />
+                    <Button
+                      variant="secondary"
+                      onClick={() => {
+                        setSelectedProposalId(proposal.id);
+                        setSelectFundingRoundOpen(true);
+                      }}
+                    >
+                      Submit to funding round
+                    </Button>
                   )}
-                  <span className="sr-only">Delete proposal</span>
-                </Button>
+                  
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => handleDelete(proposal.id)}
+                    disabled={deleteLoading}
+                    className="text-muted-foreground hover:text-foreground"
+                  >
+                    {deleteLoading ? (
+                      <span className="animate-spin">⌛</span>
+                    ) : (
+                      <Trash2 className="h-5 w-5" />
+                    )}
+                    <span className="sr-only">Delete proposal</span>
+                  </Button>
+                </>
               )}
             </div>
           </div>
@@ -187,6 +300,21 @@ export function ProposalsList() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <SelectFundingRoundDialog
+        open={selectFundingRoundOpen}
+        onOpenChange={setSelectFundingRoundOpen}
+        onSubmit={handleSubmitToFunding}
+      />
+      
+      {selectedProposal?.fundingRound && (
+        <ViewFundingRoundDialog
+          open={viewFundingRoundOpen}
+          onOpenChange={setViewFundingRoundOpen}
+          fundingRound={selectedProposal.fundingRound}
+          onWithdraw={() => handleWithdrawFromFunding(selectedProposal.id)}
+        />
+      )}
     </div>
   )
 }

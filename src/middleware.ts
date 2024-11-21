@@ -4,8 +4,31 @@ import { verifyToken } from "./lib/auth/jwt";
 
 export const config = {
   matcher: ["/((?!_next/static|_next/image|favicon.ico|public).*)"],
-  runtime: "nodejs", // Explicitly set nodejs runtime
 };
+
+// Move admin check to a separate API route
+async function checkAdminAccess(request: NextRequest): Promise<boolean> {
+  try {
+    const accessToken = request.cookies.get("access_token")?.value;
+    if (!accessToken) return false;
+
+    // Call the admin check API endpoint
+    const response = await fetch(`${request.nextUrl.origin}/api/admin/check`, {
+      headers: {
+        Cookie: `access_token=${accessToken}`,
+      },
+      // Add these options to handle SSL issues
+      cache: "no-store",
+    });
+
+    if (!response.ok) return false;
+    const data = await response.json();
+    return data.isAdmin;
+  } catch (error) {
+    console.error("Admin check failed:", error);
+    return false;
+  }
+}
 
 export async function middleware(request: NextRequest) {
   console.log(
@@ -14,10 +37,25 @@ export async function middleware(request: NextRequest) {
   );
   const path = request.nextUrl.pathname;
 
-  // Allow authentication-related paths
+  // Allow auth paths first, before any other checks
   if (AUTH_PATHS.includes(path)) {
     console.log("[Middleware] Allowing auth path:", path);
     return NextResponse.next();
+  }
+
+  // Check for admin routes
+  if (
+    request.nextUrl.pathname.startsWith("/admin") ||
+    (request.nextUrl.pathname.startsWith("/api/admin") &&
+      !AUTH_PATHS.includes(path))
+  ) {
+    const isAdmin = await checkAdminAccess(request);
+    if (!isAdmin) {
+      // Redirect to home with error message
+      const url = new URL("/", request.url);
+      url.searchParams.set("error", "unauthorized_admin");
+      return NextResponse.redirect(url);
+    }
   }
 
   // Allow public paths without authentication
@@ -50,18 +88,7 @@ export async function middleware(request: NextRequest) {
       return NextResponse.next();
     } catch (error) {
       // Access token invalid, try refresh flow
-      console.error("[Middleware] Access token verification failed:", {
-        error:
-          error instanceof Error
-            ? {
-                name: error.name,
-                message: error.message,
-                stack: error.stack,
-              }
-            : error,
-        runtime: process.env.NEXT_RUNTIME || "unknown",
-        nodeEnv: process.env.NODE_ENV,
-      });
+      console.error("[Middleware] Access token verification failed:", error);
     }
   }
 
@@ -93,7 +120,6 @@ export async function middleware(request: NextRequest) {
 
       // Copy the cookies if they exist
       if (setCookieHeader) {
-        // Split multiple Set-Cookie headers
         const cookies = setCookieHeader.split(", ");
         cookies.forEach((cookie: string) => {
           res.headers.append("Set-Cookie", cookie);
@@ -102,18 +128,7 @@ export async function middleware(request: NextRequest) {
 
       return res;
     } catch (error) {
-      console.error("[Middleware] Token refresh failed:", {
-        error:
-          error instanceof Error
-            ? {
-                name: error.name,
-                message: error.message,
-                stack: error.stack,
-              }
-            : error,
-        runtime: process.env.NEXT_RUNTIME || "unknown",
-        nodeEnv: process.env.NODE_ENV,
-      });
+      console.error("[Middleware] Token refresh failed:", error);
       return redirectToAuth(
         request,
         "Your session has expired. Please log in again."
@@ -135,6 +150,11 @@ function redirectToAuth(request: NextRequest, message?: string) {
   console.log("[Middleware] Redirecting to auth:", url.toString());
   return NextResponse.redirect(url);
 }
+
 // Define public paths that don't require authentication
 const PUBLIC_PATHS = ["/", "/auth"];
-const AUTH_PATHS = ["/api/auth/exchange", "/api/auth/refresh"];
+const AUTH_PATHS = [
+  "/api/auth/exchange",
+  "/api/auth/refresh",
+  "/api/admin/check",
+];
