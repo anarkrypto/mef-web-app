@@ -1,13 +1,12 @@
 {
   "name": "pgt-web-app",
-  "version": "0.2.0",
+  "version": "0.1.1",
   "private": true,
   "type": "module",
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "start": "next start",
-    "start:prod": "prisma migrate deploy && node server.js",
+    "start": "npx prisma migrate deploy && next start",
     "lint": "next lint"
   },
   "dependencies": {
