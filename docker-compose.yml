@@ -1,29 +1,22 @@
-version: '3.8'
-
 services:
   app:
-    build:
-      context: .
-      dockerfile: Dockerfile
+    build: .
     ports:
       - "3000:3000"
     environment:
-      - DATABASE_URL=postgresql://postgres:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}?schema=public
+      - DATABASE_URL=postgresql://postgres:mina123@db:5432/govbot?schema=public
       - NODE_ENV=production
     depends_on:
       db:
         condition: service_healthy
-    networks:
-      - app_network
-    restart: unless-stopped
-   
+
   db:
     image: postgres:17-alpine
     ports:
       - "5432:5432"
     environment:
-      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
-      - POSTGRES_DB=${POSTGRES_DB}
+      - POSTGRES_PASSWORD=mina123
+      - POSTGRES_DB=govbot
       - POSTGRES_USER=postgres
     volumes:
       - postgres_data:/var/lib/postgresql/data
@@ -32,9 +25,6 @@ services:
       interval: 5s
       timeout: 5s
       retries: 5
-    networks:
-      - app_network
-    restart: unless-stopped
 
 volumes:
   postgres_data:
