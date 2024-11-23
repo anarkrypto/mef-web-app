@@ -20,13 +20,9 @@ export async function GET(request: Request, context: RouteContext) {
     }
 
     const proposal = await prisma.proposal.findUnique({
-      where: { id: (await context.params).id },
+      where: { id: parseInt((await context.params).id) },
       include: {
-        user: {
-          select: {
-            metadata: true,
-          },
-        },
+        user: true,
         fundingRound: {
           include: {
             considerationPhase: true,
@@ -74,7 +70,7 @@ export async function DELETE(
       );
     }
 
-    await proposalService.deleteProposal((await params).id, user.id);
+    await proposalService.deleteProposal(parseInt((await params).id), user.id);
 
     return NextResponse.json({ success: true });
   } catch (error) {
@@ -103,9 +99,7 @@ export async function PUT(
 
     // Verify user can edit this proposal
     const existing = await proposalService.getProposalById(
-      (
-        await params
-      ).id,
+      parseInt((await params).id),
       user.id,
       user.linkId
     );
@@ -126,9 +120,7 @@ export async function PUT(
 
     // Update proposal
     const updated = await proposalService.updateProposal(
-      (
-        await params
-      ).id,
+      parseInt((await params).id),
       data
     );
 

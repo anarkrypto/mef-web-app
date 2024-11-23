@@ -22,6 +22,7 @@ import { useActionFeedback } from '@/hooks/use-action-feedback'
 import { Badge } from "@/components/ui/badge"
 
 interface ProposalWithUser extends Proposal {
+  id: number;
   user: {
     id: string;
     linkId: string;
@@ -60,8 +61,8 @@ export function ProposalsList() {
   const { toast } = useToast()
   const [proposals, setProposals] = useState<ProposalWithUser[]>([])
   const [loading, setLoading] = useState(true)
-  const [deleteId, setDeleteId] = useState<string | null>(null)
-  const [selectedProposalId, setSelectedProposalId] = useState<string | null>(null)
+  const [deleteId, setDeleteId] = useState<number | null>(null)
+  const [selectedProposalId, setSelectedProposalId] = useState<number | null>(null)
   const [viewFundingRoundOpen, setViewFundingRoundOpen] = useState(false)
   const [selectFundingRoundOpen, setSelectFundingRoundOpen] = useState(false)
 
@@ -93,7 +94,7 @@ export function ProposalsList() {
     }
   }
 
-  const handleDelete = async (id: string) => {
+  const handleDelete = async (id: number) => {
     await handleAction(async () => {
       const response = await fetch(`/api/proposals/${id}`, {
         method: 'DELETE'
@@ -137,7 +138,7 @@ export function ProposalsList() {
     }
   };
 
-  const handleWithdrawFromFunding = async (proposalId: string) => {
+  const handleWithdrawFromFunding = async (proposalId: number) => {
     try {
       const response = await fetch(`/api/proposals/${proposalId}/withdraw`, {
         method: 'POST',

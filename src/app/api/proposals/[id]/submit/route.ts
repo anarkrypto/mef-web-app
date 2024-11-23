@@ -15,7 +15,7 @@ export async function POST(request: Request, context: RouteContext) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const proposalId = (await context.params).id;
+    const proposalId = parseInt((await context.params).id);
     const { fundingRoundId } = await request.json();
 
     // Verify the proposal belongs to the user
