@@ -37,7 +37,7 @@ model User {
 }
 
 model Proposal {
-  id                    String   @id @default(uuid()) @db.Uuid
+  id                   Int      @id @default(autoincrement())
   userId               String   @db.Uuid
   fundingRoundId       String?  @db.Uuid  // Optional because proposal starts as DRAFT
   status               ProposalStatus @default(DRAFT)
