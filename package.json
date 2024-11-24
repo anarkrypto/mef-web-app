@@ -7,7 +7,12 @@
     "dev": "next dev",
     "build": "next build",
     "start": "npx prisma migrate deploy && next start",
-    "lint": "next lint"
+    "start:prod": "npx prisma migrate deploy && node server.js",
+    "lint": "next lint",
+    "lint:full": "next lint --max-warnings=0",
+    "lint:types": "tsc --noEmit",
+    "lint:all": "npm run lint:full && npm run lint:types && next build",
+    "admin:status": "npx tsx src/scripts/toggle-admin-status.ts"
   },
   "dependencies": {
     "@prisma/client": "^5.22.0",
@@ -37,7 +42,8 @@
     "tailwind-merge": "^2.5.4",
     "tailwindcss-animate": "^1.0.7",
     "uuid": "^11.0.2",
-    "zod": "^3.23.8"
+    "zod": "^3.23.8",
+    "dotenv": "^16.4.5"
   },
   "devDependencies": {
     "@types/dotenv": "^6.1.1",
@@ -46,7 +52,6 @@
     "@types/react": "^18",
     "@types/react-dom": "^18",
     "@types/uuid": "^10.0.0",
-    "dotenv": "^16.4.5",
     "eslint": "^8",
     "eslint-config-next": "15.0.1",
     "postcss": "^8",
