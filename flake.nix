@@ -19,8 +19,11 @@
             # Core dependencies
             nodejs_20
             nodePackages.typescript
+            nodePackages.tsx
             podman
             podman-compose
+            direnv
+            git
           ];
 
           shellHook = ''
@@ -32,21 +35,21 @@
               podman system service --time=0 >/dev/null 2>&1 &
             fi
 
-            # Initialize project if package.json doesn't exist
-            if [ ! -f package.json ]; then
-              echo "📦 Initializing new Next.js project..."
-              npm init -y
-              echo "TODO: Add project initialization logic here"
-            fi
-
             # Environment variables for podman
             export DOCKER_HOST="unix://$XDG_RUNTIME_DIR/podman/podman.sock"
             export DOCKER_CONTEXT="default"
+
+            # Load .env file if it exists
+            if [ -f .env ]; then
+              set -a
+              source .env
+              set +a
+            fi
           '';
 
           # Add environment variables
           env = {
-            NODE_ENV = "development";
+            NODE_ENV = "production";
           };
         };
       });
