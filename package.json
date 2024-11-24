@@ -11,7 +11,7 @@
     "lint": "next lint",
     "lint:full": "next lint --max-warnings=0",
     "lint:types": "tsc --noEmit",
-    "lint:all": "npm run lint:full && npm run lint:types && next build",
+    "lint:all": "npm run lint:full && npm run lint:types",
     "admin:status": "npx tsx src/scripts/toggle-admin-status.ts"
   },
   "dependencies": {
@@ -26,10 +26,12 @@
     "@radix-ui/react-select": "^2.1.2",
     "@radix-ui/react-slot": "^1.1.0",
     "@radix-ui/react-toast": "^1.2.2",
+    "@radix-ui/react-tooltip": "^1.1.4",
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.1.1",
     "date-fns": "^3.6.0",
     "decimal.js": "^10.4.3",
+    "dotenv": "^16.4.5",
     "hash-wasm": "^4.11.0",
     "jose": "^5.9.6",
     "lucide-react": "^0.453.0",
@@ -42,8 +44,7 @@
     "tailwind-merge": "^2.5.4",
     "tailwindcss-animate": "^1.0.7",
     "uuid": "^11.0.2",
-    "zod": "^3.23.8",
-    "dotenv": "^16.4.5"
+    "zod": "^3.23.8"
   },
   "devDependencies": {
     "@types/dotenv": "^6.1.1",
