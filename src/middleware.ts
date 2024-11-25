@@ -3,7 +3,7 @@ import type { NextRequest } from "next/server";
 import { verifyToken } from "./lib/auth/jwt";
 
 const getBaseUrl = () => {
-  return process.env.NEXT_PUBLIC_APP_URL;
+  return process.env.NEXT_APP_URL;
 };
 
 export const config = {
