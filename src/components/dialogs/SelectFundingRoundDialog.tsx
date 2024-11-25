@@ -19,6 +19,8 @@ import {
 } from "@/components/ui/select"
 import { useToast } from "@/hooks/use-toast"
 import { format } from "date-fns"
+import { AlertCircle } from "lucide-react"
+import { Alert, AlertDescription } from "@/components/ui/alert"
 
 interface FundingRound {
   id: string;
@@ -41,11 +43,13 @@ export function SelectFundingRoundDialog({ open, onOpenChange, onSubmit }: Props
   const [loading, setLoading] = useState(false);
   const [rounds, setRounds] = useState<FundingRound[]>([]);
   const [selectedRoundId, setSelectedRoundId] = useState<string>('');
+  const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
 
   useEffect(() => {
     const fetchRounds = async () => {
       try {
+        setIsLoading(true);
         const response = await fetch('/api/funding-rounds/active');
         if (!response.ok) throw new Error('Failed to fetch funding rounds');
         const data = await response.json();
@@ -58,7 +62,6 @@ export function SelectFundingRoundDialog({ open, onOpenChange, onSubmit }: Props
           return startDate <= now && now <= endDate;
         });
 
-        // TODO: Later, also filter out DRAFT status rounds
         setRounds(activeRounds);
       } catch (error) {
         toast({
@@ -66,6 +69,8 @@ export function SelectFundingRoundDialog({ open, onOpenChange, onSubmit }: Props
           description: "Failed to load funding rounds",
           variant: "destructive",
         });
+      } finally {
+        setIsLoading(false);
       }
     };
 
@@ -109,35 +114,50 @@ export function SelectFundingRoundDialog({ open, onOpenChange, onSubmit }: Props
           </DialogDescription>
         </DialogHeader>
         <div className="grid gap-4 py-4">
-          <Select
-            value={selectedRoundId}
-            onValueChange={setSelectedRoundId}
-            disabled={loading}
-          >
-            <SelectTrigger>
-              <SelectValue placeholder="Select a funding round" />
-            </SelectTrigger>
-            <SelectContent>
-              {rounds.map((round) => (
-                <SelectItem key={round.id} value={round.id}>
-                  <div className="flex flex-col">
-                    <span>{round.name}</span>
-                    <span className="text-xs text-muted-foreground">
-                      Consideration phase: {format(new Date(round.considerationPhase.startDate), "PPP")} - {format(new Date(round.considerationPhase.endDate), "PPP")}
-                    </span>
-                  </div>
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          {isLoading ? (
+            <div className="flex items-center justify-center py-6">
+              <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+            </div>
+          ) : rounds.length > 0 ? (
+            <Select
+              value={selectedRoundId}
+              onValueChange={setSelectedRoundId}
+              disabled={loading}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Select a funding round" />
+              </SelectTrigger>
+              <SelectContent>
+                {rounds.map((round) => (
+                  <SelectItem key={round.id} value={round.id}>
+                    <div className="flex flex-col">
+                      <span>{round.name}</span>
+                      <span className="text-xs text-muted-foreground">
+                        Consideration phase: {format(new Date(round.considerationPhase.startDate), "PPP")} - {format(new Date(round.considerationPhase.endDate), "PPP")}
+                      </span>
+                    </div>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          ) : (
+            <Alert variant="destructive">
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription>
+                There are currently no active funding rounds accepting proposals. Please check back later or contact the team for more information.
+              </AlertDescription>
+            </Alert>
+          )}
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)} disabled={loading}>
-            Cancel
+            {rounds.length === 0 ? "Close" : "Cancel"}
           </Button>
-          <Button onClick={handleSubmit} disabled={loading || !selectedRoundId}>
-            {loading ? "Submitting..." : "Submit"}
-          </Button>
+          {rounds.length > 0 && (
+            <Button onClick={handleSubmit} disabled={loading || !selectedRoundId}>
+              {loading ? "Submitting..." : "Submit"}
+            </Button>
+          )}
         </DialogFooter>
       </DialogContent>
     </Dialog>

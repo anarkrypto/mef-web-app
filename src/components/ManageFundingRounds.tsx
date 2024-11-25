@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { Button } from "@/components/ui/button"
 import Link from "next/link"
 import { Trash2, Plus } from 'lucide-react'
@@ -41,11 +41,7 @@ export function ManageFundingRoundsComponent() {
   const { toast } = useToast();
   const router = useRouter();
 
-  useEffect(() => {
-    fetchRounds();
-  }, []);
-
-  const fetchRounds = async () => {
+  const fetchRounds = useCallback(async () => {
     try {
       const response = await fetch('/api/admin/funding-rounds');
       if (!response.ok) throw new Error('Failed to fetch funding rounds');
@@ -60,7 +56,11 @@ export function ManageFundingRoundsComponent() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [toast]);
+
+  useEffect(() => {
+    fetchRounds();
+  }, [fetchRounds]);
 
   const handleDelete = async (id: string) => {
     if (!confirm('Are you sure you want to delete this funding round?')) return;
@@ -77,7 +77,6 @@ export function ManageFundingRoundsComponent() {
         description: "Funding round deleted successfully",
       });
 
-      // Refresh rounds list
       fetchRounds();
     } catch (error) {
       toast({

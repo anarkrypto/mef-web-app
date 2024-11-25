@@ -49,7 +49,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // Refresh user data
       refreshUser()
     }
-  }, [searchParams])
+  }, [searchParams, success])
 
   const refreshUser = async () => {
     try {

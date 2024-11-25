@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import Link from 'next/link'
 import { Button } from "@/components/ui/button"
 import { Trash2 } from "lucide-react"
@@ -20,6 +20,13 @@ import {
 } from "@/components/ui/alert-dialog"
 import { useActionFeedback } from '@/hooks/use-action-feedback'
 import { Badge } from "@/components/ui/badge"
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip"
+import { useFundingRounds } from "@/hooks/use-funding-rounds"
 
 interface ProposalWithUser extends Proposal {
   id: number;
@@ -65,6 +72,7 @@ export function ProposalsList() {
   const [selectedProposalId, setSelectedProposalId] = useState<number | null>(null)
   const [viewFundingRoundOpen, setViewFundingRoundOpen] = useState(false)
   const [selectFundingRoundOpen, setSelectFundingRoundOpen] = useState(false)
+  const { loading: checkingRounds, hasAvailableRounds } = useFundingRounds();
 
   const { handleAction, loading: deleteLoading } = useActionFeedback({
     successMessage: "Proposal deleted successfully",
@@ -73,11 +81,7 @@ export function ProposalsList() {
     confirmMessage: "Are you sure you want to delete this proposal? This action cannot be undone."
   })
 
-  useEffect(() => {
-    fetchProposals()
-  }, [])
-
-  const fetchProposals = async () => {
+const fetchProposals = useCallback(async () => {
     try {
       const response = await fetch('/api/proposals')
       if (!response.ok) throw new Error('Failed to fetch proposals')
@@ -92,7 +96,12 @@ export function ProposalsList() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [toast]);
+
+  useEffect(() => {
+    fetchProposals()
+  }, [fetchProposals])
+ 
 
   const handleDelete = async (id: number) => {
     await handleAction(async () => {
@@ -160,6 +169,19 @@ export function ProposalsList() {
         variant: "destructive",
       });
     }
+  };
+
+  const handleSubmitClick = (proposalId: number) => {
+    if (!hasAvailableRounds) {
+      toast({
+        title: "No Available Funding Rounds",
+        description: "There are currently no funding rounds accepting proposals. Please check back later.",
+        variant: "default",
+      });
+      return;
+    }
+    setSelectedProposalId(proposalId);
+    setSelectFundingRoundOpen(true);
   };
 
   if (loading) {
@@ -250,15 +272,26 @@ export function ProposalsList() {
                       Submitted to {proposal.fundingRound.name}
                     </Button>
                   ) : (
-                    <Button
-                      variant="secondary"
-                      onClick={() => {
-                        setSelectedProposalId(proposal.id);
-                        setSelectFundingRoundOpen(true);
-                      }}
-                    >
-                      Submit to funding round
-                    </Button>
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <div>
+                            <Button
+                              variant="secondary"
+                              onClick={() => handleSubmitClick(proposal.id)}
+                              disabled={checkingRounds || !hasAvailableRounds}
+                            >
+                              {checkingRounds ? "Checking rounds..." : "Submit to funding round"}
+                            </Button>
+                          </div>
+                        </TooltipTrigger>
+                        {!hasAvailableRounds && (
+                          <TooltipContent>
+                            <p>No funding rounds are currently accepting proposals</p>
+                          </TooltipContent>
+                        )}
+                      </Tooltip>
+                    </TooltipProvider>
                   )}
                   
                   <Button

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { Button } from "@/components/ui/button"
@@ -11,6 +11,13 @@ import { useActionFeedback } from '@/hooks/use-action-feedback'
 import { SelectFundingRoundDialog } from "@/components/dialogs/SelectFundingRoundDialog"
 import { ViewFundingRoundDialog } from "@/components/dialogs/ViewFundingRoundDialog"
 import { Badge } from "@/components/ui/badge"
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip"
+import { useFundingRounds } from "@/hooks/use-funding-rounds"
 
 interface ProposalWithAccess extends Proposal {
   canEdit: boolean;
@@ -54,11 +61,30 @@ export function ProposalDetails({ proposalId }: Props) {
   const [loading, setLoading] = useState(true)
   const [selectFundingRoundOpen, setSelectFundingRoundOpen] = useState(false);
   const [viewFundingRoundOpen, setViewFundingRoundOpen] = useState(false);
+  const { loading: checkingRounds, hasAvailableRounds } = useFundingRounds();
 
   const { handleAction } = useActionFeedback({
     successMessage: "Action will be implemented soon",
     errorMessage: "Failed to perform action"
-  })
+  });
+
+const fetchProposal = useCallback(async () => {
+    try {
+      const response = await fetch(`/api/proposals/${proposalId}`)
+      if (!response.ok) throw new Error('Failed to fetch proposal')
+      const data = await response.json()
+      setProposal(data)
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to load proposal",
+        variant: "destructive"
+      })
+      router.push('/proposals')
+    } finally {
+      setLoading(false)
+    }
+  }, [toast, router, proposalId]);
 
   const handleSubmitToFunding = async (roundId: string) => {
     try {
@@ -106,25 +132,19 @@ export function ProposalDetails({ proposalId }: Props) {
 
   useEffect(() => {
     fetchProposal()
-  }, [proposalId])
+  }, [proposalId, fetchProposal]) 
 
-  const fetchProposal = async () => {
-    try {
-      const response = await fetch(`/api/proposals/${proposalId}`)
-      if (!response.ok) throw new Error('Failed to fetch proposal')
-      const data = await response.json()
-      setProposal(data)
-    } catch (error) {
+  const handleSubmitClick = () => {
+    if (!hasAvailableRounds) {
       toast({
-        title: "Error",
-        description: "Failed to load proposal",
-        variant: "destructive"
-      })
-      router.push('/proposals')
-    } finally {
-      setLoading(false)
+        title: "No Available Funding Rounds",
+        description: "There are currently no funding rounds accepting proposals. Please check back later.",
+        variant: "default",
+      });
+      return;
     }
-  }
+    setSelectFundingRoundOpen(true);
+  };
 
   if (loading) {
     return <div className="text-center py-8">Loading proposal...</div>
@@ -241,12 +261,25 @@ export function ProposalDetails({ proposalId }: Props) {
                   View Funding Round Details
                 </Button>
               ) : (
-                <Button
-                  onClick={() => setSelectFundingRoundOpen(true)}
-                  disabled={loading}
-                >
-                  Submit to funding round
-                </Button>
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <div>
+                        <Button
+                          onClick={handleSubmitClick}
+                          disabled={checkingRounds || !hasAvailableRounds}
+                        >
+                          {checkingRounds ? "Checking rounds..." : "Submit to funding round"}
+                        </Button>
+                      </div>
+                    </TooltipTrigger>
+                    {!hasAvailableRounds && (
+                      <TooltipContent>
+                        <p>No funding rounds are currently accepting proposals</p>
+                      </TooltipContent>
+                    )}
+                  </Tooltip>
+                </TooltipProvider>
               )}
             </div>
           )}

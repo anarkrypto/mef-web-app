@@ -1,4 +1,4 @@
-import { PrismaClient } from '@prisma/client'
+import { PrismaClient, User } from '@prisma/client'
 import dotenv from "dotenv";
 import path from "path";
 import readline from 'readline';
@@ -68,7 +68,7 @@ async function setAdminStatus(userId: string, status: boolean): Promise<void> {
   }
 }
 
-async function displayUserInfo(user: any, isAdmin: boolean) {
+async function displayUserInfo(user: User, isAdmin: boolean) {
   const metadata = user.metadata as { username: string };
   
   console.log('\n📋 User Information:');
