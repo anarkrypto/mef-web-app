@@ -2,6 +2,14 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { verifyToken } from "./lib/auth/jwt";
 
+const getBaseUrl = (request: NextRequest) => {
+  // Check for X-Forwarded-Proto header (should be set by AWS ALB)
+  const forwardedProto = request.headers.get('x-forwarded-proto');
+  const protocol = forwardedProto || request.nextUrl.protocol;
+  const host = request.headers.get('host') || request.nextUrl.host;
+  return `${protocol}://${host}`;
+};
+
 export const config = {
   matcher: ["/((?!_next/static|_next/image|favicon.ico|public).*)"],
 };
@@ -12,13 +20,11 @@ async function checkAdminAccess(request: NextRequest): Promise<boolean> {
     const accessToken = request.cookies.get("access_token")?.value;
     if (!accessToken) return false;
 
-    // Call the admin check API endpoint
-    const response = await fetch(`${request.nextUrl.origin}/api/admin/check`, {
+    const baseUrl = getBaseUrl(request);
+    const response = await fetch(`${baseUrl}/api/admin/check`, {
       headers: {
         Cookie: `access_token=${accessToken}`,
       },
-      // Add these options to handle SSL issues
-      cache: "no-store",
     });
 
     if (!response.ok) return false;
@@ -96,8 +102,8 @@ export async function middleware(request: NextRequest) {
   if (refreshToken) {
     try {
       console.log("[Middleware] Attempting token refresh");
-      const response = await fetch(
-        `${request.nextUrl.origin}/api/auth/refresh`,
+      const baseUrl = getBaseUrl(request);
+      const response = await fetch(`${baseUrl}/api/auth/refresh`, 
         {
           method: "POST",
           headers: {
