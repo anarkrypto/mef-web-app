@@ -136,6 +136,34 @@ export class ProposalService {
             linkId: true,
           },
         },
+        fundingRound: {
+          select: {
+            id: true,
+            name: true,
+            description: true,
+            status: true,
+            startDate: true,
+            endDate: true,
+            considerationPhase: {
+              select: {
+                startDate: true,
+                endDate: true,
+              },
+            },
+            deliberationPhase: {
+              select: {
+                startDate: true,
+                endDate: true,
+              },
+            },
+            votingPhase: {
+              select: {
+                startDate: true,
+                endDate: true,
+              },
+            },
+          },
+        },
       },
       orderBy: [
         { status: "asc" }, // Show drafts first
