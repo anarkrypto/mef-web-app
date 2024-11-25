@@ -5,10 +5,12 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Loader2, AlertCircle, CheckCircle2 } from "lucide-react";
+import { useAuth } from '@/contexts/AuthContext';
 
 function AuthContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { refresh } = useAuth();
   const token = searchParams?.get('token');
   const from = searchParams?.get('from') || '/';
   const message = searchParams?.get('message');
@@ -44,6 +46,8 @@ function AuthContent() {
           throw new Error(data.error || 'Authentication failed');
         }
 
+        await refresh();
+        
         setSuccess(true);
         // Small delay to show success message
         setTimeout(() => {
@@ -57,7 +61,7 @@ function AuthContent() {
     }
 
     authenticate();
-  }, [token, from, router, message]);
+  }, [token, from, router, message, refresh]);
 
   return (
     <Card className="w-full max-w-md">

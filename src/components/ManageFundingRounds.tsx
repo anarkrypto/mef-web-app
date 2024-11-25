@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { Button } from "@/components/ui/button"
 import Link from "next/link"
 import { Trash2, Plus } from 'lucide-react'
@@ -15,6 +15,7 @@ import {
 import { Badge } from "@/components/ui/badge"
 import { useToast } from "@/hooks/use-toast"
 import { useRouter } from "next/navigation"
+import { ChangeFundingRoundStatusDialog } from "@/components/dialogs/ChangeFundingRoundStatusDialog"
 
 interface FundingRound {
   id: string;
@@ -40,12 +41,10 @@ export function ManageFundingRoundsComponent() {
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
   const router = useRouter();
+  const [statusDialogOpen, setStatusDialogOpen] = useState(false);
+  const [selectedRound, setSelectedRound] = useState<FundingRound | null>(null);
 
-  useEffect(() => {
-    fetchRounds();
-  }, []);
-
-  const fetchRounds = async () => {
+  const fetchRounds = useCallback(async () => {
     try {
       const response = await fetch('/api/admin/funding-rounds');
       if (!response.ok) throw new Error('Failed to fetch funding rounds');
@@ -60,7 +59,11 @@ export function ManageFundingRoundsComponent() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [toast]);
+
+  useEffect(() => {
+    fetchRounds();
+  }, [fetchRounds]);
 
   const handleDelete = async (id: string) => {
     if (!confirm('Are you sure you want to delete this funding round?')) return;
@@ -77,7 +80,6 @@ export function ManageFundingRoundsComponent() {
         description: "Funding round deleted successfully",
       });
 
-      // Refresh rounds list
       fetchRounds();
     } catch (error) {
       toast({
@@ -100,6 +102,21 @@ export function ManageFundingRoundsComponent() {
         return 'destructive'
       default:
         return 'outline'
+    }
+  };
+
+  const getStatusIcon = (status: FundingRound['status']) => {
+    switch (status) {
+      case 'COMPLETED':
+        return '✅'
+      case 'ACTIVE':
+        return '🟢'
+      case 'DRAFT':
+        return '📝'
+      case 'CANCELLED':
+        return '❌'
+      default:
+        return '📝'
     }
   };
 
@@ -173,9 +190,18 @@ export function ManageFundingRoundsComponent() {
                     {formatPeriod(round.startDate, round.endDate)}
                   </TableCell>
                   <TableCell>
-                    <Badge variant={getStatusBadgeVariant(round.status)}>
-                      {round.status}
-                    </Badge>
+                    <Button
+                      variant="ghost"
+                      className="p-0 h-auto hover:bg-transparent"
+                      onClick={() => {
+                        setSelectedRound(round);
+                        setStatusDialogOpen(true);
+                      }}
+                    >
+                      <Badge variant={getStatusBadgeVariant(round.status)}>
+                        {getStatusIcon(round.status)} {round.status}
+                      </Badge>
+                    </Button>
                   </TableCell>
                   <TableCell className="text-right">
                     <Link href={`/admin/funding-rounds/${round.id}`}>
@@ -217,6 +243,17 @@ export function ManageFundingRoundsComponent() {
             </Button>
           </Link>
         </div>
+
+        {selectedRound && (
+          <ChangeFundingRoundStatusDialog
+            open={statusDialogOpen}
+            onOpenChange={setStatusDialogOpen}
+            currentStatus={selectedRound.status}
+            roundName={selectedRound.name}
+            roundId={selectedRound.id}
+            onStatusChange={fetchRounds}
+          />
+        )}
       </div>
     </div>
   );

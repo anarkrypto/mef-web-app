@@ -65,7 +65,7 @@ export default function WhatsNext() {
 
   return (
     <div className="my-8">
-      <h2 className="text-3xl font-bold mb-6">What's Next</h2>
+      <h2 className="text-3xl font-bold mb-6">What&apos;s Next</h2>
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         {actions.map((action, index) => (
           <Card key={index} className="flex flex-col">

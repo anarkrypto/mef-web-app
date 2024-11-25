@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { Button } from "@/components/ui/button"
 import Link from "next/link"
 import { Trash2, UserPlus, Users, ChevronDown } from 'lucide-react'
@@ -39,11 +39,7 @@ export function ManageReviewersComponent() {
   const [groups, setGroups] = useState<ReviewerGroup[]>([]);
   const { toast } = useToast();
 
-  useEffect(() => {
-    fetchGroups();
-  }, []);
-
-  const fetchGroups = async () => {
+  const fetchGroups = useCallback(async () => {
     try {
       const response = await fetch('/api/admin/reviewer-groups');
       if (!response.ok) throw new Error('Failed to fetch groups');
@@ -56,7 +52,13 @@ export function ManageReviewersComponent() {
         variant: "destructive",
       });
     }
-  };
+  }, [toast]);
+
+  useEffect(() => {
+    fetchGroups();
+  }, [fetchGroups]);
+
+
 
   // Flatten all members from all groups for display
   const allMembers = groups.flatMap(group => 

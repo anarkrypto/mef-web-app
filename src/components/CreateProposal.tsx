@@ -82,12 +82,7 @@ export default function CreateProposal({ mode = 'create', proposalId }: Props) {
   const [errors, setErrors] = useState<ValidationErrors>({})
 
   useEffect(() => {
-    if (mode === 'edit' && proposalId) {
-      fetchProposal()
-    }
-  }, [mode, proposalId])
-
-  const fetchProposal = async () => {
+const fetchProposal = async () => {
     try {
       const response = await fetch(`/api/proposals/${proposalId}`)
       if (!response.ok) throw new Error('Failed to fetch proposal')
@@ -110,8 +105,14 @@ export default function CreateProposal({ mode = 'create', proposalId }: Props) {
         variant: "destructive"
       })
       router.push('/proposals')
+      }
     }
-  }
+    if (mode === 'edit' && proposalId) {
+      fetchProposal()
+    }
+  }, [mode, proposalId, router, toast])
+
+  
 
   const validateField = (name: ProposalField, value: string) => {
     try {

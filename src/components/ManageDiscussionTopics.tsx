@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { Button } from "@/components/ui/button"
 import Link from "next/link"
 import { Trash2, Plus } from 'lucide-react'
@@ -37,12 +37,8 @@ export function ManageDiscussionTopicsComponent() {
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
   const router = useRouter();
-
-  useEffect(() => {
-    fetchTopics();
-  }, []);
-
-  const fetchTopics = async () => {
+  
+const fetchTopics = useCallback(async () => {
     try {
       const response = await fetch('/api/admin/discussion-topics');
       if (!response.ok) throw new Error('Failed to fetch topics');
@@ -57,7 +53,13 @@ export function ManageDiscussionTopicsComponent() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [toast]);
+
+  useEffect(() => {
+    fetchTopics();
+  }, [fetchTopics]);
+
+  
 
   const handleDelete = async (id: string) => {
     if (!confirm('Are you sure you want to delete this topic?')) return;

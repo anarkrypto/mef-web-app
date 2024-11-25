@@ -88,19 +88,14 @@ export class ProposalService {
   }
 
   async getProposalById(
-    id: string,
+    id: number,
     userId: string,
     userLinkId: string
   ): Promise<(Proposal & { canEdit: boolean; canDelete: boolean }) | null> {
     const proposal = await this.prisma.proposal.findUnique({
       where: { id },
       include: {
-        user: {
-          select: {
-            linkId: true,
-            metadata: true,
-          },
-        },
+        user: true,
       },
     });
 
@@ -108,7 +103,7 @@ export class ProposalService {
 
     // Check if user has access (is creator or has same linkId)
     const hasAccess =
-      proposal.userId === userId || proposal.user.linkId === userLinkId;
+      proposal.userId === userId || proposal.user?.linkId === userLinkId;
 
     if (!hasAccess) return null;
 
@@ -141,6 +136,34 @@ export class ProposalService {
             linkId: true,
           },
         },
+        fundingRound: {
+          select: {
+            id: true,
+            name: true,
+            description: true,
+            status: true,
+            startDate: true,
+            endDate: true,
+            considerationPhase: {
+              select: {
+                startDate: true,
+                endDate: true,
+              },
+            },
+            deliberationPhase: {
+              select: {
+                startDate: true,
+                endDate: true,
+              },
+            },
+            votingPhase: {
+              select: {
+                startDate: true,
+                endDate: true,
+              },
+            },
+          },
+        },
       },
       orderBy: [
         { status: "asc" }, // Show drafts first
@@ -149,7 +172,7 @@ export class ProposalService {
     });
   }
 
-  async deleteProposal(id: string, userId: string): Promise<void> {
+  async deleteProposal(id: number, userId: string): Promise<void> {
     const proposal = await this.prisma.proposal.findUnique({
       where: { id },
     });
@@ -172,7 +195,7 @@ export class ProposalService {
   }
 
   async updateProposal(
-    id: string,
+    id: number,
     data: CreateProposalInput
   ): Promise<Proposal> {
     try {
