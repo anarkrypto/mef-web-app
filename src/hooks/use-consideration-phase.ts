@@ -2,48 +2,55 @@
 
 import { useState, useEffect } from 'react'
 import { useToast } from "@/hooks/use-toast"
+import type { ConsiderationProposal } from '@/types/consideration';
+import type { Dispatch, SetStateAction } from 'react';
 
-interface ConsiderationProposal {
-  id: number;
-  proposalName: string;
-  submitter: string;
-  abstract: string;
-  status: 'pending' | 'approved' | 'rejected';
-  decision?: string;
+interface UseConsiderationPhaseResult {
+  proposals: ConsiderationProposal[];
+  loading: boolean;
+  error: string | null;
+  setProposals: Dispatch<SetStateAction<ConsiderationProposal[]>>;
 }
 
-export function useConsiderationPhase(fundingRoundId: string) {
+export function useConsiderationPhase(fundingRoundId: string): UseConsiderationPhaseResult {
   const [proposals, setProposals] = useState<ConsiderationProposal[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
 
   useEffect(() => {
-    const fetchProposals = async () => {
+    async function fetchProposals() {
       try {
-        setLoading(true);
-        const response = await fetch(`/api/funding-rounds/${fundingRoundId}/consideration-proposals`);
-        if (!response.ok) throw new Error('Failed to fetch proposals');
+        const response = await fetch(
+          `/api/funding-rounds/${fundingRoundId}/consideration-proposals`
+        );
+
+        if (!response.ok) {
+          throw new Error('Failed to fetch proposals');
+        }
+
         const data = await response.json();
         setProposals(data);
-      } catch (error) {
+      } catch (err) {
+        const message = err instanceof Error ? err.message : 'Failed to fetch proposals';
+        setError(message);
         toast({
           title: "Error",
-          description: "Failed to load proposals",
+          description: message,
           variant: "destructive",
         });
       } finally {
         setLoading(false);
       }
-    };
-
-    if (fundingRoundId) {
-      fetchProposals();
     }
+
+    fetchProposals();
   }, [fundingRoundId, toast]);
 
   return {
     proposals,
     loading,
-    setProposals
+    error,
+    setProposals,
   };
 } 

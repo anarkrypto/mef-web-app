@@ -287,8 +287,8 @@ export function FundingRoundStatus({ onRoundSelect }: Props) {
                       onClick={() => {/* Handle click */}}
                     >
                       <CardHeader>
-                        <CardTitle>📊 Submissions (completed; see the summary)</CardTitle>
-                        <CardDescription>View the summary of the submitted proposals</CardDescription>
+                        <CardTitle>📊 Submissions (in progress)</CardTitle>
+                        <CardDescription>Proposal submissions are in progress</CardDescription>
                       </CardHeader>
                     </Card>
 

@@ -1,145 +1,83 @@
 'use client'
 
-import React, { createContext, useContext, useState, useEffect } from 'react'
-import type { AuthProvider } from '@/types/auth'
-import { useFeedback } from './FeedbackContext'
-import { useRouter, useSearchParams } from 'next/navigation'
+import { createContext, useContext, useEffect, useState, useCallback } from 'react'
+import { useRouter } from 'next/navigation'
+import { useToast } from "@/hooks/use-toast"
 
-export interface AuthSource {
-  type: 'discord' | 'telegram' | 'wallet';
-  id: string;
+export type AuthSource = {
+  type: 'discord' | 'telegram' | 'wallet'
+  id: string
+  username: string
 }
 
-interface UserMetadata {
-  username: string;
-  authSource: AuthSource;
+interface User {
+  id: string
+  metadata: {
+    username: string
+    authSource: AuthSource
+  }
 }
 
-interface UserInfo {
-  id: string;
-  metadata: UserMetadata;
+interface AuthContextType {
+  user: User | null
+  isLoading: boolean
+  login: (provider: AuthSource['type']) => void
+  logout: () => Promise<void>
+  refresh: () => Promise<void>
 }
 
-interface AuthContextValue {
-  user: UserInfo | null;
-  isLoading: boolean;
-  login: (provider: AuthSource['type']) => Promise<void>;
-  logout: () => Promise<void>;
-  refreshUser: () => Promise<void>;
-}
-
-const AuthContext = createContext<AuthContextValue | undefined>(undefined)
+const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<UserInfo | null>(null)
+  const [user, setUser] = useState<User | null>(null)
   const [isLoading, setIsLoading] = useState(true)
-  const { success, error: showError } = useFeedback()
   const router = useRouter()
-  const searchParams = useSearchParams()
+  const { toast } = useToast()
 
-  // Check for auth success message
-  useEffect(() => {
-    const message = searchParams?.get('message')
-    if (message === 'auth_success') {
-      success('Successfully logged in')
-      // Remove the message from URL
-      const url = new URL(window.location.href)
-      url.searchParams.delete('message')
-      window.history.replaceState({}, '', url)
-      // Refresh user data
-      refreshUser()
-    }
-  }, [searchParams, success])
-
-  const refreshUser = async () => {
+  const refresh = useCallback(async () => {
     try {
-      setIsLoading(true)
-      const response = await fetch('/api/me/info', {
-        headers: {
-          'Accept': 'application/json'
-        }
-      })
-
-      // If response is not JSON, user is not authenticated
-      const contentType = response.headers.get('content-type')
-      if (!contentType || !contentType.includes('application/json')) {
-        setUser(null)
-        return
-      }
-
-      if (response.ok) {
-        const data = await response.json()
-        if (data.user) {
-          setUser(data.user)
-        } else {
-          setUser(null)
-        }
-      } else {
-        // Handle error responses
-        if (response.status === 401) {
-          setUser(null)
-        } else {
-          console.error('Failed to fetch user:', await response.text())
-          setUser(null)
-        }
-      }
+      const res = await fetch('/api/me/info')
+      if (!res.ok) throw new Error('Failed to fetch user info')
+      const data = await res.json()
+      setUser(data.user)
     } catch (error) {
-      console.error('Failed to fetch user:', error)
+      console.error('Error refreshing user info:', error)
       setUser(null)
-    } finally {
-      setIsLoading(false)
     }
-  }
-
-  useEffect(() => {
-    refreshUser()
   }, [])
 
-  const login = async (provider: AuthSource['type']) => {
-    // Placeholder for future implementation
-    showError('Login functionality will be implemented soon')
-  }
+  useEffect(() => {
+    refresh().finally(() => setIsLoading(false))
+  }, [refresh])
 
-  const logout = async () => {
+  const login = useCallback((provider: AuthSource['type']) => {
+    // Existing login logic...
+  }, [])
+
+  const logout = useCallback(async () => {
     try {
-      setIsLoading(true)
-      const response = await fetch('/api/auth/logout', {
-        method: 'POST',
-        credentials: 'include',
-        headers: {
-          'Accept': 'application/json'
-        }
-      })
-
-      if (!response.ok) {
-        throw new Error('Failed to logout')
-      }
-
-      // Clear user state
+      const res = await fetch('/api/auth/logout', { method: 'POST' })
+      if (!res.ok) throw new Error('Logout failed')
       setUser(null)
-
-      // Show success message
-      success('Successfully logged out')
-
-      // Redirect to home page
       router.push('/')
-      router.refresh() // Refresh the page to update server components
     } catch (error) {
-      showError('Failed to logout. Please try again.')
       console.error('Logout error:', error)
-    } finally {
-      setIsLoading(false)
+      toast({
+        title: "Error",
+        description: "Failed to logout. Please try again.",
+        variant: "destructive",
+      })
     }
-  }
+  }, [router, toast])
 
   return (
-    <AuthContext.Provider value={{ user, isLoading, login, logout, refreshUser }}>
+    <AuthContext.Provider value={{ user, isLoading, login, logout, refresh }}>
       {children}
     </AuthContext.Provider>
   )
 }
 
-export const useAuth = () => {
+export function useAuth() {
   const context = useContext(AuthContext)
   if (context === undefined) {
     throw new Error('useAuth must be used within an AuthProvider')

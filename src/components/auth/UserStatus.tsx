@@ -32,13 +32,14 @@ const AUTH_PROVIDER_NAMES = {
 } as const satisfies Record<AuthSource['type'], string>
 
 export function UserStatus() {
-  const { user, isLoading, login, logout } = useAuth()
+  const { user, isLoading, login, logout, refresh } = useAuth()
   const [isLoggingOut, setIsLoggingOut] = useState(false)
 
   const handleLogout = async () => {
     try {
       setIsLoggingOut(true)
       await logout()
+      await refresh()
     } finally {
       setIsLoggingOut(false)
     }
