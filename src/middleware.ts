@@ -2,12 +2,8 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { verifyToken } from "./lib/auth/jwt";
 
-const getBaseUrl = (request: NextRequest) => {
-  // Check for X-Forwarded-Proto header (should be set by AWS ALB)
-  const forwardedProto = request.headers.get('x-forwarded-proto');
-  const protocol = forwardedProto || request.nextUrl.protocol;
-  const host = request.headers.get('host') || request.nextUrl.host;
-  return `${protocol}://${host}`;
+const getBaseUrl = () => {
+  return process.env.NEXT_PUBLIC_APP_URL;
 };
 
 export const config = {
@@ -20,7 +16,7 @@ async function checkAdminAccess(request: NextRequest): Promise<boolean> {
     const accessToken = request.cookies.get("access_token")?.value;
     if (!accessToken) return false;
 
-    const baseUrl = getBaseUrl(request);
+    const baseUrl = getBaseUrl();
     const response = await fetch(`${baseUrl}/api/admin/check`, {
       headers: {
         Cookie: `access_token=${accessToken}`,
@@ -102,7 +98,7 @@ export async function middleware(request: NextRequest) {
   if (refreshToken) {
     try {
       console.log("[Middleware] Attempting token refresh");
-      const baseUrl = getBaseUrl(request);
+      const baseUrl = getBaseUrl();
       const response = await fetch(`${baseUrl}/api/auth/refresh`, 
         {
           method: "POST",
