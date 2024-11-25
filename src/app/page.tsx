@@ -1,14 +1,15 @@
 'use client';
 
 import { useSearchParams } from 'next/navigation';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useFeedback } from "@/contexts/FeedbackContext";
-import CreateProposal from "@/pages/CreateProposal";
-import StartHereComponent from "@/pages/StartHere";
+import { FundingRoundStatus } from "@/components/FundingRoundStatus";
+import { ConsiderationProposalList } from '@/components/ConsiderationProposalList';
 
 export default function HomePage() {
   const searchParams = useSearchParams();
   const feedback = useFeedback();
+  const [selectedRound, setSelectedRound] = useState<{ id: string; name: string } | null>(null);
   
   useEffect(() => {
     // Check for error param on mount and after navigation
@@ -28,7 +29,16 @@ export default function HomePage() {
     }
   }, [searchParams, feedback]);
 
+  // Only render ConsiderationProposalList if we have a selected round
   return (
-    <StartHereComponent />
+    <>
+      <FundingRoundStatus onRoundSelect={setSelectedRound} />
+      {selectedRound && (
+        <ConsiderationProposalList
+          fundingRoundId={selectedRound.id}
+          fundingRoundName={selectedRound.name}
+        />
+      )}
+    </>
   );
 }
