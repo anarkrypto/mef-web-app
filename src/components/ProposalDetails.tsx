@@ -178,7 +178,7 @@ const fetchProposal = useCallback(async () => {
                 onClick={() => setViewFundingRoundOpen(true)}
               >
                 <Badge variant="outline" className="cursor-pointer">
-                  Submitted to {proposal.fundingRound.name}
+                  {proposal.fundingRound.name}
                 </Badge>
               </Button>
             )}
@@ -290,6 +290,7 @@ const fetchProposal = useCallback(async () => {
         open={selectFundingRoundOpen}
         onOpenChange={setSelectFundingRoundOpen}
         onSubmit={handleSubmitToFunding}
+        proposalTitle={proposal.proposalName}
       />
       
       {proposal.fundingRound && (
@@ -297,6 +298,7 @@ const fetchProposal = useCallback(async () => {
           open={viewFundingRoundOpen}
           onOpenChange={setViewFundingRoundOpen}
           fundingRound={proposal.fundingRound}
+          proposalTitle={proposal.proposalName}
           onWithdraw={handleWithdrawFromFunding}
         />
       )}

@@ -28,13 +28,28 @@ import {
 } from "@/components/ui/tooltip"
 import { useFundingRounds } from "@/hooks/use-funding-rounds"
 
-interface ProposalWithUser extends Proposal {
+interface ProposalWithUser {
   id: number;
+  userId: string;
+  fundingRoundId: string | null;
+  status: string;
+  proposalName: string;
+  abstract: string;
+  motivation: string;
+  rationale: string;
+  deliveryRequirements: string;
+  securityAndPerformance: string;
+  budgetRequest: string;
+  discord: string;
+  email: string;
+  createdAt: string;
+  updatedAt: string;
   user: {
     id: string;
     linkId: string;
     metadata: {
       username: string;
+      createdAt: string;
       authSource: {
         type: string;
         id: string;
@@ -81,7 +96,7 @@ export function ProposalsList() {
     confirmMessage: "Are you sure you want to delete this proposal? This action cannot be undone."
   })
 
-const fetchProposals = useCallback(async () => {
+  const fetchProposals = useCallback(async () => {
     try {
       const response = await fetch('/api/proposals')
       if (!response.ok) throw new Error('Failed to fetch proposals')
@@ -236,14 +251,14 @@ const fetchProposals = useCallback(async () => {
                     <span>•</span>
                     <Button
                       variant="link"
-                      className="p-0 h-auto text-sm"
+                      className="p-0 h-auto"
                       onClick={() => {
                         setSelectedProposalId(proposal.id);
                         setViewFundingRoundOpen(true);
                       }}
                     >
                       <Badge variant="outline" className="cursor-pointer">
-                        Submitted to {proposal.fundingRound.name}
+                        {proposal.fundingRound.name}
                       </Badge>
                     </Button>
                   </>
@@ -269,7 +284,7 @@ const fetchProposals = useCallback(async () => {
                         setViewFundingRoundOpen(true);
                       }}
                     >
-                      Submitted to {proposal.fundingRound.name}
+                      View Funding Round Details
                     </Button>
                   ) : (
                     <TooltipProvider>
@@ -339,6 +354,7 @@ const fetchProposals = useCallback(async () => {
         open={selectFundingRoundOpen}
         onOpenChange={setSelectFundingRoundOpen}
         onSubmit={handleSubmitToFunding}
+        proposalTitle={selectedProposal?.proposalName || ''}
       />
       
       {selectedProposal?.fundingRound && (
@@ -346,6 +362,7 @@ const fetchProposals = useCallback(async () => {
           open={viewFundingRoundOpen}
           onOpenChange={setViewFundingRoundOpen}
           fundingRound={selectedProposal.fundingRound}
+          proposalTitle={selectedProposal.proposalName}
           onWithdraw={() => handleWithdrawFromFunding(selectedProposal.id)}
         />
       )}

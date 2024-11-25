@@ -23,6 +23,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 
 interface FundingRound {
   id: string;
@@ -49,24 +50,38 @@ interface Props {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   fundingRound: FundingRound;
-  onWithdraw: () => Promise<void>;
+  proposalTitle: string;
+  onWithdraw?: () => Promise<void>;
+  mode?: 'view' | 'withdraw';
 }
 
 export function ViewFundingRoundDialog({ 
   open, 
   onOpenChange, 
   fundingRound,
-  onWithdraw 
+  proposalTitle,
+  onWithdraw,
+  mode = 'withdraw'
 }: Props) {
   const [loading, setLoading] = useState(false);
   const [confirmWithdraw, setConfirmWithdraw] = useState(false);
   const { toast } = useToast();
 
   const handleWithdraw = async () => {
+    if (!onWithdraw) {
+      console.warn('onWithdraw callback is not defined');
+      return;
+    }
+
     try {
       setLoading(true);
       await onWithdraw();
       onOpenChange(false);
+      toast({
+        title: "Proposal Withdrawn",
+        description: "Your proposal has been withdrawn. You will need to create a new proposal to submit to a funding round.",
+        variant: "default",
+      });
     } catch (error) {
       toast({
         title: "Error",
@@ -82,62 +97,64 @@ export function ViewFundingRoundDialog({
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="sm:max-w-[425px]">
+        <DialogContent className="sm:max-w-[500px]">
           <DialogHeader>
-            <DialogTitle>Funding Round Details</DialogTitle>
+            <DialogTitle>🎯 Funding Round Details</DialogTitle>
             <DialogDescription>
-              Your proposal is submitted to this funding round
+              {mode === 'withdraw' ? (
+                <>Your proposal, titled <i>{proposalTitle}</i>, is submitted to the following funding round:</>
+              ) : (
+                <>Review the funding round details before submitting your proposal:</>
+              )}
             </DialogDescription>
           </DialogHeader>
-          <div className="grid gap-4 py-4">
-            <div>
-              <h3 className="font-medium">{fundingRound.name}</h3>
-              <p className="text-sm text-muted-foreground mt-1">{fundingRound.description}</p>
-            </div>
-            <div className="space-y-2">
-              <div>
-                <span className="text-sm font-medium">Status: </span>
-                <Badge variant="outline">{fundingRound.status}</Badge>
+          <Card className="mt-4">
+            <CardHeader>
+              <CardTitle>📋 {fundingRound.name}</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-muted-foreground mb-4">{fundingRound.description}</p>
+              <div className="mt-4">
+                <table className="w-full text-sm">
+                  <tbody>
+                    <tr className="border-b">
+                      <td className="py-2 font-medium">🔖 Status:</td>
+                      <td><Badge variant="outline">{fundingRound.status}</Badge></td>
+                    </tr>
+                    <tr className="border-b">
+                      <td className="py-2 font-medium">📅 Period:</td>
+                      <td>{format(new Date(fundingRound.startDate), "PPP")} - {format(new Date(fundingRound.endDate), "PPP")}</td>
+                    </tr>
+                    <tr className="border-b">
+                      <td className="py-2 font-medium">🕒 Consideration Phase:</td>
+                      <td>{format(new Date(fundingRound.considerationPhase.startDate), "PPP")} - {format(new Date(fundingRound.considerationPhase.endDate), "PPP")}</td>
+                    </tr>
+                    <tr className="border-b">
+                      <td className="py-2 font-medium">🗣️ Deliberation Phase:</td>
+                      <td>{format(new Date(fundingRound.deliberationPhase.startDate), "PPP")} - {format(new Date(fundingRound.deliberationPhase.endDate), "PPP")}</td>
+                    </tr>
+                    <tr>
+                      <td className="py-2 font-medium">🗳️ Voting Phase:</td>
+                      <td>{format(new Date(fundingRound.votingPhase.startDate), "PPP")} - {format(new Date(fundingRound.votingPhase.endDate), "PPP")}</td>
+                    </tr>
+                  </tbody>
+                </table>
               </div>
-              <div>
-                <span className="text-sm font-medium">Period: </span>
-                <span className="text-sm">
-                  {format(new Date(fundingRound.startDate), "PPP")} - {format(new Date(fundingRound.endDate), "PPP")}
-                </span>
-              </div>
-              <div className="space-y-1">
-                <div>
-                  <span className="text-sm font-medium">Consideration Phase: </span>
-                  <span className="text-sm">
-                    {format(new Date(fundingRound.considerationPhase.startDate), "PPP")} - {format(new Date(fundingRound.considerationPhase.endDate), "PPP")}
-                  </span>
-                </div>
-                <div>
-                  <span className="text-sm font-medium">Deliberation Phase: </span>
-                  <span className="text-sm">
-                    {format(new Date(fundingRound.deliberationPhase.startDate), "PPP")} - {format(new Date(fundingRound.deliberationPhase.endDate), "PPP")}
-                  </span>
-                </div>
-                <div>
-                  <span className="text-sm font-medium">Voting Phase: </span>
-                  <span className="text-sm">
-                    {format(new Date(fundingRound.votingPhase.startDate), "PPP")} - {format(new Date(fundingRound.votingPhase.endDate), "PPP")}
-                  </span>
-                </div>
-              </div>
-            </div>
-          </div>
+            </CardContent>
+          </Card>
           <DialogFooter>
             <Button variant="outline" onClick={() => onOpenChange(false)} disabled={loading}>
               Close
             </Button>
-            <Button 
-              variant="destructive" 
-              onClick={() => setConfirmWithdraw(true)} 
-              disabled={loading}
-            >
-              Withdraw Proposal
-            </Button>
+            {mode === 'withdraw' && onWithdraw && (
+              <Button 
+                variant="destructive" 
+                onClick={() => setConfirmWithdraw(true)} 
+                disabled={loading}
+              >
+                Withdraw Proposal
+              </Button>
+            )}
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -145,9 +162,9 @@ export function ViewFundingRoundDialog({
       <AlertDialog open={confirmWithdraw} onOpenChange={setConfirmWithdraw}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+            <AlertDialogTitle>⚠️ Are you sure?</AlertDialogTitle>
             <AlertDialogDescription>
-              This will withdraw your proposal from the funding round. You can submit it to another funding round later.
+              This will withdraw your proposal from the funding round. You will need to create a new proposal to submit to another funding round.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
