@@ -32,6 +32,8 @@ model User {
     reviewerGroupMemberships ReviewerGroupMember[]
     adminUser            AdminUser?
 
+    considerationVotes    ConsiderationVote[]
+
     @@index([id])
     @@index([linkId])
 }
@@ -63,6 +65,8 @@ model Proposal {
   @@index([proposalName])
   @@index([createdAt])
   @@index([fundingRoundId])
+
+  considerationVotes ConsiderationVote[]
 }
 
 enum ProposalStatus {
@@ -204,4 +208,25 @@ model AdminUser {
     updatedAt   DateTime      @updatedAt @db.Timestamptz(6)
 
     user        User          @relation(fields: [userId], references: [id])
+}
+
+enum ConsiderationDecision {
+  APPROVED
+  REJECTED
+}
+
+model ConsiderationVote {
+  id          String               @id @default(uuid()) @db.Uuid
+  proposalId  Int
+  voterId     String              @db.Uuid
+  decision    ConsiderationDecision
+  feedback    String              @db.Text
+  createdAt   DateTime            @default(now()) @db.Timestamptz(6)
+  updatedAt   DateTime            @updatedAt @db.Timestamptz(6)
+
+  proposal    Proposal            @relation(fields: [proposalId], references: [id], onDelete: Cascade)
+  voter       User                @relation(fields: [voterId], references: [id], onDelete: Cascade)
+
+  @@unique([proposalId, voterId])
+  @@index([voterId])
 }
