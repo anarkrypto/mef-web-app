@@ -408,6 +408,7 @@ export class AdminService {
             },
           },
         },
+        submissionPhase: true,
         considerationPhase: true,
         deliberationPhase: true,
         votingPhase: true,
@@ -434,6 +435,7 @@ export class AdminService {
             },
           },
         },
+        submissionPhase: true,
         considerationPhase: true,
         deliberationPhase: true,
         votingPhase: true,
@@ -454,11 +456,11 @@ export class AdminService {
     totalBudget: number;
     createdById: string;
     fundingRoundDates: { from: Date; to: Date };
+    submissionDates: { from: Date; to: Date };
     considerationDates: { from: Date; to: Date };
     deliberationDates: { from: Date; to: Date };
     votingDates: { from: Date; to: Date };
   }) {
-    // Use a transaction to ensure all phases are created atomically
     return this.prisma.$transaction(async (tx) => {
       // Create the funding round with proper createdById
       const fundingRound = await tx.fundingRound.create({
@@ -479,6 +481,14 @@ export class AdminService {
       });
 
       // Create all phases
+      await tx.submissionPhase.create({
+        data: {
+          fundingRound: { connect: { id: fundingRound.id } },
+          startDate: data.submissionDates.from,
+          endDate: data.submissionDates.to,
+        },
+      });
+
       await tx.considerationPhase.create({
         data: {
           fundingRound: { connect: { id: fundingRound.id } },
@@ -516,6 +526,7 @@ export class AdminService {
               },
             },
           },
+          submissionPhase: true,
           considerationPhase: true,
           deliberationPhase: true,
           votingPhase: true,
@@ -538,6 +549,7 @@ export class AdminService {
       topicId: string;
       totalBudget: number;
       fundingRoundDates: { from: Date; to: Date };
+      submissionDates: { from: Date; to: Date };
       considerationDates: { from: Date; to: Date };
       deliberationDates: { from: Date; to: Date };
       votingDates: { from: Date; to: Date };
@@ -561,31 +573,59 @@ export class AdminService {
       });
 
       // Update all phases
-      await tx.considerationPhase.update({
+      await tx.submissionPhase.upsert({
         where: { fundingRoundId: id },
-        data: {
+        create: {
+          fundingRound: { connect: { id: fundingRound.id } },
+          startDate: data.submissionDates.from,
+          endDate: data.submissionDates.to,
+        },
+        update: {
+          startDate: data.submissionDates.from,
+          endDate: data.submissionDates.to,
+        },
+      });
+
+      await tx.considerationPhase.upsert({
+        where: { fundingRoundId: id },
+        create: {
+          fundingRound: { connect: { id: fundingRound.id } },
+          startDate: data.considerationDates.from,
+          endDate: data.considerationDates.to,
+        },
+        update: {
           startDate: data.considerationDates.from,
           endDate: data.considerationDates.to,
         },
       });
 
-      await tx.deliberationPhase.update({
+      await tx.deliberationPhase.upsert({
         where: { fundingRoundId: id },
-        data: {
+        create: {
+          fundingRound: { connect: { id: fundingRound.id } },
+          startDate: data.deliberationDates.from,
+          endDate: data.deliberationDates.to,
+        },
+        update: {
           startDate: data.deliberationDates.from,
           endDate: data.deliberationDates.to,
         },
       });
 
-      await tx.votingPhase.update({
+      await tx.votingPhase.upsert({
         where: { fundingRoundId: id },
-        data: {
+        create: {
+          fundingRound: { connect: { id: fundingRound.id } },
+          startDate: data.votingDates.from,
+          endDate: data.votingDates.to,
+        },
+        update: {
           startDate: data.votingDates.from,
           endDate: data.votingDates.to,
         },
       });
 
-      // Return the complete updated funding round
+      // Return the complete funding round with all relations
       return tx.fundingRound.findUnique({
         where: { id: fundingRound.id },
         include: {
@@ -598,6 +638,7 @@ export class AdminService {
               },
             },
           },
+          submissionPhase: true,
           considerationPhase: true,
           deliberationPhase: true,
           votingPhase: true,
@@ -616,6 +657,9 @@ export class AdminService {
     // Use a transaction to ensure all related data is deleted
     return this.prisma.$transaction(async (tx) => {
       // Delete all phases
+      await tx.submissionPhase.delete({
+        where: { fundingRoundId: id },
+      });
       await tx.considerationPhase.delete({
         where: { fundingRoundId: id },
       });

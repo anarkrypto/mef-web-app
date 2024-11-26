@@ -6,6 +6,23 @@ import { validatePhaseDates } from "@/lib/validation";
 
 const adminService = new AdminService(prisma);
 
+interface DateRange {
+  from: string;
+  to: string;
+}
+
+interface FundingRoundRequestData {
+  name: string;
+  description: string;
+  topicId: string;
+  totalBudget: number;
+  fundingRoundDates: DateRange;
+  submissionDates: DateRange;
+  considerationDates: DateRange;
+  deliberationDates: DateRange;
+  votingDates: DateRange;
+}
+
 interface RouteContext {
   params: Promise<{
     id: string;
@@ -58,26 +75,37 @@ export async function PUT(request: Request, context: RouteContext) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
-    const data = await request.json();
+    const data: FundingRoundRequestData = await request.json();
+
+    // Convert string dates to Date objects for validation
+    const fundingRoundDates = {
+      from: new Date(data.fundingRoundDates.from),
+      to: new Date(data.fundingRoundDates.to),
+    };
+    const submissionDates = {
+      from: new Date(data.submissionDates.from),
+      to: new Date(data.submissionDates.to),
+    };
+    const considerationDates = {
+      from: new Date(data.considerationDates.from),
+      to: new Date(data.considerationDates.to),
+    };
+    const deliberationDates = {
+      from: new Date(data.deliberationDates.from),
+      to: new Date(data.deliberationDates.to),
+    };
+    const votingDates = {
+      from: new Date(data.votingDates.from),
+      to: new Date(data.votingDates.to),
+    };
 
     // Validate phase dates
     const datesValid = validatePhaseDates({
-      fundingRound: {
-        from: new Date(data.fundingRoundDates.from),
-        to: new Date(data.fundingRoundDates.to),
-      },
-      consideration: {
-        from: new Date(data.considerationDates.from),
-        to: new Date(data.considerationDates.to),
-      },
-      deliberation: {
-        from: new Date(data.deliberationDates.from),
-        to: new Date(data.deliberationDates.to),
-      },
-      voting: {
-        from: new Date(data.votingDates.from),
-        to: new Date(data.votingDates.to),
-      },
+      fundingRound: fundingRoundDates,
+      submission: submissionDates,
+      consideration: considerationDates,
+      deliberation: deliberationDates,
+      voting: votingDates,
     });
 
     if (!datesValid.valid) {
@@ -85,10 +113,18 @@ export async function PUT(request: Request, context: RouteContext) {
     }
 
     const round = await adminService.updateFundingRound(
-      (
-        await context.params
-      ).id,
-      data
+      (await context.params).id,
+      {
+        name: data.name,
+        description: data.description,
+        topicId: data.topicId,
+        totalBudget: data.totalBudget,
+        fundingRoundDates,
+        submissionDates,
+        considerationDates,
+        deliberationDates,
+        votingDates,
+      }
     );
 
     return NextResponse.json(round);

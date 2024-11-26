@@ -1,6 +1,10 @@
 import { PrismaClient, FundingRound as PrismaFundingRound, FundingRoundStatus } from "@prisma/client";
 
 interface FundingRoundWithPhases extends PrismaFundingRound {
+  submissionPhase: {
+    startDate: Date;
+    endDate: Date;
+  };
   considerationPhase: {
     startDate: Date;
     endDate: Date;
@@ -26,6 +30,7 @@ export class FundingRoundService {
     return await this.prisma.fundingRound.findMany({
       include: {
         proposals: true,
+        submissionPhase: true,
         considerationPhase: true,
         deliberationPhase: true,
         votingPhase: true,
@@ -44,6 +49,7 @@ export class FundingRoundService {
       },
       include: {
         proposals: true,
+        submissionPhase: true,
         considerationPhase: true,
         deliberationPhase: true,
         votingPhase: true,
@@ -57,6 +63,7 @@ export class FundingRoundService {
       where: { id },
       include: {
         proposals: true,
+        submissionPhase: true,
         considerationPhase: true,
         deliberationPhase: true,
         votingPhase: true,
@@ -69,6 +76,11 @@ export class FundingRoundService {
 
     if (now < new Date(fundingRound.startDate)) {
       return 'upcoming';
+    }
+
+    if (now >= new Date(fundingRound.submissionPhase.startDate) && 
+        now <= new Date(fundingRound.submissionPhase.endDate)) {
+      return 'submission';
     }
 
     if (now >= new Date(fundingRound.considerationPhase.startDate) && 
