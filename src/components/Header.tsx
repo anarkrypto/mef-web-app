@@ -22,7 +22,7 @@ export default function Header() {
   const navigation = [
     { name: 'Home', href: '/', emoji: '🏠' },
     { name: 'Start Here', href: '/start-here', emoji: '🚀' },
-    { name: 'Proposals', href: '/proposals', emoji: '📝' },
+    { name: 'My Proposals', href: '/proposals', emoji: '📝' },
   ]
 
   useEffect(() => {

@@ -153,6 +153,7 @@ model FundingRound {
     topic       Topic             @relation(fields: [topicId], references: [id])
     proposals   Proposal[]
     
+    submissionPhase    SubmissionPhase?
     considerationPhase ConsiderationPhase?
     deliberationPhase  DeliberationPhase?
     votingPhase       VotingPhase?
@@ -189,6 +190,19 @@ model DeliberationPhase {
 }
 
 model VotingPhase {
+    id              String        @id @default(uuid()) @db.Uuid
+    fundingRoundId  String        @unique @db.Uuid
+    startDate       DateTime      @db.Timestamptz(6)
+    endDate         DateTime      @db.Timestamptz(6)
+    createdAt       DateTime      @default(now()) @db.Timestamptz(6)
+    updatedAt       DateTime      @updatedAt @db.Timestamptz(6)
+
+    fundingRound    FundingRound  @relation(fields: [fundingRoundId], references: [id], onDelete: Cascade)
+
+    @@index([startDate, endDate])
+}
+
+model SubmissionPhase {
     id              String        @id @default(uuid()) @db.Uuid
     fundingRoundId  String        @unique @db.Uuid
     startDate       DateTime      @db.Timestamptz(6)

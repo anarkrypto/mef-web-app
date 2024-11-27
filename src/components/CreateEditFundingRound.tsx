@@ -44,6 +44,10 @@ interface FundingRound {
   totalBudget: number;
   startDate: string;
   endDate: string;
+  submissionPhase: {
+    startDate: string;
+    endDate: string;
+  };
   considerationPhase: {
     startDate: string;
     endDate: string;
@@ -59,12 +63,13 @@ interface FundingRound {
 }
 
 type DatePhase = {
-  key: 'fundingRoundDates' | 'considerationDates' | 'deliberationDates' | 'votingDates';
+  key: 'fundingRoundDates' | 'submissionDates' | 'considerationDates' | 'deliberationDates' | 'votingDates';
   label: string;
 };
 
 const DATE_PHASES: DatePhase[] = [
   { key: 'fundingRoundDates', label: "Funding Round Period" },
+  { key: 'submissionDates', label: "Submission Phase (UTC)" },
   { key: 'considerationDates', label: "Consideration Phase (UTC)" },
   { key: 'deliberationDates', label: "Deliberation Phase (UTC)" },
   { key: 'votingDates', label: "Voting Phase (UTC)" }
@@ -87,6 +92,7 @@ export function AddEditFundingRoundComponent({
     totalBudget: "",
     selectedTopic: null as Topic | null,
     fundingRoundDates: { from: null as Date | null, to: null as Date | null },
+    submissionDates: { from: null as Date | null, to: null as Date | null },
     considerationDates: { from: null as Date | null, to: null as Date | null },
     deliberationDates: { from: null as Date | null, to: null as Date | null },
     votingDates: { from: null as Date | null, to: null as Date | null },
@@ -107,6 +113,21 @@ export function AddEditFundingRoundComponent({
           const roundResponse = await fetch(`/api/admin/funding-rounds/${roundId}`);
           if (!roundResponse.ok) throw new Error('Failed to fetch funding round');
           const round: FundingRound = await roundResponse.json();
+
+          // Check for missing phases and show warnings
+          const missingPhases = [];
+          if (!round.submissionPhase) missingPhases.push('Submission');
+          if (!round.considerationPhase) missingPhases.push('Consideration');
+          if (!round.deliberationPhase) missingPhases.push('Deliberation');
+          if (!round.votingPhase) missingPhases.push('Voting');
+
+          if (missingPhases.length > 0) {
+            toast({
+              title: "⚠️ Warning",
+              description: `Missing phase data for: ${missingPhases.join(', ')}. Please set the dates manually.`,
+              variant: "default",
+            });
+          }
           
           setFormData({
             name: round.name,
@@ -117,18 +138,22 @@ export function AddEditFundingRoundComponent({
               from: new Date(round.startDate),
               to: new Date(round.endDate),
             },
-            considerationDates: {
+            submissionDates: round.submissionPhase ? {
+              from: new Date(round.submissionPhase.startDate),
+              to: new Date(round.submissionPhase.endDate),
+            } : { from: null, to: null },
+            considerationDates: round.considerationPhase ? {
               from: new Date(round.considerationPhase.startDate),
               to: new Date(round.considerationPhase.endDate),
-            },
-            deliberationDates: {
+            } : { from: null, to: null },
+            deliberationDates: round.deliberationPhase ? {
               from: new Date(round.deliberationPhase.startDate),
               to: new Date(round.deliberationPhase.endDate),
-            },
-            votingDates: {
+            } : { from: null, to: null },
+            votingDates: round.votingPhase ? {
               from: new Date(round.votingPhase.startDate),
               to: new Date(round.votingPhase.endDate),
-            },
+            } : { from: null, to: null },
           });
         }
       } catch (error) {
@@ -201,6 +226,7 @@ export function AddEditFundingRoundComponent({
     // Check if all dates are set
     const dateFields = [
       'fundingRoundDates',
+      'submissionDates',
       'considerationDates',
       'deliberationDates',
       'votingDates',
@@ -221,6 +247,8 @@ export function AddEditFundingRoundComponent({
     const allDatesPresent = 
       formData.fundingRoundDates.from && 
       formData.fundingRoundDates.to &&
+      formData.submissionDates.from && 
+      formData.submissionDates.to &&
       formData.considerationDates.from && 
       formData.considerationDates.to &&
       formData.deliberationDates.from && 
@@ -242,6 +270,10 @@ export function AddEditFundingRoundComponent({
       fundingRound: {
         from: formData.fundingRoundDates.from as Date,
         to: formData.fundingRoundDates.to as Date,
+      },
+      submission: {
+        from: formData.submissionDates.from as Date,
+        to: formData.submissionDates.to as Date,
       },
       consideration: {
         from: formData.considerationDates.from as Date,
@@ -292,6 +324,10 @@ export function AddEditFundingRoundComponent({
           fundingRoundDates: {
             from: formData.fundingRoundDates.from!.toISOString(),
             to: formData.fundingRoundDates.to!.toISOString(),
+          },
+          submissionDates: {
+            from: formData.submissionDates.from!.toISOString(),
+            to: formData.submissionDates.to!.toISOString(),
           },
           considerationDates: {
             from: formData.considerationDates.from!.toISOString(),

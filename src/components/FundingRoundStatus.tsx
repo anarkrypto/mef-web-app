@@ -24,6 +24,10 @@ interface FundingRound {
   endDate: string;
   totalBudget: string;
   proposals: Proposal[];
+  submissionPhase: {
+    startDate: string;
+    endDate: string;
+  };
   considerationPhase: {
     startDate: string;
     endDate: string;
@@ -38,7 +42,7 @@ interface FundingRound {
   };
 }
 
-type Phase = 'submit' | 'consider' | 'deliberate' | 'vote';
+type Phase = 'submission' | 'consider' | 'deliberate' | 'vote';
 
 interface Props {
   onRoundSelect?: (round: { id: string; name: string } | null) => void;
@@ -97,7 +101,7 @@ export function FundingRoundStatus({ onRoundSelect }: Props) {
         now <= new Date(round.votingPhase.endDate)) {
       return 'vote';
     }
-    return 'submit';
+    return 'submission';
   };
 
   const getTimeRemainingWithEmoji = (date: Date): { text: string; emoji: string } => {
@@ -166,8 +170,8 @@ export function FundingRoundStatus({ onRoundSelect }: Props) {
     </div>;
   }
 
-  const currentPhase = selectedRound ? getCurrentPhase(selectedRound) : 'submit' as Phase;
-  const phases: Phase[] = ['submit', 'consider', 'deliberate', 'vote'];
+  const currentPhase = selectedRound ? getCurrentPhase(selectedRound) : 'submission' as Phase;
+  const phases: Phase[] = ['submission', 'consider', 'deliberate', 'vote'];
 
   return (
     <div className="container mx-auto p-6 max-w-7xl">
@@ -268,7 +272,7 @@ export function FundingRoundStatus({ onRoundSelect }: Props) {
                         !isActive && !isCompleted && "text-muted-foreground"
                       )}
                     >
-                      {phase === 'submit' && "📝 "}
+                      {phase === 'submission' && "📝 "}
                       {phase === 'consider' && "🤔 "}
                       {phase === 'deliberate' && "💭 "}
                       {phase === 'vote' && "🗳️ "}
@@ -280,18 +284,20 @@ export function FundingRoundStatus({ onRoundSelect }: Props) {
 
               {/* Content Area */}
               <div className="space-y-4">
+                {currentPhase === 'submission' && (
+                  <Card
+                    className="cursor-pointer hover:bg-muted/50 transition-colors"
+                    onClick={() => {/* Handle click */}}
+                  >
+                    <CardHeader>
+                      <CardTitle>📝 Submit Proposal</CardTitle>
+                      <CardDescription>Submit your proposal for this funding round</CardDescription>
+                    </CardHeader>
+                  </Card>
+                )}
+
                 {currentPhase === 'consider' && (
                   <>
-                    <Card
-                      className="cursor-pointer hover:bg-muted/50 transition-colors"
-                      onClick={() => {/* Handle click */}}
-                    >
-                      <CardHeader>
-                        <CardTitle>📊 Submissions (in progress)</CardTitle>
-                        <CardDescription>Proposal submissions are in progress</CardDescription>
-                      </CardHeader>
-                    </Card>
-
                     <Card
                       className="cursor-pointer hover:bg-muted/50 transition-colors"
                       onClick={() => {/* Handle click */}}

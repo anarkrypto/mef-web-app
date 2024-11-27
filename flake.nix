@@ -19,7 +19,6 @@
             # Core dependencies
             nodejs_20
             nodePackages.typescript
-            nodePackages.tsx
             podman
             podman-compose
             direnv
