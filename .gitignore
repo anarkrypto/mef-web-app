@@ -143,3 +143,5 @@ Thumbs.db
 # Prisma
 prisma/.env
 
+# direnv
+.direnv
