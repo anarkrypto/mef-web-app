@@ -12,12 +12,10 @@ export async function GET(req: Request) {
     // Get all funding rounds with their phases
     const rounds = await prisma.fundingRound.findMany({
       where: {
-        OR: [
-          { status: "ACTIVE" },
-          { status: "DRAFT" }, // TODO: Remove this when going to production
-        ],
+        status: "ACTIVE",
       },
       include: {
+        submissionPhase: true,
         considerationPhase: true,
         deliberationPhase: true,
         votingPhase: true,
