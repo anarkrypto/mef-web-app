@@ -30,6 +30,10 @@ interface FundingRound {
   status: 'DRAFT' | 'ACTIVE';
   startDate: string;
   endDate: string;
+  submissionPhase: {
+    startDate: string;
+    endDate: string;
+  };
   considerationPhase: {
     startDate: string;
     endDate: string;
@@ -85,11 +89,11 @@ export function SelectFundingRoundDialog({
         if (!response.ok) throw new Error('Failed to fetch funding rounds');
         const data = await response.json();
         
-        // Filter rounds that are in consideration phase
+        // Filter rounds that are in submission phase
         const now = new Date();
         const activeRounds = data.filter((round: FundingRound) => {
-          const startDate = new Date(round.considerationPhase.startDate);
-          const endDate = new Date(round.considerationPhase.endDate);
+          const startDate = new Date(round.submissionPhase.startDate);
+          const endDate = new Date(round.submissionPhase.endDate);
           return startDate <= now && now <= endDate;
         });
 
@@ -171,7 +175,7 @@ export function SelectFundingRoundDialog({
                       <div className="flex flex-col">
                         <span>📋 {round.name}</span>
                         <span className="text-xs text-muted-foreground">
-                          ⏳ {getTimeRemaining(round.considerationPhase.endDate)} to submit
+                          ⏳ {getTimeRemaining(round.submissionPhase.endDate)} to submit
                         </span>
                       </div>
                     </SelectItem>
@@ -182,7 +186,7 @@ export function SelectFundingRoundDialog({
               <Alert variant="destructive">
                 <AlertCircle className="h-4 w-4" />
                 <AlertDescription>
-                  There are currently no active funding rounds accepting proposals. Please check back later or contact the team for more information.
+                  There are currently no active funding rounds accepting submissions. Please check back later or contact the team for more information.
                 </AlertDescription>
               </Alert>
             )}

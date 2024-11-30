@@ -8,6 +8,10 @@ interface FundingRound {
   name: string;
   description: string;
   status: 'DRAFT' | 'ACTIVE';
+  submissionPhase: {
+    startDate: string;
+    endDate: string;
+  };
   considerationPhase: {
     startDate: string;
     endDate: string;
@@ -26,11 +30,11 @@ export function useFundingRounds() {
       if (!response.ok) throw new Error('Failed to fetch funding rounds');
       const data = await response.json();
       
-      // Filter rounds that are in consideration phase
+      // Filter rounds that are in submission phase
       const now = new Date();
       const activeRounds = data.filter((round: FundingRound) => {
-        const startDate = new Date(round.considerationPhase.startDate);
-        const endDate = new Date(round.considerationPhase.endDate);
+        const startDate = new Date(round.submissionPhase.startDate);
+        const endDate = new Date(round.submissionPhase.endDate);
         return startDate <= now && now <= endDate;
       });
 

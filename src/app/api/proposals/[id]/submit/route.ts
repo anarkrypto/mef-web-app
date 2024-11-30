@@ -1,12 +1,37 @@
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { getUserFromRequest } from "@/lib/auth";
+import Bree from 'bree';
+import path from 'path';
 
 interface RouteContext {
   params: Promise<{
     id: string;
   }>;
 }
+
+// Initialize Bree for job scheduling
+const bree = new Bree({
+  root: path.join(process.cwd(), 'dist', 'tasks'),
+  jobs: [{
+    name: 'discord-notify',
+    path: path.join(process.cwd(), 'dist', 'tasks', 'discord-notify.js'),
+    worker: {
+      workerData: {
+        proposalId: null // set when job is run
+      }
+    }
+  }]
+});
+
+// Set up event listeners for the job
+bree.on('worker created', (name) => {
+  console.log(`Worker ${name} created`);
+});
+
+bree.on('worker deleted', (name) => {
+  console.log(`Worker ${name} deleted`);
+});
 
 export async function POST(request: Request, context: RouteContext) {
   try {
@@ -34,11 +59,11 @@ export async function POST(request: Request, context: RouteContext) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
-    // Verify the funding round exists and is in consideration phase
+    // Verify the funding round exists and is in submission phase
     const fundingRound = await prisma.fundingRound.findUnique({
       where: { id: fundingRoundId },
       include: {
-        considerationPhase: true,
+        submissionPhase: true,
       },
     });
 
@@ -50,14 +75,14 @@ export async function POST(request: Request, context: RouteContext) {
     }
 
     const now = new Date();
-    const considerationStart = new Date(
-      fundingRound.considerationPhase!.startDate
+    const submissionStart = new Date(
+      fundingRound.submissionPhase!.startDate
     );
-    const considerationEnd = new Date(fundingRound.considerationPhase!.endDate);
+    const submissionEnd = new Date(fundingRound.submissionPhase!.endDate);
 
-    if (now < considerationStart || now > considerationEnd) {
+    if (now < submissionStart || now > submissionEnd) {
       return NextResponse.json(
-        { error: "Funding round is not in consideration phase" },
+        { error: "Funding round is not in submission phase" },
         { status: 400 }
       );
     }
@@ -72,6 +97,7 @@ export async function POST(request: Request, context: RouteContext) {
       include: {
         fundingRound: {
           include: {
+            submissionPhase: true,
             considerationPhase: true,
             deliberationPhase: true,
             votingPhase: true,
@@ -79,6 +105,17 @@ export async function POST(request: Request, context: RouteContext) {
         },
       },
     });
+
+    // Update worker data before running the job
+    const job = bree.config.jobs.find(j => j.name === 'discord-notify');
+    if (job && job.worker) {
+      job.worker.workerData = {
+        proposalId: proposalId.toString()
+      };
+    }
+
+    // Run the job (instead of starting it)
+    await bree.run('discord-notify');
 
     return NextResponse.json(updatedProposal);
   } catch (error) {
