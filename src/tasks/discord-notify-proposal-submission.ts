@@ -1,9 +1,13 @@
 import { parentPort, workerData } from 'worker_threads';
-import { DiscordAPIError } from 'discord.js';
+import { Client, DiscordAPIError } from 'discord.js';
 import { getDiscordClient } from '../discord/client';
 import { createProposalEmbed } from '../discord/utils/embeds';
 import { getNotificationRecipients } from '../discord/utils/users';
 import prisma from '@/lib/prisma';
+
+enum DISCORD_DEFAULTS {
+  RETRY_DELAY = 5000,
+}
 
 interface WorkerData {
   proposalId: string;
@@ -22,17 +26,17 @@ async function handleDiscordError(error: DiscordAPIError): Promise<DiscordErrorR
     case 50016: // Rate limited
       return { 
         retry: true, 
-        delay: 5000, // Default delay if retry_after is not available
+        delay: DISCORD_DEFAULTS.RETRY_DELAY,
         log: true
       };
     case 10013: // Unknown user
       return { retry: false, log: true };
     default:
-      return { retry: true, delay: 5000, log: true };
+      return { retry: false, delay: DISCORD_DEFAULTS.RETRY_DELAY, log: true };
   }
 }
 
-async function notifyDiscordUsers() {
+async function notifyReviewersOfProposalSubmission() {
   const { proposalId } = workerData as WorkerData;
 
   try {
@@ -76,7 +80,7 @@ async function notifyDiscordUsers() {
     }
 
     // Get Discord client singleton
-    const client = await getDiscordClient();
+    const client: Client = await getDiscordClient();
 
     // Get all recipient Discord IDs
     const recipientIds = await getNotificationRecipients({
@@ -107,7 +111,7 @@ async function notifyDiscordUsers() {
         }
 
         await user.send({ embeds: [embed] });
-        
+    
         // Rate limit compliance - wait 500ms between messages
         await new Promise(resolve => setTimeout(resolve, 500));
       } catch (error) {
@@ -118,8 +122,8 @@ async function notifyDiscordUsers() {
             console.error(`Discord API error for user ${discordId}:`, error);
           }
 
-          if (retry && delay) {
-            await new Promise(resolve => setTimeout(resolve, delay));
+          if (retry) {
+            await new Promise(resolve => setTimeout(resolve, delay || DISCORD_DEFAULTS.RETRY_DELAY));
             continue;
           }
         } else {
@@ -136,4 +140,4 @@ async function notifyDiscordUsers() {
   }
 }
 
-notifyDiscordUsers(); 
+notifyReviewersOfProposalSubmission(); 

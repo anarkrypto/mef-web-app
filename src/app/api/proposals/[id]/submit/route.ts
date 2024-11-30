@@ -14,8 +14,8 @@ interface RouteContext {
 const bree = new Bree({
   root: path.join(process.cwd(), 'dist', 'tasks'),
   jobs: [{
-    name: 'discord-notify',
-    path: path.join(process.cwd(), 'dist', 'tasks', 'discord-notify.js'),
+    name: 'discord-notify-proposal-submission',
+    path: path.join(process.cwd(), 'dist', 'tasks', 'discord-notify-proposal-submission.js'),
     worker: {
       workerData: {
         proposalId: null // set when job is run
@@ -107,7 +107,7 @@ export async function POST(request: Request, context: RouteContext) {
     });
 
     // Update worker data before running the job
-    const job = bree.config.jobs.find(j => j.name === 'discord-notify');
+    const job = bree.config.jobs.find(j => j.name === 'discord-notify-proposal-submission');
     if (job && job.worker) {
       job.worker.workerData = {
         proposalId: proposalId.toString()
@@ -115,7 +115,7 @@ export async function POST(request: Request, context: RouteContext) {
     }
 
     // Run the job (instead of starting it)
-    await bree.run('discord-notify');
+    await bree.run('discord-notify-proposal-submission');
 
     return NextResponse.json(updatedProposal);
   } catch (error) {
