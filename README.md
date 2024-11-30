@@ -39,6 +39,7 @@ A decentralized governance platform for managing proposals and grants on the Min
 Create a `.env` file in the root directory:
 
 ```env
+# Authentication
 JWT_PRIVATE_KEY_RS512="-----BEGIN PRIVATE KEY-----
 ...
 -----END PRIVATE KEY-----"
@@ -47,10 +48,19 @@ JWT_PUBLIC_KEY_RS512="-----BEGIN PUBLIC KEY-----
 ...
 -----END PUBLIC KEY-----"
 
+# Discord Bot Configuration
+DISCORD_TOKEN="your-bot-token"        # Bot token from Discord Developer Portal
+CLIENT_ID="your-client-id"           # Application ID from Developer Portal
+GUILD_ID="your-guild-id"             # Server ID where bot will operate
+PUBLIC_KEY="your-public-key"         # Application public key from Developer Portal
+
+# Application URL
+NEXT_APP_URL="http://localhost:3000"  # Used for Discord embed links
 
 # PGAdmin Configuration
 PGADMIN_EMAIL=admin@example.com
 PGADMIN_PASSWORD=pgadmin_password
+
 # Database Configuration
 POSTGRES_DB=govbot
 POSTGRES_PASSWORD=your_secure_password_here
@@ -151,6 +161,48 @@ Users can link multiple authentication sources:
      metadata: Json; // Auth source info
    }
    ```
+
+### Background Jobs with Bree.js
+
+Bree.js is for running background tasks in separate threads:
+
+1. **Worker Structure**:
+   ```
+   src/
+     tasks/           # TypeScript worker files
+       discord-notify.ts
+     scripts/
+       build-workers.ts
+   dist/
+     tasks/          # Compiled JavaScript workers
+   ```
+
+2. **Build Process**:
+   - Workers are compiled from TypeScript to JavaScript
+   - ESM compatibility layer is added for module support
+   - Dependencies are bundled with the worker
+   - Output is placed in `dist/tasks/`
+
+3. **Available Scripts**:
+   ```bash
+   # Build workers only
+   npm run build:workers
+
+   # Build everything (Next.js + workers)
+   npm run build
+   ```
+
+4. **Implementation**:
+   - Workers are initialized in API routes
+   - Each worker runs in isolation
+   - Communication via worker_threads
+   - Proper error handling and recovery
+
+5. **Development Flow**:
+   - Workers are automatically built in development
+   - Hot reload of workers **NOT** supported via `npm run dev`
+   - Production builds include worker compilation
+
 
 ## API Routes
 
