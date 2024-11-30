@@ -170,7 +170,7 @@ Bree.js is for running background tasks in separate threads:
    ```
    src/
      tasks/           # TypeScript worker files
-       discord-notify.ts
+       discord-notify-proposal-submission.ts
      scripts/
        build-workers.ts
    dist/
