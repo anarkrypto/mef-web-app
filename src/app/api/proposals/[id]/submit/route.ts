@@ -3,6 +3,7 @@ import prisma from "@/lib/prisma";
 import { getUserFromRequest } from "@/lib/auth";
 import Bree from 'bree';
 import path from 'path';
+import logger from "@/logging";
 
 interface RouteContext {
   params: Promise<{
@@ -26,11 +27,11 @@ const bree = new Bree({
 
 // Set up event listeners for the job
 bree.on('worker created', (name) => {
-  console.log(`Worker ${name} created`);
+  logger.debug(`Worker ${name} created`);
 });
 
 bree.on('worker deleted', (name) => {
-  console.log(`Worker ${name} deleted`);
+  logger.debug(`Worker ${name} deleted`);
 });
 
 export async function POST(request: Request, context: RouteContext) {

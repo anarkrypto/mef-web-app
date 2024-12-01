@@ -27,6 +27,7 @@
  * npm run build:workers
  */
 
+import logger from '@/logging'
 import * as esbuild from 'esbuild'
 
 async function buildWorkers() {
@@ -49,7 +50,7 @@ async function buildWorkers() {
         `
       }
     })
-    console.log('Workers built successfully!')
+    logger.debug('Workers built successfully!')
   } catch (error) {
     console.error('Worker build failed:', error)
     process.exit(1)

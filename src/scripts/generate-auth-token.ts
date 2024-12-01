@@ -1,3 +1,4 @@
+import logger from "@/logging";
 import { generateInitialToken } from "../lib/auth/jwt";
 import dotenv from "dotenv";
 import path from "path";
@@ -33,12 +34,12 @@ async function main() {
 
     const url = `http://localhost:3000/auth?token=${token}`;
 
-    console.log("\nToken generated successfully!");
-    console.log("=".repeat(50));
-    console.log("Token:", token);
-    console.log("-".repeat(50));
-    console.log("Login URL:", url);
-    console.log("=".repeat(50));
+    logger.debug("\nToken generated successfully!");
+    logger.debug("=".repeat(50));
+    logger.debug("Token:", token);
+    logger.debug("-".repeat(50));
+    logger.debug("Login URL:", url);
+    logger.debug("=".repeat(50));
   } catch (error) {
     console.error(
       "Error generating token:",

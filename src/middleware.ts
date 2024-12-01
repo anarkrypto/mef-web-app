@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { verifyToken } from "./lib/auth/jwt";
+import logger from "./logging";
 
 const getBaseUrl = () => {
   return process.env.NEXT_APP_URL;
@@ -33,7 +34,7 @@ async function checkAdminAccess(request: NextRequest): Promise<boolean> {
 }
 
 export async function middleware(request: NextRequest) {
-  console.log(
+  logger.debug(
     "[Middleware] Processing request for path:",
     request.nextUrl.pathname
   );
@@ -41,7 +42,7 @@ export async function middleware(request: NextRequest) {
 
   // Allow auth paths first, before any other checks
   if (AUTH_PATHS.includes(path)) {
-    console.log("[Middleware] Allowing auth path:", path);
+    logger.debug("[Middleware] Allowing auth path:", path);
     return NextResponse.next();
   }
 
@@ -62,7 +63,7 @@ export async function middleware(request: NextRequest) {
 
   // Allow public paths without authentication
   if (PUBLIC_PATHS.includes(path)) {
-    console.log("[Middleware] Allowing public path:", path);
+    logger.debug("[Middleware] Allowing public path:", path);
     return NextResponse.next();
   }
 
@@ -70,23 +71,23 @@ export async function middleware(request: NextRequest) {
   const accessToken = request.cookies.get("access_token")?.value;
   const refreshToken = request.cookies.get("refresh_token")?.value;
 
-  console.log("[Middleware] Token status:", {
+  logger.debug("[Middleware] Token status:", {
     hasAccessToken: !!accessToken,
     hasRefreshToken: !!refreshToken,
   });
 
   // If no tokens at all, redirect to auth
   if (!accessToken && !refreshToken) {
-    console.log("[Middleware] No tokens found, redirecting to auth");
+    logger.debug("[Middleware] No tokens found, redirecting to auth");
     return redirectToAuth(request, "Please log in to continue");
   }
 
   // Try to use access token first
   if (accessToken) {
     try {
-      console.log("[Middleware] Attempting to verify access token");
+      logger.debug("[Middleware] Attempting to verify access token");
       await verifyToken(accessToken);
-      console.log("[Middleware] Access token verified successfully");
+      logger.debug("[Middleware] Access token verified successfully");
       return NextResponse.next();
     } catch (error) {
       // Access token invalid, try refresh flow
@@ -97,7 +98,7 @@ export async function middleware(request: NextRequest) {
   // Try refresh flow if we have a refresh token
   if (refreshToken) {
     try {
-      console.log("[Middleware] Attempting token refresh");
+      logger.debug("[Middleware] Attempting token refresh");
       const baseUrl = getBaseUrl();
       const response = await fetch(`${baseUrl}/api/auth/refresh`, 
         {
@@ -112,7 +113,7 @@ export async function middleware(request: NextRequest) {
         throw new Error(`Refresh failed with status: ${response.status}`);
       }
 
-      console.log("[Middleware] Token refresh successful");
+      logger.debug("[Middleware] Token refresh successful");
 
       // Get the Set-Cookie headers
       const setCookieHeader = response.headers.get("set-cookie");
@@ -139,7 +140,7 @@ export async function middleware(request: NextRequest) {
   }
 
   // No valid tokens and refresh failed
-  console.log("[Middleware] Authentication required - no valid tokens");
+  logger.debug("[Middleware] Authentication required - no valid tokens");
   return redirectToAuth(request, "Authentication required");
 }
 
@@ -149,7 +150,7 @@ function redirectToAuth(request: NextRequest, message?: string) {
   if (message) {
     url.searchParams.set("message", message);
   }
-  console.log("[Middleware] Redirecting to auth:", url.toString());
+  logger.debug("[Middleware] Redirecting to auth:", url.toString());
   return NextResponse.redirect(url);
 }
 

@@ -1,3 +1,4 @@
+import logger from '@/logging';
 import { Client, GatewayIntentBits } from 'discord.js';
 
 let client: Client | null = null;
@@ -14,7 +15,7 @@ export async function getDiscordClient(): Promise<Client> {
   });
 
   newClient.once('ready', () => {
-    console.log(`Logged in as ${newClient.user?.tag}`);
+    logger.debug(`Logged in as ${newClient.user?.tag}`);
   });
 
   newClient.on('error', error => {
