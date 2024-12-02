@@ -47,8 +47,6 @@ export async function GET(request: Request, context: RouteContext) {
     // Add access control flags
     const response = {
       ...proposal,
-      canEdit: isOwner && proposal.status === "DRAFT",
-      canDelete: isOwner && proposal.status === "DRAFT",
       isOwner, 
     };
 

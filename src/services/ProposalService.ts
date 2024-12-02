@@ -102,13 +102,13 @@ export class ProposalService {
     if (!proposal) return null;
 
     // Check if user has access (is creator or has same linkId)
-    const hasAccess =
+    const isOnwer =
       proposal.userId === userId || proposal.user?.linkId === userLinkId;
 
-    if (!hasAccess) return null;
+    if (!isOnwer) return null;
 
     // Only creator can edit/delete, and only if status is DRAFT
-    const canEdit = proposal.userId === userId && proposal.status === "DRAFT";
+    const canEdit = isOnwer && proposal.status === ProposalStatus.DRAFT;
     const canDelete = canEdit;
 
     return {
@@ -185,7 +185,7 @@ export class ProposalService {
       throw new Error("Not authorized to delete this proposal");
     }
 
-    if (proposal.status !== "DRAFT") {
+    if (proposal.status !== ProposalStatus.DRAFT) {
       throw new Error("Only draft proposals can be deleted");
     }
 

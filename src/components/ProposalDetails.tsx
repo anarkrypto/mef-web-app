@@ -20,8 +20,6 @@ import {
 import { useFundingRounds } from "@/hooks/use-funding-rounds"
 
 interface ProposalWithAccess extends Proposal {
-  canEdit: boolean;
-  canDelete: boolean;
   isOwner: boolean;
   user: {
     metadata: {
@@ -249,7 +247,7 @@ const fetchProposal = useCallback(async () => {
 
           {proposal.status === 'DRAFT' && (
             <div className="flex gap-4">
-              {proposal.canEdit && (
+              {proposal.isOwner && (
                 <Link href={`/proposals/${proposal.id}/edit`}>
                   <Button variant="outline">Edit</Button>
                 </Link>

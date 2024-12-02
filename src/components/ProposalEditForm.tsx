@@ -6,6 +6,7 @@ import { useToast } from '@/hooks/use-toast'
 import { CreateProposal } from './CreateProposal'
 import type { ProposalWithAccess } from '@/types/proposals'
 import { useFeedback } from '@/contexts/FeedbackContext'
+import { ProposalStatus } from '@prisma/client'
 
 interface Props {
   proposalId: string
@@ -28,19 +29,15 @@ export function ProposalEditForm({ proposalId }: Props) {
         }
         const data = await response.json()
         
-        // Check if user can edit
-        if (!data.canEdit) {
-          showError("You cannot edit this proposal")
+        const canEdit: boolean = data.isOwner && data.status === ProposalStatus.DRAFT
+
+        if (!canEdit) {
+          showError("Only your draft proposals can be edited")
           router.push('/proposals')
           return
         }
 
-        // Check if proposal is in draft state
-        if (data.status !== 'DRAFT') {
-          showError("Only draft proposals can be edited")
-          router.push('/proposals')
-          return
-        }
+        
 
         setProposal(data)
       } catch (error) {
