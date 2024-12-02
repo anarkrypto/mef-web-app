@@ -231,13 +231,7 @@ export function ConsiderationProposalList({ fundingRoundId, fundingRoundName }: 
           </div>
         );
       }
-      return (
-        <div className="bg-muted p-4 rounded-md">
-          <p className="text-muted-foreground">
-            💡 Community members can vote using their wallet once the feature is available.
-          </p>
-        </div>
-      );
+      return null;
     }
 
     if (reviewStates[proposal.id] === 'editing') {
