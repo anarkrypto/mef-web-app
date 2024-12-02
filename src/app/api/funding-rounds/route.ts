@@ -14,6 +14,7 @@ export async function GET(req: Request) {
     const rounds = await prisma.fundingRound.findMany({
       include: {
         proposals: true,
+        submissionPhase: true,
         considerationPhase: true,
         deliberationPhase: true,
         votingPhase: true,

@@ -41,16 +41,38 @@ interface FundingRound {
   };
 }
 
-type Phase = 'submission' | 'consider' | 'deliberate' | 'vote';
+type PhaseKey = 'submissionPhase' | 'considerationPhase' | 'deliberationPhase' | 'votingPhase';
+type PhaseType = 'submission' | 'consider' | 'deliberate' | 'vote';
+
+// Create a mapping between phase types and their corresponding phase keys
+const PHASE_MAPPING: Record<PhaseType, PhaseKey> = {
+  'submission': 'submissionPhase',
+  'consider': 'considerationPhase',
+  'deliberate': 'deliberationPhase',
+  'vote': 'votingPhase'
+} as const;
 
 interface Props {
-  onRoundSelect?: (round: { id: string; name: string; phase: Phase }) => void;
+  onRoundSelect?: (round: { 
+    id: string; 
+    name: string; 
+    phase: PhaseType | null;
+    submissionPhase: { startDate: string; endDate: string };
+    considerationPhase: { startDate: string; endDate: string };
+    deliberationPhase: { startDate: string; endDate: string };
+    votingPhase: { startDate: string; endDate: string };
+  }) => void;
 }
 
 export function FundingRoundStatus({ onRoundSelect }: Props) {
-  const getCurrentPhase = (round: FundingRound): Phase => {
+  const getCurrentPhase = (round: FundingRound): PhaseType | null => {
     const now = new Date();
     
+    // Check each phase in chronological order
+    if (now >= new Date(round.submissionPhase.startDate) && 
+        now <= new Date(round.submissionPhase.endDate)) {
+      return 'submission';
+    }
     if (now >= new Date(round.considerationPhase.startDate) && 
         now <= new Date(round.considerationPhase.endDate)) {
       return 'consider';
@@ -63,7 +85,25 @@ export function FundingRoundStatus({ onRoundSelect }: Props) {
         now <= new Date(round.votingPhase.endDate)) {
       return 'vote';
     }
-    return 'submission';
+
+    // If we're not in any active phase, determine if we're between phases
+    const phases = [
+      { phase: 'submission', dates: round.submissionPhase },
+      { phase: 'consider', dates: round.considerationPhase },
+      { phase: 'deliberate', dates: round.deliberationPhase },
+      { phase: 'vote', dates: round.votingPhase }
+    ];
+
+    // Find the next phase
+    const nextPhase = phases.find(p => now < new Date(p.dates.startDate));
+    
+    // If there's no next phase and we're past all phases, return the last phase
+    if (!nextPhase && now > new Date(round.votingPhase.endDate)) {
+      return 'vote';
+    }
+
+    // Return null to indicate we're between phases
+    return null;
   };
 
   const getTimeRemainingWithEmoji = (date: Date): { text: string; emoji: string } => {
@@ -121,7 +161,7 @@ export function FundingRoundStatus({ onRoundSelect }: Props) {
     ? fundingRounds.find(round => round.id === selectedRoundId)
     : null;
 
-  const currentPhase = selectedRound ? getCurrentPhase(selectedRound) : 'submission' as Phase;
+  const currentPhase = selectedRound ? getCurrentPhase(selectedRound) : 'submission' as PhaseType;
 
   useEffect(() => {
     const fetchFundingRounds = async () => {
@@ -157,7 +197,11 @@ export function FundingRoundStatus({ onRoundSelect }: Props) {
       onRoundSelect({
         id: selectedRound.id,
         name: selectedRound.name,
-        phase: currentPhase
+        phase: currentPhase,
+        submissionPhase: selectedRound.submissionPhase,
+        considerationPhase: selectedRound.considerationPhase,
+        deliberationPhase: selectedRound.deliberationPhase,
+        votingPhase: selectedRound.votingPhase
       });
     }
   }, [selectedRound, onRoundSelect, currentPhase]);
@@ -172,7 +216,62 @@ export function FundingRoundStatus({ onRoundSelect }: Props) {
     </div>;
   }
 
-  const phases: Phase[] = ['submission', 'consider', 'deliberate', 'vote'];
+  const phases: PhaseType[] = ['submission', 'consider', 'deliberate', 'vote'];
+
+  const renderPhaseTimeline = () => {
+    if (!selectedRound) return null;
+
+    return phases.map((phase, index) => {
+      const isActive = phase === currentPhase;
+      const phaseKey = PHASE_MAPPING[phase];
+      
+      // Now we can safely access the phase dates
+      const isCompleted = currentPhase === null 
+        ? new Date() > new Date(selectedRound[phaseKey].endDate)
+        : phases.indexOf(phase) < phases.indexOf(currentPhase);
+      
+      return (
+        <div key={phase} className="relative">
+          {/* Timeline connector */}
+          {index > 0 && (
+            <div 
+              className={cn(
+                "absolute -top-4 left-4 w-0.5 h-4",
+                isCompleted ? "bg-primary" : "bg-muted-foreground/20"
+              )} 
+            />
+          )}
+          
+          <div
+            className={cn(
+              "p-3 rounded-md font-medium capitalize relative",
+              isCompleted && "text-primary bg-primary/10",
+              isActive && "bg-primary text-primary-foreground",
+              !isActive && !isCompleted && "text-muted-foreground"
+            )}
+          >
+            {/* Phase icon */}
+            <span className="mr-2">
+              {phase === 'submission' && "📝"}
+              {phase === 'consider' && "🤔"}
+              {phase === 'deliberate' && "💭"}
+              {phase === 'vote' && "🗳️"}
+            </span>
+            
+            {/* Phase name */}
+            {phase}
+            
+            {/* Completion indicator */}
+            {isCompleted && (
+              <span className="absolute right-2 top-1/2 -translate-y-1/2 text-primary">
+                ✓
+              </span>
+            )}
+          </div>
+        </div>
+      );
+    });
+  };
 
   return (
     <div className="container mx-auto p-6 max-w-7xl">
@@ -259,51 +358,7 @@ export function FundingRoundStatus({ onRoundSelect }: Props) {
             <div className="grid grid-cols-[200px,1fr] gap-8">
               {/* Phase Progress */}
               <div className="space-y-4">
-                {phases.map((phase, index) => {
-                  const isActive = phase === currentPhase;
-                  const isCompleted = phases.indexOf(phase) < phases.indexOf(currentPhase);
-                  
-                  return (
-                    <div key={phase} className="relative">
-                      {/* Timeline connector */}
-                      {index > 0 && (
-                        <div 
-                          className={cn(
-                            "absolute -top-4 left-4 w-0.5 h-4",
-                            isCompleted ? "bg-primary" : "bg-muted-foreground/20"
-                          )} 
-                        />
-                      )}
-                      
-                      <div
-                        className={cn(
-                          "p-3 rounded-md font-medium capitalize relative",
-                          isCompleted && "text-primary bg-primary/10",
-                          isActive && "bg-primary text-primary-foreground",
-                          !isActive && !isCompleted && "text-muted-foreground"
-                        )}
-                      >
-                        {/* Phase icon */}
-                        <span className="mr-2">
-                          {phase === 'submission' && "📝"}
-                          {phase === 'consider' && "🤔"}
-                          {phase === 'deliberate' && "💭"}
-                          {phase === 'vote' && "🗳️"}
-                        </span>
-                        
-                        {/* Phase name */}
-                        {phase}
-                        
-                        {/* Completion indicator */}
-                        {isCompleted && (
-                          <span className="absolute right-2 top-1/2 -translate-y-1/2 text-primary">
-                            ✓
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                  );
-                })}
+                {renderPhaseTimeline()}
               </div>
 
               {/* Content Area */}
