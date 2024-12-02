@@ -3,6 +3,7 @@ import { AdminService } from "@/services/AdminService";
 import prisma from "@/lib/prisma";
 import { getUserFromRequest } from "@/lib/auth";
 import { validatePhaseDates } from "@/lib/validation";
+import logger from "@/logging";
 
 interface DateRange {
   from: string;
@@ -38,7 +39,7 @@ export async function GET(req: Request) {
     const rounds = await adminService.getFundingRounds();
     return NextResponse.json(rounds);
   } catch (error) {
-    console.error("Failed to fetch funding rounds:", error);
+    logger.error("Failed to fetch funding rounds:", error);
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 }
@@ -109,7 +110,7 @@ export async function POST(req: Request) {
     });
     return NextResponse.json(round);
   } catch (error) {
-    console.error("Failed to create funding round:", error);
+    logger.error("Failed to create funding round:", error);
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 }

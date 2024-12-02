@@ -3,6 +3,7 @@ import { ProposalService } from "@/services/ProposalService";
 import prisma from "@/lib/prisma";
 import { getUserFromRequest } from "@/lib/auth";
 import { ZodError } from "zod";
+import logger from "@/logging";
 
 const proposalService = new ProposalService(prisma);
 
@@ -49,7 +50,7 @@ export async function GET(request: Request, context: RouteContext) {
 
     return NextResponse.json(response);
   } catch (error) {
-    console.error("Failed to fetch proposal:", error);
+    logger.error("Failed to fetch proposal:", error);
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 }
@@ -74,7 +75,7 @@ export async function DELETE(
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error("Failed to delete proposal:", error);
+    logger.error("Failed to delete proposal:", error);
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 }
@@ -126,7 +127,7 @@ export async function PUT(
 
     return NextResponse.json(updated);
   } catch (error) {
-    console.error("Failed to update proposal:", error);
+    logger.error("Failed to update proposal:", error);
 
     if (error instanceof ZodError) {
       return NextResponse.json(

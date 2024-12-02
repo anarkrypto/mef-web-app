@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { verifyToken, generateTokenPair } from "@/lib/auth/jwt";
+import logger from "@/logging";
 
 export const runtime = "nodejs";
 
@@ -42,7 +43,7 @@ export async function POST() {
 
     return response;
   } catch (error) {
-    console.error("Token refresh error:", error);
+    logger.error("Token refresh error:", error);
     return NextResponse.json(
       { error: "Invalid refresh token" },
       { status: 401 }

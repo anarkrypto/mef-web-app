@@ -6,6 +6,7 @@ import { ThemeProvider } from "@/components/theme-provider"
 import { FeedbackProvider } from "@/contexts/FeedbackContext"
 import { Toaster } from "@/components/ui/toaster"
 import { AuthProvider } from "@/contexts/AuthContext"
+import { WalletProvider } from "@/contexts/WalletContext"
 import { Suspense } from "react";
 
 const geistSans = localFont({
@@ -41,9 +42,11 @@ export default function RootLayout({
           <FeedbackProvider>
             <Suspense fallback={<div>Loading...</div>}>
               <AuthProvider>
-                <Header />
-              <main>{children}</main>
-              <Toaster />
+                <WalletProvider>
+                  <Header />
+                  <main>{children}</main>
+                  <Toaster />
+                </WalletProvider>
               </AuthProvider>
             </Suspense>
           </FeedbackProvider>

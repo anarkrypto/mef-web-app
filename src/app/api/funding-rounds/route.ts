@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { getUserFromRequest } from "@/lib/auth";
+import logger from "@/logging";
 
 export async function GET(req: Request) {
   try {
@@ -26,7 +27,7 @@ export async function GET(req: Request) {
 
     return NextResponse.json(rounds);
   } catch (error) {
-    console.error("Failed to fetch funding rounds:", error);
+    logger.error("Failed to fetch funding rounds:", error);
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 }

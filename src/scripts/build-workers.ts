@@ -52,7 +52,7 @@ async function buildWorkers() {
     })
     logger.debug('Workers built successfully!')
   } catch (error) {
-    console.error('Worker build failed:', error)
+    logger.error('Worker build failed:', error)
     process.exit(1)
   }
 }

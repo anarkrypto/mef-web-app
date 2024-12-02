@@ -3,6 +3,7 @@ import prisma from "@/lib/prisma";
 import { getUserFromRequest } from "@/lib/auth";
 import { ProposalStatus, Prisma } from "@prisma/client";
 import type { UserMetadata } from "@/types/consideration";
+import logger from "@/logging";
 
 interface FormattedProposal {
   id: number;
@@ -88,7 +89,7 @@ export async function GET(
 
     return NextResponse.json(formattedProposals);
   } catch (error) {
-    console.error("Failed to fetch proposals:", error);
+    logger.error("Failed to fetch proposals:", error);
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 }

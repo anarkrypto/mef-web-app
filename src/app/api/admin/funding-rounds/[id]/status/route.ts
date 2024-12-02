@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { getUserFromRequest } from "@/lib/auth";
 import { AdminService } from "@/services/AdminService";
+import logger from "@/logging";
 
 const adminService = new AdminService(prisma);
 
@@ -150,7 +151,7 @@ export async function PATCH(request: Request, context: RouteContext) {
 
     return NextResponse.json(updatedRound);
   } catch (error) {
-    console.error("Failed to update funding round status:", error);
+    logger.error("Failed to update funding round status:", error);
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 }

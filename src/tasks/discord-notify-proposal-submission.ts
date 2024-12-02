@@ -4,6 +4,7 @@ import { getDiscordClient } from '../discord/client';
 import { createProposalEmbed } from '../discord/utils/embeds';
 import { getNotificationRecipients } from '../discord/utils/users';
 import prisma from '@/lib/prisma';
+import logger from '@/logging';
 
 enum DISCORD_DEFAULTS {
   RETRY_DELAY = 5000,
@@ -106,7 +107,7 @@ async function notifyReviewersOfProposalSubmission() {
       try {
         const user = await client.users.fetch(discordId);
         if (!user || user.bot) {
-          console.error(`Invalid user ${discordId}`);
+          logger.error(`Invalid user ${discordId}`);
           continue;
         }
 
@@ -119,7 +120,7 @@ async function notifyReviewersOfProposalSubmission() {
           const { retry, delay, log } = await handleDiscordError(error);
           
           if (log) {
-            console.error(`Discord API error for user ${discordId}:`, error);
+            logger.error(`Discord API error for user ${discordId}:`, error);
           }
 
           if (retry) {
@@ -127,7 +128,7 @@ async function notifyReviewersOfProposalSubmission() {
             continue;
           }
         } else {
-          console.error(`Unexpected error for user ${discordId}:`, error);
+          logger.error(`Unexpected error for user ${discordId}:`, error);
         }
       }
     }
@@ -135,7 +136,7 @@ async function notifyReviewersOfProposalSubmission() {
     // Signal completion to parent
     parentPort?.postMessage('completed');
   } catch (error) {
-    console.error('Discord notification failed:', error);
+    logger.error('Discord notification failed:', error);
     process.exit(1);
   }
 }

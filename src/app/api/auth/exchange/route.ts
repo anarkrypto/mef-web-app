@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { verifyToken, generateTokenPair } from "@/lib/auth/jwt";
+import logger from "@/logging";
 
 export const runtime = "nodejs";
 
@@ -44,7 +45,7 @@ export async function POST(request: Request) {
 
     return response;
   } catch (error) {
-    console.error("Token exchange error:", error);
+    logger.error("Token exchange error:", error);
     return NextResponse.json(
       { error: "Invalid or expired token" },
       { status: 401 }

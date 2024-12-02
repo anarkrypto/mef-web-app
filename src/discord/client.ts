@@ -19,14 +19,14 @@ export async function getDiscordClient(): Promise<Client> {
   });
 
   newClient.on('error', error => {
-    console.error('Discord client error:', error);
+    logger.error('Discord client error:', error);
   });
 
   try {
     await newClient.login(process.env.DISCORD_BOT_TOKEN);
     client = newClient;
   } catch (error) {
-    console.error('Failed to login to Discord:', error);
+    logger.error('Failed to login to Discord:', error);
     throw error;
   }
 

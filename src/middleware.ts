@@ -28,7 +28,7 @@ async function checkAdminAccess(request: NextRequest): Promise<boolean> {
     const data = await response.json();
     return data.isAdmin;
   } catch (error) {
-    console.error("Admin check failed:", error);
+    logger.error("Admin check failed:", error);
     return false;
   }
 }
@@ -91,7 +91,7 @@ export async function middleware(request: NextRequest) {
       return NextResponse.next();
     } catch (error) {
       // Access token invalid, try refresh flow
-      console.error("[Middleware] Access token verification failed:", error);
+      logger.error("[Middleware] Access token verification failed:", error);
     }
   }
 
@@ -131,7 +131,7 @@ export async function middleware(request: NextRequest) {
 
       return res;
     } catch (error) {
-      console.error("[Middleware] Token refresh failed:", error);
+      logger.error("[Middleware] Token refresh failed:", error);
       return redirectToAuth(
         request,
         "Your session has expired. Please log in again."

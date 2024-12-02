@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { getUserFromRequest } from "@/lib/auth";
+import logger from "@/logging";
 
 interface RouteContext {
   params: Promise<{
@@ -44,7 +45,7 @@ export async function POST(request: Request, context: RouteContext) {
 
     return NextResponse.json(updatedProposal);
   } catch (error) {
-    console.error("Failed to withdraw proposal:", error);
+    logger.error("Failed to withdraw proposal:", error);
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 }

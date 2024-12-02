@@ -11,7 +11,7 @@ try {
   const envPath = path.resolve(process.cwd(), ".env");
   dotenv.config({ path: envPath });
 } catch (error) {
-  console.warn("\x1b[33mNo .env file found, using environment variables\x1b[0m");
+  logger.warn("\x1b[33mNo .env file found, using environment variables\x1b[0m");
 }
 
 // ANSI color codes

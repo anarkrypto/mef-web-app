@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { AdminService } from "@/services/AdminService";
 import prisma from "@/lib/prisma";
 import { getUserFromRequest } from "@/lib/auth";
+import logger from "@/logging";
 
 const adminService = new AdminService(prisma);
 
@@ -20,7 +21,7 @@ export async function GET(req: Request) {
     const topics = await adminService.getTopics();
     return NextResponse.json(topics);
   } catch (error) {
-    console.error("Failed to fetch topics:", error);
+    logger.error("Failed to fetch topics:", error);
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 }
@@ -49,7 +50,7 @@ export async function POST(req: Request) {
     );
     return NextResponse.json(topic);
   } catch (error) {
-    console.error("Failed to create topic:", error);
+    logger.error("Failed to create topic:", error);
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 }

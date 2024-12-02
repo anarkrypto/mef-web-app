@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import prisma from "@/lib/prisma";
 import { getUserFromRequest } from "@/lib/auth";
+import logger from "@/logging";
 
 const voteSchema = z.object({
   decision: z.enum(["APPROVED", "REJECTED"]),
@@ -137,7 +138,7 @@ export async function POST(
 
     return NextResponse.json(vote);
   } catch (error) {
-    console.error("Failed to submit vote:", error);
+    logger.error("Failed to submit vote:", error);
     if (error instanceof z.ZodError) {
       return NextResponse.json({ error: error.errors }, { status: 400 });
     }

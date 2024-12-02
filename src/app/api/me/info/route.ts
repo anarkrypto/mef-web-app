@@ -3,6 +3,7 @@ import { cookies } from "next/headers";
 import prisma from "@/lib/prisma";
 import { resolveUser } from "@/lib/user/resolve";
 import { verifyToken } from "@/lib/auth/jwt";
+import logger from "@/logging";
 
 export const runtime = "nodejs";
 
@@ -30,11 +31,11 @@ export async function GET() {
       created,
     });
   } catch (error) {
-    console.error("User info error:", error);
+    logger.error("User info error:", error);
 
     // Detailed error logging
     if (error instanceof Error) {
-      console.error({
+      logger.error({
         message: error.message,
         stack: error.stack,
         name: error.name,
