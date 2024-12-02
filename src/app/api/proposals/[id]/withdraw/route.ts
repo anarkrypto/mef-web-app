@@ -18,9 +18,12 @@ export async function POST(request: Request, context: RouteContext) {
 
     const proposalId = parseInt((await context.params).id);
 
-    // Verify the proposal belongs to the user
+    // Verify the proposal belongs to the user or a linked user
     const proposal = await prisma.proposal.findUnique({
       where: { id: proposalId },
+      include: {
+        user: true, // Include user to get linkId
+      },
     });
 
     if (!proposal) {
@@ -30,7 +33,11 @@ export async function POST(request: Request, context: RouteContext) {
       );
     }
 
-    if (proposal.userId !== user.id) {
+    // Check if user has access (is creator or has same linkId)
+    const hasAccess =
+      proposal.userId === user.id || proposal.user?.linkId === user.linkId;
+
+    if (!hasAccess) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 

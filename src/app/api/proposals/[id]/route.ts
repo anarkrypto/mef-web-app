@@ -41,11 +41,15 @@ export async function GET(request: Request, context: RouteContext) {
       );
     }
 
+    // Check if user is owner or linked user
+    const isOwner = proposal.userId === user.id || proposal.user.linkId === user.linkId;
+
     // Add access control flags
     const response = {
       ...proposal,
-      canEdit: proposal.userId === user.id && proposal.status === "DRAFT",
-      canDelete: proposal.userId === user.id && proposal.status === "DRAFT",
+      canEdit: isOwner && proposal.status === "DRAFT",
+      canDelete: isOwner && proposal.status === "DRAFT",
+      isOwner, 
     };
 
     return NextResponse.json(response);
