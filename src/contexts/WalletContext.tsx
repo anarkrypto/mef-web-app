@@ -2,7 +2,10 @@
 
 import { createContext, useContext, useEffect, useState, ReactNode, useCallback } from 'react';
 import { useToast } from '@/hooks/use-toast';
-import type { WalletContextType, WalletProvider, WalletState } from '@/types/wallet';
+import type { AuroWallet, WalletContextType, WalletProvider, WalletState, NetworkID, WalletEventType, NetworkInfo } from '@/types/wallet';
+
+// Define target network - can be toggled between 'mainnet' and 'testnet'
+export const TARGET_NETWORK: NetworkID = 'testnet';
 
 const initialState: WalletState = {
   status: 'disconnected',
@@ -19,9 +22,58 @@ interface AccountsChangedEvent extends Event {
   };
 }
 
+// Define type for window.mina
+declare global {
+  interface Window {
+    mina?: AuroWallet;
+  }
+}
+
 export function WalletProvider({ children }: { children: ReactNode }) {
   const [state, setState] = useState<WalletState>(initialState);
   const { toast } = useToast();
+
+  // Add network switching functionality
+  const switchNetwork = useCallback(async (targetNetwork: NetworkID) => {
+    if (!window.mina?.switchChain) {
+      throw new Error('Network switching not supported');
+    }
+
+    try {
+      const result = await window.mina.switchChain({ 
+        networkID: `mina:${targetNetwork}` 
+      });
+      
+      toast({
+        title: '🔄 Network Switched',
+        description: `Successfully switched to ${targetNetwork}`,
+      });
+      return true;
+    } catch (error) {
+      console.error('Network switch error:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Failed to switch network';
+      toast({
+        title: '❌ Network Switch Failed',
+        description: errorMessage,
+        variant: 'destructive',
+      });
+      return false;
+    }
+  }, [toast]);
+
+  // Check and enforce target network
+  const enforceTargetNetwork = useCallback(async () => {
+    if (!window.mina?.requestNetwork || !state.wallet) return;
+
+    try {
+      const network = await window.mina.requestNetwork();
+      if (network.networkID !== TARGET_NETWORK) {
+        await switchNetwork(TARGET_NETWORK);
+      }
+    } catch (error) {
+      console.error('Network check error:', error);
+    }
+  }, [state.wallet, switchNetwork]);
 
   const connect = async (provider: WalletProvider) => {
     try {
@@ -39,6 +91,11 @@ export function WalletProvider({ children }: { children: ReactNode }) {
         }
 
         const network = await window.mina.requestNetwork?.().catch(() => null);
+        
+        // Check if we need to switch networks
+        if (network?.networkID !== TARGET_NETWORK) {
+          await switchNetwork(TARGET_NETWORK);
+        }
 
         setState({
           status: 'connected',
@@ -95,12 +152,30 @@ export function WalletProvider({ children }: { children: ReactNode }) {
 
   const disconnect = useCallback(async () => {
     try {
+      // Clear the connection in Auro wallet
+      if (window.mina?.getAccounts) {
+        // Remove the dApp from connected sites
+        const accounts = await window.mina.getAccounts();
+        if (accounts && accounts.length > 0) {
+          // Trigger a disconnect event by updating state
+          setState(initialState);
+          
+          // Force a refresh of the accounts
+          if (window.mina.on) {
+            window.mina.on('accountsChanged', () => {});
+          }
+        }
+      }
+
+      // Reset local state
       setState(initialState);
+      
       toast({
         title: '👋 Wallet Disconnected',
-        description: 'Successfully disconnected wallet',
+        description: 'To make your wallet disconnection permanent, please disconnect directly from the wallet extension.',
       });
     } catch (error) {
+      console.error('Disconnect error:', error);
       const errorMessage = error instanceof Error ? error.message : 'Failed to disconnect wallet';
       toast({
         title: '❌ Disconnect Failed',
@@ -168,6 +243,38 @@ export function WalletProvider({ children }: { children: ReactNode }) {
     };
   }, [state.wallet?.address, disconnect]);
 
+  // Monitor network changes
+  useEffect(() => {
+    const mina = window.mina;
+    if (!mina?.on) return;
+
+    const handleNetworkChange = (networkInfo: NetworkInfo) => {
+      const networkId = networkInfo.networkID;
+      
+      // Update state with new network
+      setState(prev => ({
+        ...prev,
+        wallet: prev.wallet ? {
+          ...prev.wallet,
+          network: networkId,
+        } : null,
+      }));
+
+      // If network changed to something other than target, switch back
+      if (networkId !== TARGET_NETWORK) {
+        void enforceTargetNetwork();
+      }
+    };
+
+    mina.on('chainChanged', handleNetworkChange);
+
+    return () => {
+      if (mina.removeListener) {
+        mina.removeListener('chainChanged', handleNetworkChange);
+      }
+    };
+  }, [enforceTargetNetwork]);
+
   return (
     <WalletContext.Provider
       value={{
@@ -175,6 +282,8 @@ export function WalletProvider({ children }: { children: ReactNode }) {
         connect,
         disconnect,
         isConnected: state.status === 'connected',
+        switchNetwork, // Export the network switching functionality
+        enforceTargetNetwork, // Export network enforcement
       }}
     >
       {children}

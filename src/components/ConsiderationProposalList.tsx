@@ -18,6 +18,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip"
 import type { ConsiderationProposal } from '@/types/consideration';
+import { OCVVoteButton } from "@/components/web3/OCVVoteButton"
 
 interface Props {
   fundingRoundId: string;
@@ -159,31 +160,10 @@ export function ConsiderationProposalList({ fundingRoundId, fundingRoundName }: 
   const renderVoteButtons = (proposal: ConsiderationProposal) => {
     if (!proposal.isReviewerEligible) {
       return (
-        <TooltipProvider>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <div className="flex gap-2">
-                <Button
-                  variant="default"
-                  className="bg-green-600/50 hover:bg-green-700/50 cursor-not-allowed"
-                  disabled
-                >
-                  ✅ Approve for Deliberation
-                </Button>
-                <Button
-                  variant="destructive"
-                  className="opacity-50 cursor-not-allowed"
-                  disabled
-                >
-                  ❌ Reject for Deliberation
-                </Button>
-              </div>
-            </TooltipTrigger>
-            <TooltipContent>
-              <p>Community voting with wallet integration is coming soon!</p>
-            </TooltipContent>
-          </Tooltip>
-        </TooltipProvider>
+        <div className="flex gap-2">
+          <OCVVoteButton proposalId={proposal.id.toString()} useWallet={true} />
+          <OCVVoteButton proposalId={proposal.id.toString()} useWallet={false} />
+        </div>
       );
     }
 
@@ -209,31 +189,10 @@ export function ConsiderationProposalList({ fundingRoundId, fundingRoundName }: 
   const renderEditButtons = (proposal: ConsiderationProposal) => {
     if (!proposal.isReviewerEligible) {
       return (
-        <TooltipProvider>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <div className="flex gap-2">
-                <Button
-                  variant="default"
-                  className="bg-green-600/50 hover:bg-green-700/50 cursor-not-allowed"
-                  disabled
-                >
-                  ✅ Approve for Deliberation
-                </Button>
-                <Button
-                  variant="destructive"
-                  className="opacity-50 cursor-not-allowed"
-                  disabled
-                >
-                  ❌ Reject for Deliberation
-                </Button>
-              </div>
-            </TooltipTrigger>
-            <TooltipContent>
-              <p>Community voting with wallet integration is coming soon!</p>
-            </TooltipContent>
-          </Tooltip>
-        </TooltipProvider>
+        <div className="flex gap-2">
+          <OCVVoteButton proposalId={proposal.id.toString()} useWallet={true} />
+          <OCVVoteButton proposalId={proposal.id.toString()} useWallet={false} />
+        </div>
       );
     }
 
