@@ -40,10 +40,19 @@ export function WalletProvider({ children }: { children: ReactNode }) {
     }
 
     try {
+      // First check current network
+      const currentNetwork = await window.mina.requestNetwork?.();
+      if (currentNetwork?.networkID === `mina:${targetNetwork}`) {
+        // Already on correct network, no need to switch
+        return true;
+      }
+
+      // Need to switch networks
       const result = await window.mina.switchChain({ 
         networkID: `mina:${targetNetwork}` 
       });
       
+      // Only show toast if we actually switched networks
       toast({
         title: '🔄 Network Switched',
         description: `Successfully switched to ${targetNetwork}`,
@@ -63,15 +72,17 @@ export function WalletProvider({ children }: { children: ReactNode }) {
 
   // Check and enforce target network
   const enforceTargetNetwork = useCallback(async () => {
-    if (!window.mina?.requestNetwork || !state.wallet) return;
+    if (!window.mina?.requestNetwork || !state.wallet) return false;
 
     try {
       const network = await window.mina.requestNetwork();
       if (network.networkID !== TARGET_NETWORK) {
-        await switchNetwork(TARGET_NETWORK);
+        return await switchNetwork(TARGET_NETWORK);
       }
+      return true; // Already on correct network
     } catch (error) {
       console.error('Network check error:', error);
+      return false;
     }
   }, [state.wallet, switchNetwork]);
 

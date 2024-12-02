@@ -35,7 +35,7 @@ export interface WalletContextType {
   disconnect: () => Promise<void>;
   isConnected: boolean;
   switchNetwork: (network: NetworkID) => Promise<boolean>;
-  enforceTargetNetwork: () => Promise<void>;
+  enforceTargetNetwork: () => Promise<boolean>;
 }
 
 // Auro wallet specific types

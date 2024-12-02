@@ -32,8 +32,8 @@ export function OCVVoteButton({ proposalId, useWallet: isWalletEnabled = true }:
     }
 
     if (state.wallet.network !== TARGET_NETWORK) {
-      await enforceTargetNetwork()
-      if (state.wallet.network !== TARGET_NETWORK) {
+      const networkSwitched = await enforceTargetNetwork()
+      if (!networkSwitched) {
         return
       }
     }
