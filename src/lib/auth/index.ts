@@ -3,6 +3,7 @@ import { verifyToken } from "./jwt";
 import { resolveUser } from "../user/resolve";
 import type { User } from "@prisma/client";
 import prisma from "@/lib/prisma";
+import logger from "@/logging";
 
 export async function getUserFromRequest(req: Request): Promise<User | null> {
   try {
@@ -21,7 +22,7 @@ export async function getUserFromRequest(req: Request): Promise<User | null> {
     const { user } = await resolveUser(payload);
     return user;
   } catch (error) {
-    console.error("Error getting user from request:", error);
+    logger.error("Error getting user from request:", error);
     return null;
   }
 }
@@ -104,7 +105,7 @@ export async function checkVotingEligibility(
 
     return { isEligible: true };
   } catch (error) {
-    console.error("Error checking voting eligibility:", error);
+    logger.error("Error checking voting eligibility:", error);
     return { isEligible: false, reason: "Error checking eligibility" };
   }
 }

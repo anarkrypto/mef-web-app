@@ -3,6 +3,7 @@ import { ProposalService } from "@/services/ProposalService";
 import prisma from "@/lib/prisma";
 import { getUserFromRequest } from "@/lib/auth";
 import { ZodError } from "zod";
+import logger from "@/logging";
 
 const proposalService = new ProposalService(prisma);
 
@@ -24,7 +25,7 @@ export async function GET(req: Request) {
 
     return NextResponse.json(proposals);
   } catch (error) {
-    console.error("Failed to fetch proposals:", error);
+    logger.error("Failed to fetch proposals:", error);
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 }
@@ -47,7 +48,7 @@ export async function POST(req: Request) {
 
     return NextResponse.json(proposal);
   } catch (error) {
-    console.error("Failed to create proposal:", error);
+    logger.error("Failed to create proposal:", error);
 
     if (error instanceof ZodError) {
       return NextResponse.json(

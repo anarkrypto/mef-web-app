@@ -26,6 +26,18 @@
           ];
 
           shellHook = ''
+            # Preserve existing zsh configuration
+            export ZDOTDIR="$HOME"
+            export ZSH="$HOME/.oh-my-zsh"
+            
+            # Use zsh as the shell while preserving oh-my-zsh
+            if [ -n "$ZSH_VERSION" ]; then
+              # We're already in zsh
+              source "$ZSH/oh-my-zsh.sh" 2>/dev/null || true
+            else
+              # Start zsh
+              exec zsh
+            fi
             echo "🚀 Next.js development environment activated"
             
             # Ensure podman socket is running

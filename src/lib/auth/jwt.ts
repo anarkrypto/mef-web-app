@@ -1,3 +1,4 @@
+import logger from "@/logging";
 import * as jose from "jose";
 import { cookies } from "next/headers";
 
@@ -93,7 +94,7 @@ export const JWTUtils = {
         authSource: payload.authSource as JWTPayload["authSource"],
       } as JWTPayload;
     } catch (error) {
-      console.error("Token verification failed:", error);
+      logger.error("Token verification failed:", error);
       throw new Error("Invalid token");
     }
   },

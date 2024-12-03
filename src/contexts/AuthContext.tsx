@@ -51,7 +51,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [refresh])
 
   const login = useCallback((provider: AuthSource['type']) => {
-    // Existing login logic...
+    // TODO ?
   }, [])
 
   const logout = useCallback(async () => {

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { AdminCheckService } from "@/services/AdminCheckService";
 import { getUserFromRequest } from "@/lib/auth";
+import logger from "@/logging";
 
 export async function GET(req: Request) {
   try {
@@ -15,7 +16,7 @@ export async function GET(req: Request) {
     );
     return NextResponse.json({ isAdmin });
   } catch (error) {
-    console.error("Admin check failed:", error);
+    logger.error("Admin check failed:", error);
     return NextResponse.json({ isAdmin: false });
   }
 }

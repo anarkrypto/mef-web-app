@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { AdminService } from "@/services/AdminService";
 import prisma from "@/lib/prisma";
 import { getUserFromRequest } from "@/lib/auth";
+import logger from "@/logging";
 
 const adminService = new AdminService(prisma);
 
@@ -20,7 +21,7 @@ export async function GET(req: Request) {
     const groups = await adminService.getReviewerGroups();
     return NextResponse.json(groups);
   } catch (error) {
-    console.error("Failed to fetch reviewer groups:", error);
+    logger.error("Failed to fetch reviewer groups:", error);
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 }
@@ -48,7 +49,7 @@ export async function POST(req: Request) {
     );
     return NextResponse.json(group);
   } catch (error) {
-    console.error("Failed to create reviewer group:", error);
+    logger.error("Failed to create reviewer group:", error);
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 }

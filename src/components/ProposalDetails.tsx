@@ -22,6 +22,7 @@ import { useFundingRounds } from "@/hooks/use-funding-rounds"
 interface ProposalWithAccess extends Proposal {
   canEdit: boolean;
   canDelete: boolean;
+  isOwner: boolean;
   user: {
     metadata: {
       username: string;
@@ -300,6 +301,7 @@ const fetchProposal = useCallback(async () => {
           fundingRound={proposal.fundingRound}
           proposalTitle={proposal.proposalName}
           onWithdraw={handleWithdrawFromFunding}
+          canWithdraw={proposal.isOwner}
         />
       )}
     </div>

@@ -53,7 +53,7 @@ interface Props {
   proposalTitle: string;
   onWithdraw?: () => Promise<void>;
   mode?: 'view' | 'withdraw';
-  isAuthor?: boolean;
+  canWithdraw?: boolean;
 }
 
 export function ViewFundingRoundDialog({ 
@@ -63,7 +63,7 @@ export function ViewFundingRoundDialog({
   proposalTitle,
   onWithdraw,
   mode = 'withdraw',
-  isAuthor = false
+  canWithdraw = false
 }: Props) {
   const [loading, setLoading] = useState(false);
   const [confirmWithdraw, setConfirmWithdraw] = useState(false);
@@ -148,7 +148,7 @@ export function ViewFundingRoundDialog({
             <Button variant="outline" onClick={() => onOpenChange(false)} disabled={loading}>
               Close
             </Button>
-            {mode === 'withdraw' && onWithdraw && isAuthor && (
+            {mode === 'withdraw' && onWithdraw && canWithdraw && (
               <Button 
                 variant="destructive" 
                 onClick={() => setConfirmWithdraw(true)} 

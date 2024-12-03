@@ -13,7 +13,6 @@ import {
 } from "@/components/ui/tooltip"
 import { format, differenceInDays } from 'date-fns'
 import { Proposal } from '@prisma/client'
-import { FundingRoundService } from '@/services/FundingRoundService'
 
 interface FundingRound {
   id: string;
@@ -42,53 +41,38 @@ interface FundingRound {
   };
 }
 
-type Phase = 'submission' | 'consider' | 'deliberate' | 'vote';
+type PhaseKey = 'submissionPhase' | 'considerationPhase' | 'deliberationPhase' | 'votingPhase';
+type PhaseType = 'submission' | 'consider' | 'deliberate' | 'vote';
+
+// Create a mapping between phase types and their corresponding phase keys
+const PHASE_MAPPING: Record<PhaseType, PhaseKey> = {
+  'submission': 'submissionPhase',
+  'consider': 'considerationPhase',
+  'deliberate': 'deliberationPhase',
+  'vote': 'votingPhase'
+} as const;
 
 interface Props {
-  onRoundSelect?: (round: { id: string; name: string } | null) => void;
+  onRoundSelect?: (round: { 
+    id: string; 
+    name: string; 
+    phase: PhaseType | null;
+    submissionPhase: { startDate: string; endDate: string };
+    considerationPhase: { startDate: string; endDate: string };
+    deliberationPhase: { startDate: string; endDate: string };
+    votingPhase: { startDate: string; endDate: string };
+  }) => void;
 }
 
 export function FundingRoundStatus({ onRoundSelect }: Props) {
-  const [fundingRounds, setFundingRounds] = useState<FundingRound[]>([]);
-  const [selectedRoundId, setSelectedRoundId] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const fetchFundingRounds = async () => {
-      try {
-        setLoading(true);
-        const response = await fetch('/api/funding-rounds');
-        if (!response.ok) throw new Error('Failed to fetch funding rounds');
-        const data = await response.json();
-        
-        // Ensure data is an array
-        const rounds = Array.isArray(data) ? data : [];
-        setFundingRounds(rounds);
-        
-        // Select first active round by default
-        const activeRound = rounds.find((round: FundingRound) => round.status === 'ACTIVE');
-        if (activeRound) {
-          setSelectedRoundId(activeRound.id);
-        }
-      } catch (error) {
-        console.error('Failed to fetch funding rounds:', error);
-        // Set empty array on error to prevent undefined
-        setFundingRounds([]);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchFundingRounds();
-  }, []);
-
-  const selectedRound = selectedRoundId 
-    ? fundingRounds.find(round => round.id === selectedRoundId)
-    : null;
-  
-  const getCurrentPhase = (round: FundingRound): Phase => {
+  const getCurrentPhase = (round: FundingRound): PhaseType | null => {
     const now = new Date();
     
+    // Check each phase in chronological order
+    if (now >= new Date(round.submissionPhase.startDate) && 
+        now <= new Date(round.submissionPhase.endDate)) {
+      return 'submission';
+    }
     if (now >= new Date(round.considerationPhase.startDate) && 
         now <= new Date(round.considerationPhase.endDate)) {
       return 'consider';
@@ -101,7 +85,25 @@ export function FundingRoundStatus({ onRoundSelect }: Props) {
         now <= new Date(round.votingPhase.endDate)) {
       return 'vote';
     }
-    return 'submission';
+
+    // If we're not in any active phase, determine if we're between phases
+    const phases = [
+      { phase: 'submission', dates: round.submissionPhase },
+      { phase: 'consider', dates: round.considerationPhase },
+      { phase: 'deliberate', dates: round.deliberationPhase },
+      { phase: 'vote', dates: round.votingPhase }
+    ];
+
+    // Find the next phase
+    const nextPhase = phases.find(p => now < new Date(p.dates.startDate));
+    
+    // If there's no next phase and we're past all phases, return the last phase
+    if (!nextPhase && now > new Date(round.votingPhase.endDate)) {
+      return 'vote';
+    }
+
+    // Return null to indicate we're between phases
+    return null;
   };
 
   const getTimeRemainingWithEmoji = (date: Date): { text: string; emoji: string } => {
@@ -151,18 +153,62 @@ export function FundingRoundStatus({ onRoundSelect }: Props) {
     };
   };
 
-  const isUpcoming = (round: FundingRound) => {
-    return new Date(round.startDate) > new Date();
-  };
+  const [fundingRounds, setFundingRounds] = useState<FundingRound[]>([]);
+  const [selectedRoundId, setSelectedRoundId] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  const selectedRound = selectedRoundId 
+    ? fundingRounds.find(round => round.id === selectedRoundId)
+    : null;
+
+  const currentPhase = selectedRound ? getCurrentPhase(selectedRound) : 'submission' as PhaseType;
+
+  useEffect(() => {
+    const fetchFundingRounds = async () => {
+      try {
+        setLoading(true);
+        const response = await fetch('/api/funding-rounds');
+        if (!response.ok) throw new Error('Failed to fetch funding rounds');
+        const data = await response.json();
+        
+        // Ensure data is an array
+        const rounds = Array.isArray(data) ? data : [];
+        setFundingRounds(rounds);
+        
+        // Select first active round by default
+        const activeRound = rounds.find((round: FundingRound) => round.status === 'ACTIVE');
+        if (activeRound) {
+          setSelectedRoundId(activeRound.id);
+        }
+      } catch (error) {
+        console.error('Failed to fetch funding rounds:', error);
+        // Set empty array on error to prevent undefined
+        setFundingRounds([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchFundingRounds();
+  }, []);
 
   useEffect(() => {
     if (selectedRound && onRoundSelect) {
       onRoundSelect({
         id: selectedRound.id,
-        name: selectedRound.name
+        name: selectedRound.name,
+        phase: currentPhase,
+        submissionPhase: selectedRound.submissionPhase,
+        considerationPhase: selectedRound.considerationPhase,
+        deliberationPhase: selectedRound.deliberationPhase,
+        votingPhase: selectedRound.votingPhase
       });
     }
-  }, [selectedRound, onRoundSelect]);
+  }, [selectedRound, onRoundSelect, currentPhase]);
+
+  const isUpcoming = (round: FundingRound) => {
+    return new Date(round.startDate) > new Date();
+  };
 
   if (loading) {
     return <div className="flex items-center justify-center p-6">
@@ -170,8 +216,62 @@ export function FundingRoundStatus({ onRoundSelect }: Props) {
     </div>;
   }
 
-  const currentPhase = selectedRound ? getCurrentPhase(selectedRound) : 'submission' as Phase;
-  const phases: Phase[] = ['submission', 'consider', 'deliberate', 'vote'];
+  const phases: PhaseType[] = ['submission', 'consider', 'deliberate', 'vote'];
+
+  const renderPhaseTimeline = () => {
+    if (!selectedRound) return null;
+
+    return phases.map((phase, index) => {
+      const isActive = phase === currentPhase;
+      const phaseKey = PHASE_MAPPING[phase];
+      
+      // Now we can safely access the phase dates
+      const isCompleted = currentPhase === null 
+        ? new Date() > new Date(selectedRound[phaseKey].endDate)
+        : phases.indexOf(phase) < phases.indexOf(currentPhase);
+      
+      return (
+        <div key={phase} className="relative">
+          {/* Timeline connector */}
+          {index > 0 && (
+            <div 
+              className={cn(
+                "absolute -top-4 left-4 w-0.5 h-4",
+                isCompleted ? "bg-primary" : "bg-muted-foreground/20"
+              )} 
+            />
+          )}
+          
+          <div
+            className={cn(
+              "p-3 rounded-md font-medium capitalize relative",
+              isCompleted && "text-primary bg-primary/10",
+              isActive && "bg-primary text-primary-foreground",
+              !isActive && !isCompleted && "text-muted-foreground"
+            )}
+          >
+            {/* Phase icon */}
+            <span className="mr-2">
+              {phase === 'submission' && "📝"}
+              {phase === 'consider' && "🤔"}
+              {phase === 'deliberate' && "💭"}
+              {phase === 'vote' && "🗳️"}
+            </span>
+            
+            {/* Phase name */}
+            {phase}
+            
+            {/* Completion indicator */}
+            {isCompleted && (
+              <span className="absolute right-2 top-1/2 -translate-y-1/2 text-primary">
+                ✓
+              </span>
+            )}
+          </div>
+        </div>
+      );
+    });
+  };
 
   return (
     <div className="container mx-auto p-6 max-w-7xl">
@@ -258,59 +358,46 @@ export function FundingRoundStatus({ onRoundSelect }: Props) {
             <div className="grid grid-cols-[200px,1fr] gap-8">
               {/* Phase Progress */}
               <div className="space-y-4">
-                {phases.map((phase) => {
-                  const isActive = phase === currentPhase;
-                  const isCompleted = phases.indexOf(phase) < phases.indexOf(currentPhase);
-                  
-                  return (
-                    <div
-                      key={phase}
-                      className={cn(
-                        "p-3 rounded-md font-medium capitalize",
-                        isCompleted && "text-muted-foreground",
-                        isActive && "bg-primary text-primary-foreground",
-                        !isActive && !isCompleted && "text-muted-foreground"
-                      )}
-                    >
-                      {phase === 'submission' && "📝 "}
-                      {phase === 'consider' && "🤔 "}
-                      {phase === 'deliberate' && "💭 "}
-                      {phase === 'vote' && "🗳️ "}
-                      {phase}
-                    </div>
-                  );
-                })}
+                {renderPhaseTimeline()}
               </div>
 
               {/* Content Area */}
               <div className="space-y-4">
                 {currentPhase === 'submission' && (
-                  <Card
-                    className="cursor-pointer hover:bg-muted/50 transition-colors"
-                    onClick={() => {/* Handle click */}}
-                  >
+                  <Card>
                     <CardHeader>
-                      <CardTitle>📝 Submit Proposal</CardTitle>
-                      <CardDescription>Submit your proposal for this funding round</CardDescription>
+                      <CardTitle>📝 Submission Phase</CardTitle>
+                      <CardDescription>Submit your proposals for this funding round. Review other submissions and provide feedback.</CardDescription>
                     </CardHeader>
                   </Card>
                 )}
 
                 {currentPhase === 'consider' && (
-                  <>
-                    <Card
-                      className="cursor-pointer hover:bg-muted/50 transition-colors"
-                      onClick={() => {/* Handle click */}}
-                    >
-                      <CardHeader>
-                        <CardTitle>🤔 Consider (in progress)</CardTitle>
-                        <CardDescription>Review the submitted proposals and determine which ones you find valuable enough to receive funding</CardDescription>
-                      </CardHeader>
-                    </Card>
-                  </>
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>🤔 Consideration Phase</CardTitle>
+                      <CardDescription>Review submitted proposals and determine which ones you find valuable enough to receive funding.</CardDescription>
+                    </CardHeader>
+                  </Card>
                 )}
-                
-                {/* Add similar sections for other phases */}
+
+                {currentPhase === 'deliberate' && (
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>💭 Deliberation Phase</CardTitle>
+                      <CardDescription>Discuss and refine proposals with the community before final voting.</CardDescription>
+                    </CardHeader>
+                  </Card>
+                )}
+
+                {currentPhase === 'vote' && (
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>🗳️ Voting Phase</CardTitle>
+                      <CardDescription>Cast your votes to determine which proposals will receive funding.</CardDescription>
+                    </CardHeader>
+                  </Card>
+                )}
               </div>
             </div>
           </>

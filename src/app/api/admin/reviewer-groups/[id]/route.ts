@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { AdminService } from "@/services/AdminService";
 import prisma from "@/lib/prisma";
 import { getUserFromRequest } from "@/lib/auth";
+import logger from "@/logging";
 
 const adminService = new AdminService(prisma);
 
@@ -34,7 +35,7 @@ export async function GET(request: Request, context: RouteContext) {
 
     return NextResponse.json(group);
   } catch (error) {
-    console.error("Failed to fetch reviewer group:", error);
+    logger.error("Failed to fetch reviewer group:", error);
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 }
@@ -68,7 +69,7 @@ export async function PUT(request: Request, context: RouteContext) {
 
     return NextResponse.json(group);
   } catch (error) {
-    console.error("Failed to update reviewer group:", error);
+    logger.error("Failed to update reviewer group:", error);
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 }
@@ -91,7 +92,7 @@ export async function DELETE(request: Request, context: RouteContext) {
     await adminService.deleteReviewerGroup((await context.params).id);
     return new NextResponse(null, { status: 204 });
   } catch (error) {
-    console.error("Failed to delete reviewer group:", error);
+    logger.error("Failed to delete reviewer group:", error);
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 }

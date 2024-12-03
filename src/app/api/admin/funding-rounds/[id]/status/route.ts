@@ -2,8 +2,11 @@ import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { getUserFromRequest } from "@/lib/auth";
 import { AdminService } from "@/services/AdminService";
+import logger from "@/logging";
 
 const adminService = new AdminService(prisma);
+
+const ALLOW_MULTIPLE_ACTIVE_ROUNDS: boolean = true;
 
 interface RouteContext {
   params: Promise<{
@@ -39,24 +42,26 @@ async function validateStatusTransition(
     const round = await prisma.fundingRound.findUnique({
       where: { id: roundId },
       include: {
+        submissionPhase: true,
         considerationPhase: true,
         deliberationPhase: true,
         votingPhase: true,
       },
     });
 
-    if (!round || !round.considerationPhase || !round.deliberationPhase || !round.votingPhase) {
+    if (!round || !round.submissionPhase || !round.considerationPhase || !round.deliberationPhase || !round.votingPhase) {
       return {
         valid: false,
         error: "Funding round must have all phases defined before activation",
       };
     }
-
+    
+    if (!ALLOW_MULTIPLE_ACTIVE_ROUNDS) {
     // Check if there's already an active round
-    if (currentStatus !== 'ACTIVE') {
-      const activeRound = await prisma.fundingRound.findFirst({
-        where: {
-          status: 'ACTIVE',
+      if (currentStatus !== 'ACTIVE') {
+        const activeRound = await prisma.fundingRound.findFirst({
+          where: {
+            status: 'ACTIVE',
           id: { not: roundId },
         },
       });
@@ -66,6 +71,7 @@ async function validateStatusTransition(
           valid: false,
           error: "Another funding round is already active",
         };
+      }
       }
     }
   }
@@ -145,7 +151,7 @@ export async function PATCH(request: Request, context: RouteContext) {
 
     return NextResponse.json(updatedRound);
   } catch (error) {
-    console.error("Failed to update funding round status:", error);
+    logger.error("Failed to update funding round status:", error);
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 }

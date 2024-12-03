@@ -4,6 +4,7 @@ import Link from "next/link"
 import { Bell, Settings } from 'lucide-react'
 import { Button } from "@/components/ui/button"
 import { UserStatus } from "./auth/UserStatus"
+import { WalletConnector } from "./web3/WalletConnector"
 import { usePathname } from "next/navigation"
 import { cn } from "@/lib/utils"
 import { useEffect, useState } from "react"
@@ -93,7 +94,8 @@ export default function Header() {
               </Tooltip>
             </TooltipProvider>
           )}
-          <div className="ml-2">
+          <div className="flex items-center gap-4">
+            <WalletConnector />
             <UserStatus />
           </div>
         </div>

@@ -356,13 +356,15 @@ export function ProposalsList() {
         onSubmit={handleSubmitToFunding}
         proposalTitle={selectedProposal?.proposalName || ''}
       />
-      
+   
       {selectedProposal?.fundingRound && (
         <ViewFundingRoundDialog
           open={viewFundingRoundOpen}
           onOpenChange={setViewFundingRoundOpen}
           fundingRound={selectedProposal.fundingRound}
           proposalTitle={selectedProposal.proposalName}
+          canWithdraw={true}
+          mode="withdraw"
           onWithdraw={() => handleWithdrawFromFunding(selectedProposal.id)}
         />
       )}

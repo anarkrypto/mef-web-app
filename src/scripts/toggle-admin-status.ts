@@ -1,3 +1,4 @@
+import logger from '@/logging';
 import { PrismaClient, User } from '@prisma/client'
 import dotenv from "dotenv";
 import path from "path";
@@ -10,7 +11,7 @@ try {
   const envPath = path.resolve(process.cwd(), ".env");
   dotenv.config({ path: envPath });
 } catch (error) {
-  console.warn("\x1b[33mNo .env file found, using environment variables\x1b[0m");
+  logger.warn("\x1b[33mNo .env file found, using environment variables\x1b[0m");
 }
 
 // ANSI color codes
@@ -57,36 +58,36 @@ async function setAdminStatus(userId: string, status: boolean): Promise<void> {
       update: {},
       create: { userId }
     });
-    console.log(`${colors.green}✓${colors.reset} Admin status ${colors.bright}enabled${colors.reset}`);
+    logger.debug(`${colors.green}✓${colors.reset} Admin status ${colors.bright}enabled${colors.reset}`);
   } else {
     await prisma.adminUser.delete({
       where: { userId }
     }).catch(() => {
       // Ignore if already not an admin
     });
-    console.log(`${colors.yellow}✓${colors.reset} Admin status ${colors.bright}disabled${colors.reset}`);
+    logger.debug(`${colors.yellow}✓${colors.reset} Admin status ${colors.bright}disabled${colors.reset}`);
   }
 }
 
 async function displayUserInfo(user: User, isAdmin: boolean) {
   const metadata = user.metadata as { username: string };
   
-  console.log('\n📋 User Information:');
-  console.log('══════════════════');
-  console.log(`🆔 ID: ${colors.cyan}${user.id}${colors.reset}`);
-  console.log(`👤 Username: ${colors.cyan}${metadata.username}${colors.reset}`);
-  console.log(`👑 Admin Status: ${isAdmin 
+  logger.debug('\n📋 User Information:');
+  logger.debug('══════════════════');
+  logger.debug(`🆔 ID: ${colors.cyan}${user.id}${colors.reset}`);
+  logger.debug(`👤 Username: ${colors.cyan}${metadata.username}${colors.reset}`);
+  logger.debug(`👑 Admin Status: ${isAdmin 
     ? `${colors.green}✓ Enabled${colors.reset}` 
     : `${colors.red}✗ Disabled${colors.reset}`}`);
-  console.log('──────────────────');
+  logger.debug('──────────────────');
 }
 
 async function promptForAction(): Promise<'toggle' | 'enable' | 'disable' | 'exit'> {
-  console.log('\n📝 Available actions:');
-  console.log(`${colors.bright}1${colors.reset}) Toggle admin status`);
-  console.log(`${colors.bright}2${colors.reset}) Enable admin status`);
-  console.log(`${colors.bright}3${colors.reset}) Disable admin status`);
-  console.log(`${colors.bright}4${colors.reset}) Exit`);
+  logger.debug('\n📝 Available actions:');
+  logger.debug(`${colors.bright}1${colors.reset}) Toggle admin status`);
+  logger.debug(`${colors.bright}2${colors.reset}) Enable admin status`);
+  logger.debug(`${colors.bright}3${colors.reset}) Disable admin status`);
+  logger.debug(`${colors.bright}4${colors.reset}) Exit`);
   
   const answer = await question('\nChoose an action (1-4): ');
   
@@ -139,14 +140,14 @@ async function main() {
         await setAdminStatus(userId, false);
         break;
       case 'exit':
-        console.log(`\n${colors.gray}Goodbye! 👋${colors.reset}`);
+        logger.debug(`\n${colors.gray}Goodbye! 👋${colors.reset}`);
         break;
     }
 
     // Display new status if action was taken
     if (action !== 'exit') {
       const newStatus = await checkAdminStatus(userId);
-      console.log(`\n${colors.bright}New Status:${colors.reset} ${newStatus 
+      logger.debug(`\n${colors.bright}New Status:${colors.reset} ${newStatus 
         ? `${colors.green}✓ Enabled${colors.reset}` 
         : `${colors.red}✗ Disabled${colors.reset}`}`);
     }

@@ -3,6 +3,7 @@ import { AdminService } from "@/services/AdminService";
 import prisma from "@/lib/prisma";
 import { getUserFromRequest } from "@/lib/auth";
 import { validatePhaseDates } from "@/lib/validation";
+import logger from "@/logging";
 
 const adminService = new AdminService(prisma);
 
@@ -55,7 +56,7 @@ export async function GET(request: Request, context: RouteContext) {
 
     return NextResponse.json(round);
   } catch (error) {
-    console.error("Failed to fetch funding round:", error);
+    logger.error("Failed to fetch funding round:", error);
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 }
@@ -129,7 +130,7 @@ export async function PUT(request: Request, context: RouteContext) {
 
     return NextResponse.json(round);
   } catch (error) {
-    console.error("Failed to update funding round:", error);
+    logger.error("Failed to update funding round:", error);
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 }
@@ -152,7 +153,7 @@ export async function DELETE(request: Request, context: RouteContext) {
     await adminService.deleteFundingRound((await context.params).id);
     return new NextResponse(null, { status: 204 });
   } catch (error) {
-    console.error("Failed to delete funding round:", error);
+    logger.error("Failed to delete funding round:", error);
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 }

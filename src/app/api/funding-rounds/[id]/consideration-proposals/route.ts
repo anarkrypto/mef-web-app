@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { getUserFromRequest } from "@/lib/auth";
 import type { UserMetadata } from '@/types/consideration';
+import logger from "@/logging";
 
 interface RawUserMetadata {
   username: string;
@@ -138,7 +139,7 @@ export async function GET(
 
     return NextResponse.json(sortedProposals);
   } catch (error) {
-    console.error("Failed to fetch consideration proposals:", error);
+    logger.error("Failed to fetch consideration proposals:", error);
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 }
