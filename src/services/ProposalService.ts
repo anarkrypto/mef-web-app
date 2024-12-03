@@ -2,6 +2,8 @@ import { PrismaClient, Proposal, ProposalStatus } from "@prisma/client";
 import { z } from "zod";
 import { ProposalValidation as PV } from "@/constants/validation";
 import { Decimal } from "decimal.js";
+import { AppError } from '@/lib/errors';
+import { ProposalErrors } from '@/constants/errors';
 
 // Validation schema (reuse from CreateProposal component)
 export const proposalSchema = z.object({
@@ -172,21 +174,27 @@ export class ProposalService {
     });
   }
 
-  async deleteProposal(id: number, userId: string): Promise<void> {
+  async deleteProposal(id: number, userId: string, userLinkId: string): Promise<void> {
     const proposal = await this.prisma.proposal.findUnique({
       where: { id },
+      include: {
+        user: true,
+      },
     });
 
     if (!proposal) {
-      throw new Error("Proposal not found");
+      throw AppError.notFound(ProposalErrors.NOT_FOUND);
     }
 
-    if (proposal.userId !== userId) {
-      throw new Error("Not authorized to delete this proposal");
+    const hasAccess = 
+      proposal.userId === userId || proposal.user?.linkId === userLinkId;
+
+    if (!hasAccess) {
+      throw AppError.forbidden(ProposalErrors.UNAUTHORIZED);
     }
 
     if (proposal.status !== ProposalStatus.DRAFT) {
-      throw new Error("Only draft proposals can be deleted");
+      throw AppError.badRequest(ProposalErrors.DRAFT_ONLY);
     }
 
     await this.prisma.proposal.delete({
