@@ -37,14 +37,28 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const refresh = useCallback(async () => {
     try {
       const res = await fetch('/api/me/info')
-      if (!res.ok) throw new Error('Failed to fetch user info')
-      const data = await res.json()
-      setUser(data.user)
+      
+      if (res.status === 401) {
+        setUser(null);
+        return;
+      }
+
+      if (!res.ok) {
+        throw new Error('Failed to fetch user info');
+      }
+
+      const data = await res.json();
+      setUser(data.user);
     } catch (error) {
-      console.error('Error refreshing user info:', error)
-      setUser(null)
+      console.error('Error refreshing user info:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load user information",
+        variant: "destructive",
+      });
+      setUser(null);
     }
-  }, [])
+  }, [toast]);
 
   useEffect(() => {
     refresh().finally(() => setIsLoading(false))

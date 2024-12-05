@@ -22,4 +22,14 @@ export class ApiResponse {
       { status: HTTPStatus.INTERNAL_ERROR }
     );
   }
+
+  static Response = {
+    errorMessageFromResponse(response: { error?: string }, defaultMessage: string): string {
+      return response?.error ?? defaultMessage;
+    },
+    errorMessageFromError(error: unknown | Error | AppError, defaultMessage: string): string {
+      return error instanceof AppError ? error.message : defaultMessage;
+    }
+  }
+
 } 

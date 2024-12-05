@@ -160,4 +160,6 @@ const AUTH_PATHS = [
   "/api/auth/exchange",
   "/api/auth/refresh",
   "/api/admin/check",
+  "/api/auth/wallet",
+  "/api/me/info",
 ];
