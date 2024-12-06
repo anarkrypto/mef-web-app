@@ -29,25 +29,24 @@ export async function GET() {
     // Get user ID
     const userId = deriveUserId(payload.authSource);
 
+    // Create user if not exists
+    await userService.findOrCreateUser(payload.authSource);
+
     // Get complete user info
     const userInfo = await userService.getUserInfo(userId);
     
     if (!userInfo) {
-      return NextResponse.json({ error: "User not found" }, { status: 404 });
+      return ApiResponse.notFound("User not found");
     }
 
     return ApiResponse.success(userInfo);
-
   } catch (error) {
     logger.error("User info error:", error);
 
     if (error instanceof Error && error.message === "Invalid token") {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      return ApiResponse.unauthorized("Unauthorized");
     }
 
-    return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500 }
-    );
+    return ApiResponse.error("Internal server error");
   }
 }
