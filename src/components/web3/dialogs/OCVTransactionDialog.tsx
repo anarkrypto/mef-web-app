@@ -121,7 +121,6 @@ export function OCVTransactionDialog({
             to: account,
             amount: "0",
             memo,
-            fee: "100000000", // 0.1 MINA in nanomina
           }
 
           // Send the transaction

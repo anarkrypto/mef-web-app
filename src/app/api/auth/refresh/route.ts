@@ -1,6 +1,7 @@
-import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
-import { verifyToken, generateTokenPair } from "@/lib/auth/jwt";
+import { verifyToken, generateTokenPair, setTokenCookies } from "@/lib/auth/jwt";
+import { AppError } from "@/lib/errors";
+import { ApiResponse } from "@/lib/api-response";
 import logger from "@/logging";
 
 export const runtime = "nodejs";
@@ -11,42 +12,23 @@ export async function POST() {
     const refreshToken = cookieStore.get("refresh_token")?.value;
 
     if (!refreshToken) {
-      return NextResponse.json({ error: "No refresh token" }, { status: 401 });
+      throw new AppError("No refresh token", 401);
     }
 
     // Verify refresh token
     const payload = await verifyToken(refreshToken);
 
     // Generate new token pair
-    const { accessToken, refreshToken: newRefreshToken } =
-      await generateTokenPair(payload.authSource);
+    const { accessToken, refreshToken: newRefreshToken } = await generateTokenPair(
+      payload.authSource
+    );
 
-    // Create response with new cookies
-    const response = NextResponse.json({ success: true });
+    // Create response and set cookies
+    const response = ApiResponse.success({ success: true });
+    return setTokenCookies(response, accessToken, newRefreshToken);
 
-    // Set new cookies in response
-    response.cookies.set("access_token", accessToken, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "lax",
-      maxAge: 15 * 60, // 15 minutes
-      path: "/",
-    });
-
-    response.cookies.set("refresh_token", newRefreshToken, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "lax",
-      maxAge: 7 * 24 * 60 * 60, // 7 days
-      path: "/",
-    });
-
-    return response;
   } catch (error) {
     logger.error("Token refresh error:", error);
-    return NextResponse.json(
-      { error: "Invalid refresh token" },
-      { status: 401 }
-    );
+    return ApiResponse.error(error);
   }
 }

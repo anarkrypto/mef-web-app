@@ -34,12 +34,12 @@ async function main() {
 
     const url = `http://localhost:3000/auth?token=${token}`;
 
-    logger.debug("\nToken generated successfully!");
-    logger.debug("=".repeat(50));
-    logger.debug("Token:", token);
-    logger.debug("-".repeat(50));
-    logger.debug("Login URL:", url);
-    logger.debug("=".repeat(50));
+    logger.info("\nToken generated successfully!");
+    logger.info("=".repeat(50));
+    logger.info("Token:", token);
+    logger.info("-".repeat(50));
+    logger.info("Login URL:", url);
+    logger.info("=".repeat(50));
   } catch (error) {
     logger.error(
       "Error generating token:",

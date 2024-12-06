@@ -1,6 +1,7 @@
 import logger from "@/logging";
 import * as jose from "jose";
 import { cookies } from "next/headers";
+import { NextResponse } from "next/server";
 
 // Define environment variable types
 let privateKey: jose.KeyLike;
@@ -99,10 +100,8 @@ export const JWTUtils = {
     }
   },
 
-  setTokenCookies: async (accessToken: string, refreshToken: string) => {
-    const cookieStore = await cookies();
-
-    cookieStore.set("access_token", accessToken, {
+  setTokenCookies: (response: NextResponse, accessToken: string, refreshToken: string) => {
+    response.cookies.set("access_token", accessToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       sameSite: "lax",
@@ -110,13 +109,15 @@ export const JWTUtils = {
       path: "/",
     });
 
-    cookieStore.set("refresh_token", refreshToken, {
+    response.cookies.set("refresh_token", refreshToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       sameSite: "lax",
       maxAge: 7 * 24 * 60 * 60, // 7 days
       path: "/",
     });
+
+    return response;
   },
 };
 

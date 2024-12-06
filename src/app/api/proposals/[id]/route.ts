@@ -4,6 +4,9 @@ import prisma from "@/lib/prisma";
 import { getUserFromRequest } from "@/lib/auth";
 import { ZodError } from "zod";
 import logger from "@/logging";
+import { ApiResponse } from '@/lib/api-response';
+import { AppError } from '@/lib/errors';
+import { AuthErrors } from '@/constants/errors';
 
 const proposalService = new ProposalService(prisma);
 
@@ -47,8 +50,6 @@ export async function GET(request: Request, context: RouteContext) {
     // Add access control flags
     const response = {
       ...proposal,
-      canEdit: isOwner && proposal.status === "DRAFT",
-      canDelete: isOwner && proposal.status === "DRAFT",
       isOwner, 
     };
 
@@ -69,21 +70,18 @@ export async function DELETE(
   try {
     const user = await getUserFromRequest(req);
     if (!user) {
-      return NextResponse.json(
-        { error: "Please log in to delete proposals" },
-        { status: 401 }
-      );
+      throw AppError.unauthorized(AuthErrors.UNAUTHORIZED);
     }
 
-    await proposalService.deleteProposal(parseInt((await params).id), user.id);
-
-    return NextResponse.json({ success: true });
-  } catch (error) {
-    logger.error("Failed to delete proposal:", error);
-    return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500 }
+    await proposalService.deleteProposal(
+      parseInt((await params).id), 
+      user.id,
+      user.linkId
     );
+
+    return ApiResponse.success({ success: true });
+  } catch (error) {
+    return ApiResponse.error(error);
   }
 }
 

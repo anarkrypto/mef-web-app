@@ -1,22 +1,117 @@
 import { NextResponse } from "next/server";
-import type { NextRequest } from "next/server";
+import { NextRequest } from "next/server";
 import { verifyToken } from "./lib/auth/jwt";
+import { AppError } from "./lib/errors";
 import logger from "./logging";
+import { JWTPayload } from "jose";
 
-const getBaseUrl = () => {
-  return process.env.NEXT_APP_URL;
-};
+const getBaseUrl = () => process.env.NEXT_APP_URL;
 
+// Configuration
 export const config = {
   matcher: ["/((?!_next/static|_next/image|favicon.ico|public).*)"],
 };
 
-// Move admin check to a separate API route
-async function checkAdminAccess(request: NextRequest): Promise<boolean> {
-  try {
-    const accessToken = request.cookies.get("access_token")?.value;
-    if (!accessToken) return false;
+// Route definitions
+const PUBLIC_PATHS = ["/", "/auth"] as const;
+const AUTH_PATHS = [
+  "/api/auth/exchange",
+  "/api/auth/refresh",
+  "/api/admin/check",
+  "/api/auth/wallet",
+  "/api/me/info",
+] as const;
 
+// Type helpers
+type PublicPath = typeof PUBLIC_PATHS[number];
+type AuthPath = typeof AUTH_PATHS[number];
+
+// Path checking helpers
+function isPublicPath(path: string): path is PublicPath {
+  return (PUBLIC_PATHS as readonly string[]).includes(path);
+}
+
+function isAuthPath(path: string): path is AuthPath {
+  return (AUTH_PATHS as readonly string[]).includes(path);
+}
+
+// Route type determination
+type RouteType = 'api' | 'web' | 'admin';
+
+function getRouteType(path: string): RouteType {
+  if (path.startsWith('/api/admin')) return 'admin';
+  if (path.startsWith('/api')) return 'api';
+  if (path.startsWith('/admin')) return 'admin';
+  return 'web';
+}
+
+/**
+ * Manages cookie operations for authentication tokens
+ */
+class CookieManager {
+  private response: NextResponse;
+  private request: NextRequest;
+
+  constructor(request: NextRequest, response: NextResponse) {
+    this.request = request;
+    this.response = response;
+  }
+
+  /**
+   * Gets authentication tokens from request cookies
+   */
+  getRequestTokens() {
+    return {
+      accessToken: this.request.cookies.get("access_token")?.value ?? null,
+      refreshToken: this.request.cookies.get("refresh_token")?.value ?? null
+    };
+  }
+
+  /**
+   * Gets authentication tokens from response cookies
+   */
+  getResponseTokens() {
+    return {
+      accessToken: this.response.cookies.get("access_token")?.value ?? null,
+      refreshToken: this.response.cookies.get("refresh_token")?.value ?? null
+    };
+  }
+
+  /**
+   * Sets authentication tokens in response cookies
+   */
+  setTokens(accessToken: string | null, refreshToken: string | null) {
+    if (accessToken) {
+      this.response.cookies.set("access_token", accessToken, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax',
+        path: '/'
+      });
+    }
+
+    if (refreshToken) {
+      this.response.cookies.set("refresh_token", refreshToken, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax',
+        path: '/'
+      });
+    }
+  }
+
+  /**
+   * Clears authentication tokens from response cookies
+   */
+  clearTokens() {
+    this.response.cookies.delete("access_token");
+    this.response.cookies.delete("refresh_token");
+  }
+}
+
+// Update the checkAdminAccess function to accept an access token
+async function checkAdminAccess(accessToken: string): Promise<boolean> {
+  try {
     const baseUrl = getBaseUrl();
     const response = await fetch(`${baseUrl}/api/admin/check`, {
       headers: {
@@ -28,136 +123,186 @@ async function checkAdminAccess(request: NextRequest): Promise<boolean> {
     const data = await response.json();
     return data.isAdmin;
   } catch (error) {
-    logger.error("Admin check failed:", error);
+    logger.error("[Middleware] Admin check failed:", error);
     return false;
   }
 }
 
-export async function middleware(request: NextRequest) {
-  logger.debug(
-    "[Middleware] Processing request for path:",
-    request.nextUrl.pathname
-  );
-  const path = request.nextUrl.pathname;
+async function handleTokenRefresh(refreshToken: string, cookieManager: CookieManager): Promise<boolean> {
+  try {
+    const baseUrl = getBaseUrl();
+    const refreshResponse = await fetch(`${baseUrl}/api/auth/refresh`, {
+      method: "POST",
+      headers: {
+        Cookie: `refresh_token=${refreshToken}`,
+      },
+    });
 
-  // Allow auth paths first, before any other checks
-  if (AUTH_PATHS.includes(path)) {
-    logger.debug("[Middleware] Allowing auth path:", path);
-    return NextResponse.next();
-  }
-
-  // Check for admin routes
-  if (
-    request.nextUrl.pathname.startsWith("/admin") ||
-    (request.nextUrl.pathname.startsWith("/api/admin") &&
-      !AUTH_PATHS.includes(path))
-  ) {
-    const isAdmin = await checkAdminAccess(request);
-    if (!isAdmin) {
-      // Redirect to home with error message
-      const url = new URL("/", request.url);
-      url.searchParams.set("error", "unauthorized_admin");
-      return NextResponse.redirect(url);
+    if (!refreshResponse.ok) {
+      return false;
     }
+
+    // Get all Set-Cookie headers
+    const cookies = refreshResponse.headers.getSetCookie();
+    
+    // Parse the cookies to get the new tokens
+    const newAccessToken = cookies
+      .find(cookie => cookie.startsWith('access_token='))
+      ?.split(';')[0]
+      .split('=')[1];
+    
+    const newRefreshToken = cookies
+      .find(cookie => cookie.startsWith('refresh_token='))
+      ?.split(';')[0]
+      .split('=')[1];
+
+    // Set the new tokens using the cookie manager
+    cookieManager.setTokens(newAccessToken ?? null, newRefreshToken ?? null);
+
+    return true;
+  } catch (error) {
+    logger.error("[Middleware] Token refresh failed:", error);
+    return false;
   }
-
-  // Allow public paths without authentication
-  if (PUBLIC_PATHS.includes(path)) {
-    logger.debug("[Middleware] Allowing public path:", path);
-    return NextResponse.next();
-  }
-
-  // Get both tokens
-  const accessToken = request.cookies.get("access_token")?.value;
-  const refreshToken = request.cookies.get("refresh_token")?.value;
-
-  logger.debug("[Middleware] Token status:", {
-    hasAccessToken: !!accessToken,
-    hasRefreshToken: !!refreshToken,
-  });
-
-  // If no tokens at all, redirect to auth
-  if (!accessToken && !refreshToken) {
-    logger.debug("[Middleware] No tokens found, redirecting to auth");
-    return redirectToAuth(request, "Please log in to continue");
-  }
-
-  // Try to use access token first
-  if (accessToken) {
-    try {
-      logger.debug("[Middleware] Attempting to verify access token");
-      await verifyToken(accessToken);
-      logger.debug("[Middleware] Access token verified successfully");
-      return NextResponse.next();
-    } catch (error) {
-      // Access token invalid, try refresh flow
-      logger.error("[Middleware] Access token verification failed:", error);
-    }
-  }
-
-  // Try refresh flow if we have a refresh token
-  if (refreshToken) {
-    try {
-      logger.debug("[Middleware] Attempting token refresh");
-      const baseUrl = getBaseUrl();
-      const response = await fetch(`${baseUrl}/api/auth/refresh`, 
-        {
-          method: "POST",
-          headers: {
-            Cookie: `refresh_token=${refreshToken}`,
-          },
-        }
-      );
-
-      if (!response.ok) {
-        throw new Error(`Refresh failed with status: ${response.status}`);
-      }
-
-      logger.debug("[Middleware] Token refresh successful");
-
-      // Get the Set-Cookie headers
-      const setCookieHeader = response.headers.get("set-cookie");
-
-      // Create response that continues to the original URL
-      const res = NextResponse.next();
-
-      // Copy the cookies if they exist
-      if (setCookieHeader) {
-        const cookies = setCookieHeader.split(", ");
-        cookies.forEach((cookie: string) => {
-          res.headers.append("Set-Cookie", cookie);
-        });
-      }
-
-      return res;
-    } catch (error) {
-      logger.error("[Middleware] Token refresh failed:", error);
-      return redirectToAuth(
-        request,
-        "Your session has expired. Please log in again."
-      );
-    }
-  }
-
-  // No valid tokens and refresh failed
-  logger.debug("[Middleware] Authentication required - no valid tokens");
-  return redirectToAuth(request, "Authentication required");
 }
 
-function redirectToAuth(request: NextRequest, message?: string) {
+// Update authenticateRequest to use CookieManager
+async function authenticateRequest(cookieManager: CookieManager): Promise<AuthResult> {
+  const { accessToken, refreshToken } = cookieManager.getRequestTokens();
+
+  // No tokens available
+  if (!accessToken && !refreshToken) {
+    return { isAuthenticated: false, error: "No authentication tokens" };
+  }
+
+  // Try access token
+  if (accessToken) {
+    try {
+      await verifyToken(accessToken);
+      const isAdmin = await checkAdminAccess(accessToken);
+      
+      return {
+        isAuthenticated: true,
+        isAdmin,
+      };
+    } catch (error) {
+      logger.debug("[Middleware] Access token invalid, will attempt refresh");
+    }
+  }
+
+  // Try refresh token
+  if (refreshToken) {
+    try {
+      const refreshSuccessful = await handleTokenRefresh(refreshToken, cookieManager);
+      if (refreshSuccessful) {
+        const { accessToken: newAccessToken } = cookieManager.getResponseTokens();
+        if (newAccessToken) {
+          const isAdmin = await checkAdminAccess(newAccessToken);
+          return {
+            isAuthenticated: true,
+            isAdmin,
+          };
+        }
+      }
+    } catch (error) {
+      logger.error("[Middleware] Refresh failed:", error);
+    }
+  }
+
+  return { isAuthenticated: false, error: "Authentication failed" };
+}
+
+// Update middleware function to use CookieManager
+export async function middleware(request: NextRequest) {
+  const path = request.nextUrl.pathname;
+  const routeType = getRouteType(path);
+
+  logger.debug("[Middleware] Processing request:", { path, routeType });
+
+  const response = NextResponse.next();
+  const cookieManager = new CookieManager(request, response);
+
+  // For authentication requests, just authenticate
+  if (isAuthPath(path)) {
+    return response;
+  }
+
+  // Not auth request: authenticate and check permissions
+  const authResult = await authenticateRequest(cookieManager);
+
+  // Skip authentication for public paths
+  if (isPublicPath(path)) {
+    return response;
+  }
+
+  // Handle response based on authentication and permissions
+  return handleAuthResponse(request, routeType, authResult, response);
+}
+
+/**
+ * First layer ensuring API access only to authenticated users.
+ * @param routeType 
+ * @param request 
+ * @returns 
+ */
+function generateUnauthorizedResponse(routeType: RouteType, request: NextRequest): NextResponse {
+  // All calls under /api/ must be authenticated. This is a first-layer guard, but individual
+  // routes must implement the check as well
+  if (routeType === 'api') {
+    return new NextResponse(
+      JSON.stringify({ error: "Unauthorized" }),
+      { status: 401, headers: { 'Content-Type': 'application/json' } }
+    );
+  }
+
   const url = new URL("/auth", request.url);
   url.searchParams.set("from", request.nextUrl.pathname);
-  if (message) {
-    url.searchParams.set("message", message);
-  }
-  logger.debug("[Middleware] Redirecting to auth:", url.toString());
+  url.searchParams.set("message", "Please log in to continue");
   return NextResponse.redirect(url);
 }
 
-// Define public paths that don't require authentication
-const PUBLIC_PATHS = ["/", "/auth"];
-const AUTH_PATHS = [
-  "/api/auth/exchange",
-  "/api/auth/refresh",
-  "/api/admin/check",
-];
+function generateAdminUnauthorizedResponse(routeType: RouteType, request: NextRequest): NextResponse {
+  if (routeType === 'api') {
+    return new NextResponse(
+      JSON.stringify({ error: "Admin access required" }),
+      { status: 403, headers: { 'Content-Type': 'application/json' } }
+    );
+  }
+
+  // For web routes, redirect to home with error
+  const url = new URL("/", request.url);
+  url.searchParams.set("error", "unauthorized_admin");
+  return NextResponse.redirect(url);
+}
+
+/**
+ * Authentication result with payload and permissions
+ */
+interface AuthResult {
+  isAuthenticated: boolean;
+  isAdmin?: boolean;
+  error?: string;
+}
+
+/**
+ * Handles the response based on route type and auth result
+ */
+function handleAuthResponse(
+  request: NextRequest,
+  routeType: RouteType,
+  authResult: AuthResult,
+  response: NextResponse
+): NextResponse {
+  // Authentication failed
+  if (!authResult.isAuthenticated) {
+    return generateUnauthorizedResponse(routeType, request);
+  }
+
+  // Admin route but not admin
+  if (routeType === 'admin' && !authResult.isAdmin) {
+    return generateAdminUnauthorizedResponse(routeType, request);
+  }
+
+  // Authentication successful and permissions valid
+  return response;
+}

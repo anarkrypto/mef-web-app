@@ -63,6 +63,16 @@ export interface SwitchChainArgs {
   networkID: `mina:${NetworkID}`;
 }
 
+// Add these types for the signature response
+interface SignedData {
+  publicKey: string;
+  data: string;
+  signature: {
+    field: string;
+    scalar: string;
+  };
+}
+
 export interface AuroWallet {
   requestAccounts(): Promise<string[]>;
   getAccounts?(): Promise<string[]>;
@@ -77,6 +87,7 @@ export interface AuroWallet {
     event: T,
     handler: (payload: WalletEventPayload[T]) => void
   ): void;
+  signMessage: (args: { message: string }) => Promise<SignedData>;
 }
 
 declare global {
