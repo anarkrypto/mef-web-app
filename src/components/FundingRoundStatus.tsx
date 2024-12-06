@@ -168,21 +168,27 @@ export function FundingRoundStatus({ onRoundSelect }: Props) {
       try {
         setLoading(true);
         const response = await fetch('/api/funding-rounds');
-        if (!response.ok) throw new Error('Failed to fetch funding rounds');
-        const data = await response.json();
         
-        // Ensure data is an array
+        // If unauthorized, silently fail - parent component should handle auth state
+        if (response.status === 401) {
+          setFundingRounds([]);
+          return;
+        }
+
+        if (!response.ok) {
+          throw new Error('Failed to fetch funding rounds');
+        }
+
+        const data = await response.json();
         const rounds = Array.isArray(data) ? data : [];
         setFundingRounds(rounds);
         
-        // Select first active round by default
         const activeRound = rounds.find((round: FundingRound) => round.status === 'ACTIVE');
         if (activeRound) {
           setSelectedRoundId(activeRound.id);
         }
       } catch (error) {
         console.error('Failed to fetch funding rounds:', error);
-        // Set empty array on error to prevent undefined
         setFundingRounds([]);
       } finally {
         setLoading(false);
@@ -214,6 +220,21 @@ export function FundingRoundStatus({ onRoundSelect }: Props) {
     return <div className="flex items-center justify-center p-6">
       <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
     </div>;
+  }
+
+  if (fundingRounds.length === 0 && !loading) {
+    return (
+      <div className="container mx-auto p-6 max-w-7xl">
+        <Card>
+          <CardHeader>
+            <CardTitle>No Active Funding Rounds</CardTitle>
+            <CardDescription>
+              There are currently no active funding rounds available.
+            </CardDescription>
+          </CardHeader>
+        </Card>
+      </div>
+    );
   }
 
   const phases: PhaseType[] = ['submission', 'consider', 'deliberate', 'vote'];
