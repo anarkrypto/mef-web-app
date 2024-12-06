@@ -7,7 +7,6 @@ import { useWallet } from "@/contexts/WalletContext";
 import { useToast } from "@/hooks/use-toast";
 import { WALLET_MESSAGE_VERSIONS, LATEST_WALLET_MESSAGE_VERSION } from "@/constants/wallet-messages";
 import { Icons } from "@/components/icons";
-import { TransactionPayload } from "@/types/wallet";
 import { ApiResponse } from "@/lib/api-response";
 import { AppError } from "@/lib/errors";
 import { HTTPStatus } from "@/constants/errors";

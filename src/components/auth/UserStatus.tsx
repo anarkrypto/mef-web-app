@@ -85,7 +85,12 @@ export function UserStatus() {
 
   // Get auth info from user metadata
   const authSource = user.metadata.authSource
-  const username = user.metadata.username
+  let username = user.metadata.username
+
+  if (authSource.type === 'wallet') {
+    username = username.slice(0, 6) + '...' + username.slice(-4)
+  }
+
   const ProviderIcon = AUTH_PROVIDER_ICONS[authSource.type]
   const providerName = AUTH_PROVIDER_NAMES[authSource.type]
 
