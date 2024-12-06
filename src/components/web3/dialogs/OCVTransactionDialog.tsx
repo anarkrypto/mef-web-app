@@ -116,15 +116,13 @@ export function OCVTransactionDialog({
             console.log("Connected to network:", network)
           }
 
-          // Create transaction with memo
-          const tx = {
+          // Send payment to self with memo
+          const response = await mina.sendPayment({
             to: account,
-            amount: "0",
-            memo,
-          }
-
-          // Send the transaction
-          const response = await mina.sendTransaction(tx)
+            amount: 0,
+            memo: memo,
+          })
+          
           hash = response.hash
 
           break
