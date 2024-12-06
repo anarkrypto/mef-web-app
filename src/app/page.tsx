@@ -3,6 +3,7 @@
 import { useSearchParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { useFeedback } from "@/contexts/FeedbackContext";
+import { useAuth } from "@/contexts/AuthContext";
 import { FundingRoundStatus } from "@/components/FundingRoundStatus";
 import { ConsiderationProposalList } from '@/components/ConsiderationProposalList';
 import { SubmissionProposalList } from '@/components/phases/SubmissionProposalList';
@@ -10,6 +11,7 @@ import { DeliberationPhase } from '@/components/phases/DeliberationPhase';
 import { VotingPhase } from '@/components/phases/VotingPhase';
 import { CompletedPhase } from '@/components/phases/CompletedPhase';
 import { BetweenPhases } from '@/components/phases/BetweenPhases';
+import { Card, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 
 type Phase = 'submission' | 'consider' | 'deliberate' | 'vote' | 'completed';
 
@@ -26,6 +28,7 @@ type SelectedRound = {
 export default function HomePage() {
   const searchParams = useSearchParams();
   const feedback = useFeedback();
+  const { user, isLoading } = useAuth();
   const [selectedRound, setSelectedRound] = useState<SelectedRound | null>(null);
   
   useEffect(() => {
@@ -103,6 +106,22 @@ export default function HomePage() {
         return null;
     }
   };
+
+  // Don't render funding round components if user isn't authenticated
+  if (!user) {
+    return (
+      <div className="container mx-auto p-6 max-w-7xl">
+        <Card>
+          <CardHeader>
+            <CardTitle>Welcome to Mina Ecosystem Funding</CardTitle>
+            <CardDescription>
+              Please sign in to view active funding rounds and participate in the ecosystem.
+            </CardDescription>
+          </CardHeader>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <>
