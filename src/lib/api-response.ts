@@ -4,6 +4,20 @@ import { HTTPStatus } from '@/constants/errors';
 import logger from '@/logging';
 
 export class ApiResponse {
+  static notFound<T>(data: T | { error: string } | string) {
+    if (typeof data === 'string') {
+      data = { error: data };
+    }
+    return NextResponse.json(data, { status: HTTPStatus.NOT_FOUND });
+  }
+
+  static unauthorized<T>(data: T | { error: string } | string) {
+    if (typeof data === 'string') {
+      data = { error: data };
+    }
+    return NextResponse.json(data, { status: HTTPStatus.UNAUTHORIZED });
+  }
+
   static success<T>(data: T) {
     return NextResponse.json(data);
   }

@@ -29,14 +29,13 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
 /**
- * Checks if authentication cookies exist
+ * Checks if user is authenticated.
+ * 
+ * This will be implemented later, it's not necessry to implement it now.
+ * The goal of this is to minimize unecessary api calls.
  */
-function hasAuthCookies(): boolean {
-  // Check for either access_token or refresh_token
-  return document.cookie.split(';').some(cookie => {
-    const trimmed = cookie.trim()
-    return trimmed.startsWith('access_token=') || trimmed.startsWith('refresh_token=')
-  })
+function isAuthenticated(): boolean {
+  return true;
 }
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
@@ -47,15 +46,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const refresh = useCallback(async () => {
     try {
-      // Only attempt to fetch user info if we have auth cookies
-      if (!hasAuthCookies()) {
+      if (!isAuthenticated()) {
         setUser(null)
         return
       }
 
       const res = await fetch('/api/me/info')
       
-      if (res.status === 401) {
+      if (res.status === 401 || res.status === 403) {
         setUser(null)
         return
       }
@@ -79,7 +77,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     // Only run initial auth check if we have cookies
-    if (hasAuthCookies()) {
+    if (isAuthenticated()) {
       refresh().finally(() => setIsLoading(false))
     } else {
       setIsLoading(false)
@@ -93,7 +91,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const logout = useCallback(async () => {
     try {
       // Only attempt logout if we have auth cookies
-      if (!hasAuthCookies()) {
+      if (!isAuthenticated()) {
         setUser(null)
         router.push('/')
         return

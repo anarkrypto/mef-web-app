@@ -7,10 +7,10 @@ import { useWallet } from "@/contexts/WalletContext";
 import { useToast } from "@/hooks/use-toast";
 import { WALLET_MESSAGE_VERSIONS, LATEST_WALLET_MESSAGE_VERSION } from "@/constants/wallet-messages";
 import { Icons } from "@/components/icons";
-import { TransactionPayload } from "@/types/wallet";
 import { ApiResponse } from "@/lib/api-response";
 import { AppError } from "@/lib/errors";
 import { HTTPStatus } from "@/constants/errors";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface WalletAuthDialogProps {
   open: boolean;
@@ -29,6 +29,7 @@ interface LinkingDialogProps {
 function LinkingDialog({ open, onOpenChange, walletToken, existingToken, onConfirm, onCancel }: LinkingDialogProps) {
   const [isLinking, setIsLinking] = useState(false);
   const { toast } = useToast();
+  const { refresh } = useAuth();
 
   const handleConfirm = async () => {
     setIsLinking(true);
@@ -58,6 +59,7 @@ function LinkingDialog({ open, onOpenChange, walletToken, existingToken, onConfi
     } finally {
       setIsLinking(false);
       onOpenChange(false);
+      await refresh();
     }
   };
 
@@ -94,6 +96,7 @@ function LinkingDialog({ open, onOpenChange, walletToken, existingToken, onConfi
 export function WalletAuthDialog({ open, onOpenChange }: WalletAuthDialogProps) {
   const { state } = useWallet();
   const { toast } = useToast();
+  const { refresh } = useAuth();
   const [isAuthenticating, setIsAuthenticating] = useState(false);
   const [showLinkingDialog, setShowLinkingDialog] = useState(false);
   const [authTokens, setAuthTokens] = useState<{
@@ -157,7 +160,6 @@ export function WalletAuthDialog({ open, onOpenChange }: WalletAuthDialogProps) 
         });
         onOpenChange(false);
       }
-
     } catch (error) {
       toast({
         title: "Authentication failed",
@@ -166,6 +168,7 @@ export function WalletAuthDialog({ open, onOpenChange }: WalletAuthDialogProps) 
       });
     } finally {
       setIsAuthenticating(false);
+      await refresh();
     }
   };
 
@@ -211,7 +214,7 @@ export function WalletAuthDialog({ open, onOpenChange }: WalletAuthDialogProps) 
           onOpenChange={setShowLinkingDialog}
           walletToken={authTokens.walletToken}
           existingToken={authTokens.existingToken}
-          onConfirm={() => {
+          onConfirm={async () => {
             toast({
               title: "Accounts linked",
               description: "Your accounts have been successfully linked",

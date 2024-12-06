@@ -73,6 +73,17 @@ interface SignedData {
   };
 }
 
+interface SendPaymentArgs {
+  readonly to: string
+  readonly amount: number
+  readonly fee?: number
+  readonly memo?: string
+}
+
+type SendTransactionResult = {
+  hash: string
+}
+
 export interface AuroWallet {
   requestAccounts(): Promise<string[]>;
   getAccounts?(): Promise<string[]>;
@@ -88,6 +99,7 @@ export interface AuroWallet {
     handler: (payload: WalletEventPayload[T]) => void
   ): void;
   signMessage: (args: { message: string }) => Promise<SignedData>;
+  sendPayment: (args: SendPaymentArgs) => Promise<SendTransactionResult>;
 }
 
 declare global {
