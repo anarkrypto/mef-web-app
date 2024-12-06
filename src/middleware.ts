@@ -257,7 +257,6 @@ function generateUnauthorizedResponse(routeType: RouteType, request: NextRequest
 
   const url = new URL("/auth", request.url);
   url.searchParams.set("from", request.nextUrl.pathname);
-  url.searchParams.set("message", "Please log in to continue");
   return NextResponse.redirect(url);
 }
 

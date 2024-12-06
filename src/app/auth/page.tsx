@@ -1,115 +1,174 @@
 'use client';
 
-import { Suspense, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Loader2, AlertCircle, CheckCircle2 } from "lucide-react";
 import { useAuth } from '@/contexts/AuthContext';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { ExternalLinkIcon, DiscordLogoIcon, ChatBubbleIcon } from "@radix-ui/react-icons";
+import { Wallet, Loader2 } from 'lucide-react';
+import { WalletConnector } from '@/components/web3/WalletConnector';
+import { WalletConnectorDialog } from '@/components/web3/WalletConnectorDialog';
+import { WalletAuthDialog } from '@/components/web3/WalletAuthDialog';
+import { useWallet } from '@/contexts/WalletContext';
 
-function AuthContent() {
-  const router = useRouter();
-  const searchParams = useSearchParams();
-  const { refresh } = useAuth();
-  const token = searchParams?.get('token');
-  const from = searchParams?.get('from') || '/';
-  const message = searchParams?.get('message');
-  const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState<boolean>(false);
-  const [isLoading, setIsLoading] = useState(false);
+function DiscordAuthDialog({ open, onOpenChange }: { open: boolean; onOpenChange: (open: boolean) => void }) {
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Authenticate with Discord</DialogTitle>
+          <DialogDescription>
+            To authenticate with Discord, please follow these steps:
+          </DialogDescription>
+        </DialogHeader>
+        <div className="space-y-4">
+          <ol className="list-decimal list-inside space-y-2">
+            <li>Join our Discord server if you haven&rsquo;t already</li>
+            <li>Navigate to the authentication channel</li>
+            <li>Click the &ldquo;🔐 Login To MEF&rdquo; button in the login dashboard</li>
+          </ol>
+          <Button 
+            className="w-full"
+            onClick={() => window.open('https://discord.com/channels/1229012241710448640/1311367879085785161/1311367879085785161', '_blank')}
+          >
+            <ExternalLinkIcon className="mr-2 h-4 w-4" />
+            Open Discord Login Dashboard
+          </Button>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
 
+function AuthenticationOptions() {
+  const [showDiscordDialog, setShowDiscordDialog] = useState(false);
+  const [showWalletDialog, setShowWalletDialog] = useState(false);
+  const { state } = useWallet();
+
+  const handleWalletAuth = () => {
+    if (state.wallet) {
+      // If wallet is already connected, show auth dialog directly
+      setShowWalletDialog(true);
+    } else {
+      // If no wallet connected, show connector dialog first
+      setShowWalletConnector(true);
+    }
+  };
+
+  const [showWalletConnector, setShowWalletConnector] = useState(false);
+
+  // Watch for wallet connection state changes
   useEffect(() => {
-    if (!token) {
-      if (message) {
-        setError(message);
-      } else {
-        setError("No authentication token provided");
-      }
-      return;
+    if (state.wallet && showWalletConnector) {
+      // When wallet gets connected, close connector and show auth dialog
+      setShowWalletConnector(false);
+      setShowWalletDialog(true);
     }
-
-    async function authenticate() {
-      setIsLoading(true);
-      setError(null);
-      try {
-        const res = await fetch('/api/auth/exchange', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ initialToken: token }),
-          credentials: 'include',
-        });
-
-        if (!res.ok) {
-          const data = await res.json();
-          throw new Error(data.error || 'Authentication failed');
-        }
-
-        await refresh();
-        
-        setSuccess(true);
-        // Small delay to show success message
-        setTimeout(() => {
-          router.push(from);
-        }, 1000);
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'Authentication failed');
-      } finally {
-        setIsLoading(false);
-      }
-    }
-
-    authenticate();
-  }, [token, from, router, message, refresh]);
+  }, [state.wallet, showWalletConnector]);
 
   return (
     <Card className="w-full max-w-md">
       <CardHeader>
-        <CardTitle>Authentication</CardTitle>
+        <CardTitle>Welcome to MEF</CardTitle>
         <CardDescription>
-          {isLoading ? "Please wait while we authenticate your session..." : 
-           success ? "Authentication successful!" :
-           "Secure authentication required"}
+          Choose how you&rsquo;d like to authenticate to continue
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
-        {isLoading && (
-          <div className="flex items-center justify-center space-x-2 p-4">
-            <Loader2 className="h-5 w-5 animate-spin text-primary" />
-            <p>Authenticating...</p>
-          </div>
-        )}
-        
-        {error && (
-          <Alert variant="destructive">
-            <AlertCircle className="h-4 w-4" />
-            <AlertTitle>Authentication Error</AlertTitle>
-            <AlertDescription>{error}</AlertDescription>
-          </Alert>
-        )}
-
-        {success && (
-          <Alert 
-            variant="default" 
-            className="border-green-200 bg-green-50 text-green-800"
+        <div className="grid gap-4">
+          <Button 
+            variant="outline" 
+            className="w-full justify-start h-auto py-4"
+            onClick={() => setShowDiscordDialog(true)}
           >
-            <CheckCircle2 className="h-4 w-4 text-green-600" />
-            <AlertTitle>Success!</AlertTitle>
-            <AlertDescription className="text-green-700">
-              Redirecting you to your destination...
-            </AlertDescription>
-          </Alert>
-        )}
+            <DiscordLogoIcon className="mr-2 h-5 w-5 text-[#5865F2]" />
+            <div className="flex flex-col items-start">
+              <span>Authenticate with Discord</span>
+              <span className="text-xs text-muted-foreground">Connect using your Discord account</span>
+            </div>
+          </Button>
+
+          <Button 
+            variant="outline" 
+            className="w-full justify-start h-auto py-4"
+            onClick={handleWalletAuth}
+          >
+            <Wallet className="mr-2 h-5 w-5 text-orange-500" />
+            <div className="flex flex-col items-start">
+              <span>Authenticate with Wallet</span>
+              <span className="text-xs text-muted-foreground">
+                {state.wallet 
+                  ? `Connected: ${state.wallet.address.slice(0, 6)}...${state.wallet.address.slice(-4)}`
+                  : 'Connect using your Mina wallet'
+                }
+              </span>
+            </div>
+          </Button>
+
+          <Button 
+            variant="outline" 
+            className="w-full justify-start h-auto py-4"
+            disabled
+          >
+            <ChatBubbleIcon className="mr-2 h-5 w-5 text-[#0088cc]" />
+            <div className="flex flex-col items-start">
+              <span>Authenticate with Telegram</span>
+              <span className="text-xs text-muted-foreground">Coming soon</span>
+            </div>
+          </Button>
+        </div>
+
+        <Alert>
+          <AlertDescription>
+            Choose your preferred authentication method. You&rsquo;ll be able to link multiple methods later.
+          </AlertDescription>
+        </Alert>
+
+        <DiscordAuthDialog 
+          open={showDiscordDialog} 
+          onOpenChange={setShowDiscordDialog}
+        />
+
+        <WalletConnectorDialog
+          open={showWalletConnector}
+          onOpenChange={setShowWalletConnector}
+        />
+
+        <WalletAuthDialog
+          open={showWalletDialog}
+          onOpenChange={setShowWalletDialog}
+        />
       </CardContent>
     </Card>
   );
 }
 
 export default function AuthPage() {
-  return (
-    <div className="container flex items-center justify-center min-h-screen py-8">
-      <Suspense fallback={
+  const { user, isLoading } = useAuth();
+  const router = useRouter();
+
+  useEffect(() => {
+    let mounted = true;
+
+    const redirect = () => {
+      if (mounted && !isLoading && user) {
+        router.push('/');
+      }
+    };
+
+    redirect();
+
+    return () => {
+      mounted = false;
+    };
+  }, [user, isLoading, router]);
+
+  if (isLoading) {
+    return (
+      <div className="container flex items-center justify-center min-h-screen py-8">
         <Card className="w-full max-w-md">
           <CardHeader>
             <CardTitle>Loading...</CardTitle>
@@ -119,11 +178,17 @@ export default function AuthPage() {
             <Loader2 className="h-6 w-6 animate-spin" />
           </CardContent>
         </Card>
-      }>
-        <Suspense fallback={<div>Loading...</div>}>
-          <AuthContent />
-        </Suspense>
-      </Suspense>
+      </div>
+    );
+  }
+
+  if (user) {
+    return null; // Will redirect in useEffect
+  }
+
+  return (
+    <div className="container flex items-center justify-center min-h-screen py-8">
+      <AuthenticationOptions />
     </div>
   );
 } 
