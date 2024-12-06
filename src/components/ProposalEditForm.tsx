@@ -37,8 +37,6 @@ export function ProposalEditForm({ proposalId }: Props) {
           return
         }
 
-        
-
         setProposal(data)
       } catch (error) {
         setError('Failed to load proposal')

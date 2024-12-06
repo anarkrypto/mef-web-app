@@ -3,6 +3,7 @@
 import { createContext, useContext, useEffect, useState, ReactNode, useCallback } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import type { AuroWallet, WalletContextType, WalletProvider, WalletState, NetworkID, WalletEventType, NetworkInfo } from '@/types/wallet';
+import { WalletAuthDialog } from '@/components/web3/WalletAuthDialog';
 
 // Define target network - can be toggled between 'mainnet' and 'testnet'
 export const TARGET_NETWORK: NetworkID = 'testnet';
@@ -31,6 +32,7 @@ declare global {
 
 export function WalletProvider({ children }: { children: ReactNode }) {
   const [state, setState] = useState<WalletState>(initialState);
+  const [showAuthDialog, setShowAuthDialog] = useState(false);
   const { toast } = useToast();
 
   // Add network switching functionality
@@ -124,6 +126,9 @@ export function WalletProvider({ children }: { children: ReactNode }) {
           title: '✅ Wallet Connected',
           description: `Successfully connected to ${accounts[0].slice(0, 6)}...${accounts[0].slice(-4)}`,
         });
+
+        // Trigger auth dialog only on successful fresh connections
+        setShowAuthDialog(true);
       } else {
         throw new Error('Provider not supported yet');
       }
@@ -298,6 +303,10 @@ export function WalletProvider({ children }: { children: ReactNode }) {
       }}
     >
       {children}
+      <WalletAuthDialog 
+        open={showAuthDialog} 
+        onOpenChange={setShowAuthDialog}
+      />
     </WalletContext.Provider>
   );
 }
