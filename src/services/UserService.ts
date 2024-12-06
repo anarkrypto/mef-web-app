@@ -1,6 +1,7 @@
 import { PrismaClient, User } from "@prisma/client";
 import { deriveUserId, generateLinkId } from "@/lib/user/derive";
 import type { AuthSource } from "@/lib/user/types";
+import logger from "@/logging";
 
 type AuthSourceType = AuthSource['type'];
 
