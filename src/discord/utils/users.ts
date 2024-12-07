@@ -1,17 +1,6 @@
 import { Prisma } from '@prisma/client';
 import prisma from '@/lib/prisma';
-
-interface AuthSource {
-  id: string;
-  type: string;
-  username: string;
-}
-
-interface UserMetadata {
-  username: string;
-  createdAt: string;
-  authSource?: AuthSource;
-}
+import { UserMetadata } from '@/services/UserService';
 
 type UserWithMetadata = Prisma.UserGetPayload<{
   select: {

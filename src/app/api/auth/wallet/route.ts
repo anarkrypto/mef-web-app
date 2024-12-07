@@ -1,6 +1,5 @@
 import { cookies } from "next/headers";
 import { verifyToken, generateTokenPair, setTokenCookies } from "@/lib/auth/jwt";
-import { resolveUser } from "@/lib/user/resolve";
 import logger from "@/logging";
 import { WALLET_MESSAGE_VERSIONS, LATEST_WALLET_MESSAGE_VERSION, WalletMessageVersion } from "@/constants/wallet-messages";
 import Client from 'mina-signer';

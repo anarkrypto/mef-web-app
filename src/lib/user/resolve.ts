@@ -11,32 +11,4 @@ function serializeAuthSource(authSource: AuthSource) {
   } as const;
 }
 
-export async function resolveUser(
-  jwt: JWTPayload
-): Promise<UserResolutionResult> {
-  const userId = deriveUserId(jwt.authSource);
 
-  // Try to find existing user
-  const existingUser = await prisma.user.findUnique({
-    where: { id: userId },
-  });
-
-  if (existingUser) {
-    return { user: existingUser, created: false };
-  }
-
-  // Create new user if not found
-  const newUser = await prisma.user.create({
-    data: {
-      id: userId,
-      linkId: generateLinkId(),
-      metadata: {
-        authSource: serializeAuthSource(jwt.authSource),
-        username: jwt.authSource.username,
-        createdAt: new Date().toISOString(),
-      },
-    },
-  });
-
-  return { user: newUser, created: true };
-}

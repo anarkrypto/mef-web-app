@@ -1,11 +1,11 @@
 import { NextResponse } from "next/server";
 import { AdminCheckService } from "@/services/AdminCheckService";
-import { getUserFromRequest } from "@/lib/auth";
+import { getOrCreateUserFromRequest } from "@/lib/auth";
 import logger from "@/logging";
 
 export async function GET(req: Request) {
   try {
-    const user = await getUserFromRequest(req);
+    const user = await getOrCreateUserFromRequest(req);
     if (!user) {
       return NextResponse.json({ isAdmin: false });
     }

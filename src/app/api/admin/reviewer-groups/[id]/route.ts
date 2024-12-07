@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { AdminService } from "@/services/AdminService";
 import prisma from "@/lib/prisma";
-import { getUserFromRequest } from "@/lib/auth";
+import { getOrCreateUserFromRequest } from "@/lib/auth";
 import logger from "@/logging";
 
 const adminService = new AdminService(prisma);
@@ -14,7 +14,7 @@ interface RouteContext {
 
 export async function GET(request: Request, context: RouteContext) {
   try {
-    const user = await getUserFromRequest(request);
+    const user = await getOrCreateUserFromRequest(request);
     if (!user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
@@ -45,7 +45,7 @@ export async function GET(request: Request, context: RouteContext) {
 
 export async function PUT(request: Request, context: RouteContext) {
   try {
-    const user = await getUserFromRequest(request);
+    const user = await getOrCreateUserFromRequest(request);
     if (!user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
@@ -79,7 +79,7 @@ export async function PUT(request: Request, context: RouteContext) {
 
 export async function DELETE(request: Request, context: RouteContext) {
   try {
-    const user = await getUserFromRequest(request);
+    const user = await getOrCreateUserFromRequest(request);
     if (!user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
