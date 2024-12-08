@@ -2,7 +2,7 @@
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
 
 generator client {
-  provider = "prisma-client-js"
+  provider        = "prisma-client-js"
   previewFeatures = ["jsonProtocol"]
 }
 
@@ -12,61 +12,65 @@ datasource db {
 }
 
 enum FundingRoundStatus {
-    DRAFT
-    ACTIVE
-    COMPLETED
-    CANCELLED
+  DRAFT
+  ACTIVE
+  COMPLETED
+  CANCELLED
 }
 
 model User {
-    id        String   @id @db.Uuid  // UUID v5 derived from authSource
-    linkId    String   @db.Uuid      // UUID v4 for account linking
-    createdAt DateTime @default(now()) @db.Timestamptz(6)  // Timezone-aware timestamp
-    updatedAt DateTime @updatedAt @db.Timestamptz(6)       // Timezone-aware timestamp
-    metadata  Json     // Flexible storage for user data
-    proposals Proposal[] // Add relation to Proposal
+  id        String     @id @db.Uuid // UUID v5 derived from authSource
+  linkId    String     @db.Uuid // UUID v4 for account linking
+  createdAt DateTime   @default(now()) @db.Timestamptz(6) // Timezone-aware timestamp
+  updatedAt DateTime   @updatedAt @db.Timestamptz(6) // Timezone-aware timestamp
+  metadata  Json // Flexible storage for user data
+  proposals Proposal[] // Add relation to Proposal
 
-    createdTopics         Topic[]            @relation("CreatedTopics")
-    createdReviewerGroups ReviewerGroup[]    @relation("CreatedReviewerGroups")
-    createdFundingRounds  FundingRound[]     @relation("CreatedFundingRounds")
-    reviewerGroupMemberships ReviewerGroupMember[]
-    adminUser            AdminUser?
+  createdTopics            Topic[]               @relation("CreatedTopics")
+  createdReviewerGroups    ReviewerGroup[]       @relation("CreatedReviewerGroups")
+  createdFundingRounds     FundingRound[]        @relation("CreatedFundingRounds")
+  reviewerGroupMemberships ReviewerGroupMember[]
+  adminUser                AdminUser?
 
-    considerationVotes    ConsiderationVote[]
+  considerationVotes         ConsiderationVote[]
+  deliberationCommunityVotes CommunityDeliberationVote[]
+  deliberationReviewerVotes  ReviewerDeliberationVote[]
 
-    @@index([id])
-    @@index([linkId])
+  @@index([id])
+  @@index([linkId])
 }
 
 model Proposal {
-  id                   Int      @id @default(autoincrement())
-  userId               String   @db.Uuid
-  fundingRoundId       String?  @db.Uuid  // Optional because proposal starts as DRAFT
-  status               ProposalStatus @default(DRAFT)
-  proposalName         String   @db.VarChar(100)
-  abstract             String   @db.Text
-  motivation           String   @db.Text
-  rationale            String   @db.Text
-  deliveryRequirements String   @db.Text
-  securityAndPerformance String @db.Text
-  budgetRequest        Decimal  @db.Decimal(16,2)
-  discord              String   @db.VarChar(32)
-  email                String   @db.VarChar(254)
-  createdAt            DateTime @default(now()) @db.Timestamptz(6)
-  updatedAt            DateTime @updatedAt @db.Timestamptz(6)
-  
+  id                     Int            @id @default(autoincrement())
+  userId                 String         @db.Uuid
+  fundingRoundId         String?        @db.Uuid // Optional because proposal starts as DRAFT
+  status                 ProposalStatus @default(DRAFT)
+  proposalName           String         @db.VarChar(100)
+  abstract               String         @db.Text
+  motivation             String         @db.Text
+  rationale              String         @db.Text
+  deliveryRequirements   String         @db.Text
+  securityAndPerformance String         @db.Text
+  budgetRequest          Decimal        @db.Decimal(16, 2)
+  discord                String         @db.VarChar(32)
+  email                  String         @db.VarChar(254)
+  createdAt              DateTime       @default(now()) @db.Timestamptz(6)
+  updatedAt              DateTime       @updatedAt @db.Timestamptz(6)
+
   // Relations
-  user User @relation(fields: [userId], references: [id], onDelete: Restrict)
+  user         User          @relation(fields: [userId], references: [id], onDelete: Restrict)
   fundingRound FundingRound? @relation(fields: [fundingRoundId], references: [id])
-  
+
+  considerationVotes         ConsiderationVote[]
+  deliberationCommunityVotes CommunityDeliberationVote[]
+  deliberationReviewerVotes  ReviewerDeliberationVote[]
+
   // Indexes
   @@index([userId])
   @@index([status])
   @@index([proposalName])
   @@index([createdAt])
   @@index([fundingRoundId])
-
-  considerationVotes ConsiderationVote[]
 }
 
 enum ProposalStatus {
@@ -80,148 +84,148 @@ enum ProposalStatus {
 }
 
 model Topic {
-    id          String            @id @default(uuid()) @db.Uuid
-    createdById String            @db.Uuid
-    name        String            @db.VarChar(100)
-    description String            @db.Text
-    createdAt   DateTime          @default(now()) @db.Timestamptz(6)
-    updatedAt   DateTime          @updatedAt @db.Timestamptz(6)
+  id          String   @id @default(uuid()) @db.Uuid
+  createdById String   @db.Uuid
+  name        String   @db.VarChar(100)
+  description String   @db.Text
+  createdAt   DateTime @default(now()) @db.Timestamptz(6)
+  updatedAt   DateTime @updatedAt @db.Timestamptz(6)
 
-    createdBy   User              @relation("CreatedTopics", fields: [createdById], references: [id])
-    reviewerGroups TopicReviewerGroup[]
-    fundingRounds FundingRound[]
+  createdBy      User                 @relation("CreatedTopics", fields: [createdById], references: [id])
+  reviewerGroups TopicReviewerGroup[]
+  fundingRounds  FundingRound[]
 
-    @@index([createdById])
+  @@index([createdById])
 }
 
 model ReviewerGroup {
-    id          String            @id @default(uuid()) @db.Uuid
-    createdById String            @db.Uuid
-    name        String            @db.VarChar(100)
-    description String            @db.Text
-    createdAt   DateTime          @default(now()) @db.Timestamptz(6)
-    updatedAt   DateTime          @updatedAt @db.Timestamptz(6)
+  id          String   @id @default(uuid()) @db.Uuid
+  createdById String   @db.Uuid
+  name        String   @db.VarChar(100)
+  description String   @db.Text
+  createdAt   DateTime @default(now()) @db.Timestamptz(6)
+  updatedAt   DateTime @updatedAt @db.Timestamptz(6)
 
-    createdBy   User              @relation("CreatedReviewerGroups", fields: [createdById], references: [id])
-    members     ReviewerGroupMember[]
-    topics      TopicReviewerGroup[]
+  createdBy User                  @relation("CreatedReviewerGroups", fields: [createdById], references: [id])
+  members   ReviewerGroupMember[]
+  topics    TopicReviewerGroup[]
 
-    @@index([createdById])
+  @@index([createdById])
 }
 
 model ReviewerGroupMember {
-    id              String        @id @default(uuid()) @db.Uuid
-    reviewerGroupId String        @db.Uuid
-    userId          String        @db.Uuid
-    createdAt       DateTime      @default(now()) @db.Timestamptz(6)
-    updatedAt       DateTime      @updatedAt @db.Timestamptz(6)
+  id              String   @id @default(uuid()) @db.Uuid
+  reviewerGroupId String   @db.Uuid
+  userId          String   @db.Uuid
+  createdAt       DateTime @default(now()) @db.Timestamptz(6)
+  updatedAt       DateTime @updatedAt @db.Timestamptz(6)
 
-    reviewerGroup   ReviewerGroup @relation(fields: [reviewerGroupId], references: [id], onDelete: Cascade)
-    user            User          @relation(fields: [userId], references: [id])
+  reviewerGroup ReviewerGroup @relation(fields: [reviewerGroupId], references: [id], onDelete: Cascade)
+  user          User          @relation(fields: [userId], references: [id])
 
-    @@unique([reviewerGroupId, userId])
-    @@index([userId])
+  @@unique([reviewerGroupId, userId])
+  @@index([userId])
 }
 
 model TopicReviewerGroup {
-    id              String        @id @default(uuid()) @db.Uuid
-    topicId         String        @db.Uuid
-    reviewerGroupId String        @db.Uuid
-    createdAt       DateTime      @default(now()) @db.Timestamptz(6)
-    updatedAt       DateTime      @updatedAt @db.Timestamptz(6)
+  id              String   @id @default(uuid()) @db.Uuid
+  topicId         String   @db.Uuid
+  reviewerGroupId String   @db.Uuid
+  createdAt       DateTime @default(now()) @db.Timestamptz(6)
+  updatedAt       DateTime @updatedAt @db.Timestamptz(6)
 
-    topic           Topic         @relation(fields: [topicId], references: [id], onDelete: Cascade)
-    reviewerGroup   ReviewerGroup @relation(fields: [reviewerGroupId], references: [id], onDelete: Cascade)
+  topic         Topic         @relation(fields: [topicId], references: [id], onDelete: Cascade)
+  reviewerGroup ReviewerGroup @relation(fields: [reviewerGroupId], references: [id], onDelete: Cascade)
 
-    @@unique([topicId, reviewerGroupId])
+  @@unique([topicId, reviewerGroupId])
 }
 
 model FundingRound {
-    id          String            @id @default(uuid()) @db.Uuid
-    createdById String            @db.Uuid
-    topicId     String            @db.Uuid
-    name        String            @db.VarChar(100)
-    description String            @db.Text
-    status      FundingRoundStatus @default(DRAFT)
-    startDate   DateTime          @db.Timestamptz(6)
-    endDate     DateTime          @db.Timestamptz(6)
-    totalBudget Decimal           @db.Decimal(16,2)
-    createdAt   DateTime          @default(now()) @db.Timestamptz(6)
-    updatedAt   DateTime          @updatedAt @db.Timestamptz(6)
+  id          String             @id @default(uuid()) @db.Uuid
+  createdById String             @db.Uuid
+  topicId     String             @db.Uuid
+  name        String             @db.VarChar(100)
+  description String             @db.Text
+  status      FundingRoundStatus @default(DRAFT)
+  startDate   DateTime           @db.Timestamptz(6)
+  endDate     DateTime           @db.Timestamptz(6)
+  totalBudget Decimal            @db.Decimal(16, 2)
+  createdAt   DateTime           @default(now()) @db.Timestamptz(6)
+  updatedAt   DateTime           @updatedAt @db.Timestamptz(6)
 
-    createdBy   User              @relation("CreatedFundingRounds", fields: [createdById], references: [id])
-    topic       Topic             @relation(fields: [topicId], references: [id])
-    proposals   Proposal[]
-    
-    submissionPhase    SubmissionPhase?
-    considerationPhase ConsiderationPhase?
-    deliberationPhase  DeliberationPhase?
-    votingPhase       VotingPhase?
+  createdBy User       @relation("CreatedFundingRounds", fields: [createdById], references: [id])
+  topic     Topic      @relation(fields: [topicId], references: [id])
+  proposals Proposal[]
 
-    @@index([createdById])
-    @@index([status])
-    @@index([startDate, endDate])
+  submissionPhase    SubmissionPhase?
+  considerationPhase ConsiderationPhase?
+  deliberationPhase  DeliberationPhase?
+  votingPhase        VotingPhase?
+
+  @@index([createdById])
+  @@index([status])
+  @@index([startDate, endDate])
 }
 
 model ConsiderationPhase {
-    id              String        @id @default(uuid()) @db.Uuid
-    fundingRoundId  String        @unique @db.Uuid
-    startDate       DateTime      @db.Timestamptz(6)
-    endDate         DateTime      @db.Timestamptz(6)
-    createdAt       DateTime      @default(now()) @db.Timestamptz(6)
-    updatedAt       DateTime      @updatedAt @db.Timestamptz(6)
+  id             String   @id @default(uuid()) @db.Uuid
+  fundingRoundId String   @unique @db.Uuid
+  startDate      DateTime @db.Timestamptz(6)
+  endDate        DateTime @db.Timestamptz(6)
+  createdAt      DateTime @default(now()) @db.Timestamptz(6)
+  updatedAt      DateTime @updatedAt @db.Timestamptz(6)
 
-    fundingRound    FundingRound  @relation(fields: [fundingRoundId], references: [id], onDelete: Cascade)
+  fundingRound FundingRound @relation(fields: [fundingRoundId], references: [id], onDelete: Cascade)
 
-    @@index([startDate, endDate])
+  @@index([startDate, endDate])
 }
 
 model DeliberationPhase {
-    id              String        @id @default(uuid()) @db.Uuid
-    fundingRoundId  String        @unique @db.Uuid
-    startDate       DateTime      @db.Timestamptz(6)
-    endDate         DateTime      @db.Timestamptz(6)
-    createdAt       DateTime      @default(now()) @db.Timestamptz(6)
-    updatedAt       DateTime      @updatedAt @db.Timestamptz(6)
+  id             String   @id @default(uuid()) @db.Uuid
+  fundingRoundId String   @unique @db.Uuid
+  startDate      DateTime @db.Timestamptz(6)
+  endDate        DateTime @db.Timestamptz(6)
+  createdAt      DateTime @default(now()) @db.Timestamptz(6)
+  updatedAt      DateTime @updatedAt @db.Timestamptz(6)
 
-    fundingRound    FundingRound  @relation(fields: [fundingRoundId], references: [id], onDelete: Cascade)
+  fundingRound FundingRound @relation(fields: [fundingRoundId], references: [id], onDelete: Cascade)
 
-    @@index([startDate, endDate])
+  @@index([startDate, endDate])
 }
 
 model VotingPhase {
-    id              String        @id @default(uuid()) @db.Uuid
-    fundingRoundId  String        @unique @db.Uuid
-    startDate       DateTime      @db.Timestamptz(6)
-    endDate         DateTime      @db.Timestamptz(6)
-    createdAt       DateTime      @default(now()) @db.Timestamptz(6)
-    updatedAt       DateTime      @updatedAt @db.Timestamptz(6)
+  id             String   @id @default(uuid()) @db.Uuid
+  fundingRoundId String   @unique @db.Uuid
+  startDate      DateTime @db.Timestamptz(6)
+  endDate        DateTime @db.Timestamptz(6)
+  createdAt      DateTime @default(now()) @db.Timestamptz(6)
+  updatedAt      DateTime @updatedAt @db.Timestamptz(6)
 
-    fundingRound    FundingRound  @relation(fields: [fundingRoundId], references: [id], onDelete: Cascade)
+  fundingRound FundingRound @relation(fields: [fundingRoundId], references: [id], onDelete: Cascade)
 
-    @@index([startDate, endDate])
+  @@index([startDate, endDate])
 }
 
 model SubmissionPhase {
-    id              String        @id @default(uuid()) @db.Uuid
-    fundingRoundId  String        @unique @db.Uuid
-    startDate       DateTime      @db.Timestamptz(6)
-    endDate         DateTime      @db.Timestamptz(6)
-    createdAt       DateTime      @default(now()) @db.Timestamptz(6)
-    updatedAt       DateTime      @updatedAt @db.Timestamptz(6)
+  id             String   @id @default(uuid()) @db.Uuid
+  fundingRoundId String   @unique @db.Uuid
+  startDate      DateTime @db.Timestamptz(6)
+  endDate        DateTime @db.Timestamptz(6)
+  createdAt      DateTime @default(now()) @db.Timestamptz(6)
+  updatedAt      DateTime @updatedAt @db.Timestamptz(6)
 
-    fundingRound    FundingRound  @relation(fields: [fundingRoundId], references: [id], onDelete: Cascade)
+  fundingRound FundingRound @relation(fields: [fundingRoundId], references: [id], onDelete: Cascade)
 
-    @@index([startDate, endDate])
+  @@index([startDate, endDate])
 }
 
 model AdminUser {
-    id          String        @id @default(uuid()) @db.Uuid
-    userId      String        @unique @db.Uuid
-    createdAt   DateTime      @default(now()) @db.Timestamptz(6)
-    updatedAt   DateTime      @updatedAt @db.Timestamptz(6)
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String   @unique @db.Uuid
+  createdAt DateTime @default(now()) @db.Timestamptz(6)
+  updatedAt DateTime @updatedAt @db.Timestamptz(6)
 
-    user        User          @relation(fields: [userId], references: [id])
+  user User @relation(fields: [userId], references: [id])
 }
 
 enum ConsiderationDecision {
@@ -230,17 +234,46 @@ enum ConsiderationDecision {
 }
 
 model ConsiderationVote {
-  id          String               @id @default(uuid()) @db.Uuid
-  proposalId  Int
-  voterId     String              @db.Uuid
-  decision    ConsiderationDecision
-  feedback    String              @db.Text
-  createdAt   DateTime            @default(now()) @db.Timestamptz(6)
-  updatedAt   DateTime            @updatedAt @db.Timestamptz(6)
+  id         String                @id @default(uuid()) @db.Uuid
+  proposalId Int
+  voterId    String                @db.Uuid
+  decision   ConsiderationDecision
+  feedback   String                @db.Text
+  createdAt  DateTime              @default(now()) @db.Timestamptz(6)
+  updatedAt  DateTime              @updatedAt @db.Timestamptz(6)
 
-  proposal    Proposal            @relation(fields: [proposalId], references: [id], onDelete: Cascade)
-  voter       User                @relation(fields: [voterId], references: [id], onDelete: Cascade)
+  proposal Proposal @relation(fields: [proposalId], references: [id], onDelete: Cascade)
+  voter    User     @relation(fields: [voterId], references: [id], onDelete: Cascade)
 
   @@unique([proposalId, voterId])
   @@index([voterId])
+}
+
+model CommunityDeliberationVote {
+  id         String   @id @default(uuid()) @db.Uuid
+  proposalId Int
+  userId     String   @db.Uuid
+  feedback   String   @db.Text
+  createdAt  DateTime @default(now()) @db.Timestamptz(6)
+
+  proposal Proposal @relation(fields: [proposalId], references: [id], onDelete: Cascade)
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([proposalId, userId])
+  @@index([userId])
+}
+
+model ReviewerDeliberationVote {
+  id             String   @id @default(uuid()) @db.Uuid
+  proposalId     Int
+  userId         String   @db.Uuid
+  feedback       String   @db.Text
+  recommendation Boolean
+  createdAt      DateTime @default(now()) @db.Timestamptz(6)
+
+  proposal Proposal @relation(fields: [proposalId], references: [id], onDelete: Cascade)
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([proposalId, userId])
+  @@index([userId])
 }
