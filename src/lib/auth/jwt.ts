@@ -96,7 +96,7 @@ export const JWTUtils = {
       } as JWTPayload;
     } catch (error) {
       logger.error("Token verification failed:", error);
-      throw new Error("Invalid token");
+      throw error;
     }
   },
 

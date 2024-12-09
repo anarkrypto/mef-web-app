@@ -1,12 +1,13 @@
 {
   "name": "pgt-web-app",
-  "version": "0.1.14",
+  "version": "0.1.15",
   "private": true,
   "type": "module",
   "scripts": {
     "dev": "npm run build:workers && next dev",
     "dev:https": "NODE_TLS_REJECT_UNAUTHORIZED=0 next dev --experimental-https --experimental-https-key ./localhost-key.pem --experimental-https-cert ./localhost.pem",
-    "build": "next build && npm run build:workers",
+    "build": "next build && npm run internal:copy-public && npm run build:workers",
+    "internal:copy-public": "cp -r public .next/standalone/",
     "build:workers": "npx tsx src/scripts/build-workers.ts",
     "start": "npx prisma migrate deploy && next start",
     "start:prod": "prisma migrate deploy && node server.js",

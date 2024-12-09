@@ -1,4 +1,4 @@
-import { PrismaClient, Prisma } from "@prisma/client";
+import { PrismaClient, Prisma, ProposalStatus } from "@prisma/client";
 import type { User, ReviewerGroup, ReviewerGroupMember } from "@prisma/client";
 
 export class AdminService {
@@ -674,6 +674,49 @@ export class AdminService {
       return tx.fundingRound.delete({
         where: { id },
       });
+    });
+  }
+
+  async getProposalsByFundingRound(fundingRoundId: string) {
+    return this.prisma.proposal.findMany({
+      where: {
+        fundingRoundId,
+      },
+      include: {
+        user: {
+          select: {
+            metadata: true,
+          },
+        },
+        fundingRound: {
+          select: {
+            name: true,
+          },
+        },
+      },
+      orderBy: [
+        { status: "asc" },
+        { createdAt: "desc" },
+      ],
+    });
+  }
+
+  async updateProposalStatus(proposalId: number, status: ProposalStatus) {
+    return this.prisma.proposal.update({
+      where: { id: proposalId },
+      data: { status },
+      include: {
+        user: {
+          select: {
+            metadata: true,
+          },
+        },
+        fundingRound: {
+          select: {
+            name: true,
+          },
+        },
+      },
     });
   }
 }

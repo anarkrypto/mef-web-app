@@ -11,6 +11,7 @@ COPY tsconfig.json .
 COPY tailwind.config.ts .
 COPY postcss.config.mjs .
 COPY prisma ./prisma/
+COPY public ./public
 
 RUN npx prisma generate
 

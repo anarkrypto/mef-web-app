@@ -6,10 +6,9 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { ExternalLinkIcon, DiscordLogoIcon, ChatBubbleIcon } from "@radix-ui/react-icons";
-import { Wallet, Loader2 } from 'lucide-react';
-import { WalletConnector } from '@/components/web3/WalletConnector';
+import { Wallet, Loader2, AlertCircle, CheckCircle2 } from 'lucide-react';
 import { WalletConnectorDialog } from '@/components/web3/WalletConnectorDialog';
 import { WalletAuthDialog } from '@/components/web3/WalletAuthDialog';
 import { useWallet } from '@/contexts/WalletContext';
@@ -146,15 +145,126 @@ function AuthenticationOptions() {
   );
 }
 
+function TokenAuthContent() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const { refresh } = useAuth();
+  const token = searchParams?.get('token');
+  const from = searchParams?.get('from') || '/';
+  const message = searchParams?.get('message');
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<boolean>(false);
+  const [isLoading, setIsLoading] = useState(false);
+
+  useEffect(() => {
+    if (!token) {
+      if (message) {
+        setError(message);
+      }
+      return;
+    }
+
+    async function authenticate() {
+      setIsLoading(true);
+      setError(null);
+      try {
+        const res = await fetch('/api/auth/exchange', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ initialToken: token }),
+          credentials: 'include',
+        });
+
+        if (!res.ok) {
+          const data = await res.json();
+          throw new Error(data.error || 'Authentication failed');
+        }
+
+        await refresh();
+        
+        setSuccess(true);
+        // Small delay to show success message
+        setTimeout(() => {
+          router.push(from);
+        }, 1000);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Authentication failed');
+      } finally {
+        setIsLoading(false);
+      }
+    }
+
+    authenticate();
+  }, [token, from, router, message, refresh]);
+
+  if (isLoading) {
+    return (
+      <Card className="w-full max-w-md">
+        <CardHeader>
+          <CardTitle>Authentication</CardTitle>
+          <CardDescription>Please wait while we authenticate your session...</CardDescription>
+        </CardHeader>
+        <CardContent className="flex justify-center p-4">
+          <Loader2 className="h-6 w-6 animate-spin" />
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (error) {
+    return (
+      <Card className="w-full max-w-md">
+        <CardHeader>
+          <CardTitle>Authentication Error</CardTitle>
+          <CardDescription>Unable to complete authentication</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Alert variant="destructive">
+            <AlertCircle className="h-4 w-4" />
+            <AlertTitle>Error</AlertTitle>
+            <AlertDescription>{error}</AlertDescription>
+          </Alert>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (success) {
+    return (
+      <Card className="w-full max-w-md">
+        <CardHeader>
+          <CardTitle>Authentication Successful</CardTitle>
+          <CardDescription>Redirecting you to your destination...</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Alert variant="default" className="border-green-200 bg-green-50 text-green-800">
+            <CheckCircle2 className="h-4 w-4 text-green-600" />
+            <AlertTitle>Success!</AlertTitle>
+            <AlertDescription className="text-green-700">
+              Authentication completed successfully.
+            </AlertDescription>
+          </Alert>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  return null;
+}
+
 export default function AuthPage() {
   const { user, isLoading } = useAuth();
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const token = searchParams?.get('token');
 
   useEffect(() => {
     let mounted = true;
 
     const redirect = () => {
-      if (mounted && !isLoading && user) {
+      if (mounted && !isLoading && user && !token) {
         router.push('/');
       }
     };
@@ -164,11 +274,11 @@ export default function AuthPage() {
     return () => {
       mounted = false;
     };
-  }, [user, isLoading, router]);
+  }, [user, isLoading, router, token]);
 
   if (isLoading) {
     return (
-      <div className="container flex items-center justify-center min-h-screen py-8">
+      <div className="flex items-center justify-center min-h-[calc(100vh-56px)] py-8">
         <Card className="w-full max-w-md">
           <CardHeader>
             <CardTitle>Loading...</CardTitle>
@@ -182,13 +292,13 @@ export default function AuthPage() {
     );
   }
 
-  if (user) {
+  if (user && !token) {
     return null; // Will redirect in useEffect
   }
 
   return (
-    <div className="container flex items-center justify-center min-h-screen py-8">
-      <AuthenticationOptions />
+    <div className="flex items-center justify-center min-h-[calc(100vh-56px)] py-8">
+      {token ? <TokenAuthContent /> : <AuthenticationOptions />}
     </div>
   );
 } 
