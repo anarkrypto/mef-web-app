@@ -9,7 +9,7 @@ const getBaseUrl = () => process.env.NEXT_APP_URL;
 
 // Configuration
 export const config = {
-  matcher: ["/((?!_next/static|_next/image|favicon.ico|public).*)"],
+  matcher: ["/((?!_next/static|_next/image|favicon.ico|public|wallets).*)"],
 };
 
 // Route definitions
