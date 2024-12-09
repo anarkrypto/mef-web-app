@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
-import { getUserFromRequest } from "@/lib/auth";
+import { getOrCreateUserFromRequest } from "@/lib/auth";
 import { ProposalStatus, Prisma } from "@prisma/client";
-import type { UserMetadata } from "@/types/consideration";
+import type { UserMetadata } from "@/services/UserService";
 import logger from "@/logging";
 
 interface FormattedProposal {
@@ -51,7 +51,7 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const user = await getUserFromRequest(request);
+    const user = await getOrCreateUserFromRequest(request);
     if (!user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }

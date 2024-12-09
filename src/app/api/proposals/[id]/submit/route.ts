@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
-import { getUserFromRequest } from "@/lib/auth";
+import { getOrCreateUserFromRequest } from "@/lib/auth";
 import Bree from 'bree';
 import path from 'path';
 import logger from "@/logging";
@@ -36,7 +36,7 @@ bree.on('worker deleted', (name) => {
 
 export async function POST(request: Request, context: RouteContext) {
   try {
-    const user = await getUserFromRequest(request);
+    const user = await getOrCreateUserFromRequest(request);
     if (!user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }

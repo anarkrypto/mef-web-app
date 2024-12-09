@@ -65,6 +65,9 @@ PGADMIN_PASSWORD=pgadmin_password
 POSTGRES_DB=govbot
 POSTGRES_PASSWORD=your_secure_password_here
 DATABASE_URL="postgresql://postgres:your_secure_password_here@db:5432/govbot?schema=public"
+
+# OCV API, a.k.a. 'Granola OCV'
+NEXT_PUBLIC_OCV_API_BASE_URL=http://on-chain-voting-server:8080
 ```
 
 ### Development with Docker

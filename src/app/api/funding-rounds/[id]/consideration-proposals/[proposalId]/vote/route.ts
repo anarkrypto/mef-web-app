@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import prisma from "@/lib/prisma";
-import { getUserFromRequest } from "@/lib/auth";
 import logger from "@/logging";
+import { getOrCreateUserFromRequest } from "@/lib/auth";
 
 const voteSchema = z.object({
   decision: z.enum(["APPROVED", "REJECTED"]),
@@ -48,7 +48,7 @@ export async function POST(
   { params }: { params: Promise<{ id: string; proposalId: string }> }
 ) {
   try {
-    const user = await getUserFromRequest(request);
+    const user = await getOrCreateUserFromRequest(request);
     if (!user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }

@@ -1,12 +1,14 @@
 import { cookies } from "next/headers";
 import { verifyToken } from "./jwt";
-import { resolveUser } from "../user/resolve";
 import type { User } from "@prisma/client";
 import prisma from "@/lib/prisma";
 import logger from "@/logging";
+import { UserService } from "@/services/UserService";
 
-export async function getUserFromRequest(req: Request): Promise<User | null> {
+export async function getOrCreateUserFromRequest(req: Request): Promise<User | null> {
   try {
+    const userService = new UserService(prisma);
+
     // Get the access token from cookies
     const cookieStore = await cookies();
     const accessToken = cookieStore.get("access_token")?.value;
@@ -19,7 +21,7 @@ export async function getUserFromRequest(req: Request): Promise<User | null> {
     const payload = await verifyToken(accessToken);
 
     // Resolve user from payload
-    const { user } = await resolveUser(payload);
+    const user = await userService.findOrCreateUser(payload.authSource);
     return user;
   } catch (error) {
     logger.error("Error getting user from request:", error);

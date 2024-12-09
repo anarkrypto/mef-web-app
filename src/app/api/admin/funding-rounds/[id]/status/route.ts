@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
-import { getUserFromRequest } from "@/lib/auth";
+import { getOrCreateUserFromRequest } from "@/lib/auth";
 import { AdminService } from "@/services/AdminService";
 import logger from "@/logging";
 
@@ -81,7 +81,7 @@ async function validateStatusTransition(
 
 export async function PATCH(request: Request, context: RouteContext) {
   try {
-    const user = await getUserFromRequest(request);
+    const user = await getOrCreateUserFromRequest(request);
     if (!user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }

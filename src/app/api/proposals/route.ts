@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { ProposalService } from "@/services/ProposalService";
 import prisma from "@/lib/prisma";
-import { getUserFromRequest } from "@/lib/auth";
+import { getOrCreateUserFromRequest } from "@/lib/auth";
 import { ZodError } from "zod";
 import logger from "@/logging";
 
@@ -9,7 +9,7 @@ const proposalService = new ProposalService(prisma);
 
 export async function GET(req: Request) {
   try {
-    const user = await getUserFromRequest(req);
+    const user = await getOrCreateUserFromRequest(req);
     if (!user) {
       return NextResponse.json(
         { error: "Please log in to view proposals" },
@@ -35,7 +35,7 @@ export async function GET(req: Request) {
 
 export async function POST(req: Request) {
   try {
-    const user = await getUserFromRequest(req);
+    const user = await getOrCreateUserFromRequest(req);
     if (!user) {
       return NextResponse.json(
         { error: "Please log in to create proposals" },

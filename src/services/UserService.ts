@@ -1,9 +1,31 @@
 import { PrismaClient, User } from "@prisma/client";
 import { deriveUserId, generateLinkId } from "@/lib/user/derive";
 import type { AuthSource } from "@/lib/user/types";
-import logger from "@/logging";
 
 type AuthSourceType = AuthSource['type'];
+
+/**
+ * Represents the factual structure of User.metadata in the database.
+ */
+export type UserMetadata = {
+  /**
+   * Authentication source information
+   */
+  authSource: {
+    /** The type of authentication provider */
+    type: "discord" | "telegram" | "wallet";
+    /** Unique identifier from the auth provider */
+    id: string;
+    /** Username from the auth provider */
+    username: string;
+  };
+  /** Display username, defaults to authSource.username if not set */
+  username: string;
+  /** ISO timestamp of when the user was created */
+  createdAt: string;
+  /** Additional metadata fields can be added */
+  [key: string]: unknown;
+};
 
 interface LinkingRule {
   allowedTargets: AuthSourceType[];

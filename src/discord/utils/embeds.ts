@@ -1,15 +1,6 @@
 import { EmbedBuilder } from 'discord.js';
 import { Prisma } from '@prisma/client';
-
-interface UserMetadata {
-  username: string;
-  createdAt: string;
-  authSource?: {
-    id: string;
-    type: string;
-    username: string;
-  };
-}
+import { UserMetadata } from '@/services/UserService';
 
 interface ProposalWithRelations {
   id: number;

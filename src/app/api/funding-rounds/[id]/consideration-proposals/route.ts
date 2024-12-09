@@ -1,25 +1,15 @@
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
-import { getUserFromRequest } from "@/lib/auth";
-import type { UserMetadata } from '@/types/consideration';
+import { getOrCreateUserFromRequest } from "@/lib/auth";
+import type { UserMetadata } from '@/services/UserService';
 import logger from "@/logging";
-
-interface RawUserMetadata {
-  username: string;
-  createdAt: string;
-  authSource: {
-    type: string;
-    id: string;
-    username: string;
-  };
-}
 
 export async function GET(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const user = await getUserFromRequest(request);
+    const user = await getOrCreateUserFromRequest(request);
     if (!user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
@@ -117,7 +107,7 @@ export async function GET(
       return {
         id: p.id,
         proposalName: p.proposalName,
-        submitter: ((p.user.metadata as unknown) as RawUserMetadata).username,
+        submitter: ((p.user.metadata as unknown) as UserMetadata).username,
         abstract: p.abstract,
         status: p.considerationVotes[0]?.decision?.toLowerCase() || 'pending',
         userVote: p.considerationVotes[0] ? {

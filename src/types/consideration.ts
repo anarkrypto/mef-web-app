@@ -20,13 +20,4 @@ export interface ConsiderationProposal {
   voteStats: ConsiderationVoteStats;
   createdAt: Date;
 }
-
-export interface UserMetadata {
-  username: string;
-  createdAt: string;
-  authSource: {
-    type: string;
-    id: string;
-    username: string;
-  };
-} 
+ 

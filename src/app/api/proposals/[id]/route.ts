@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { ProposalService } from "@/services/ProposalService";
 import prisma from "@/lib/prisma";
-import { getUserFromRequest } from "@/lib/auth";
+import { getOrCreateUserFromRequest } from "@/lib/auth";
 import { ZodError } from "zod";
 import logger from "@/logging";
 import { ApiResponse } from '@/lib/api-response';
@@ -18,7 +18,7 @@ interface RouteContext {
 
 export async function GET(request: Request, context: RouteContext) {
   try {
-    const user = await getUserFromRequest(request);
+    const user = await getOrCreateUserFromRequest(request);
     if (!user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
@@ -68,7 +68,7 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const user = await getUserFromRequest(req);
+    const user = await getOrCreateUserFromRequest(req);
     if (!user) {
       throw AppError.unauthorized(AuthErrors.UNAUTHORIZED);
     }
@@ -90,7 +90,7 @@ export async function PUT(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const user = await getUserFromRequest(req);
+    const user = await getOrCreateUserFromRequest(req);
     if (!user) {
       return NextResponse.json(
         { error: "Please log in to update proposals" },
