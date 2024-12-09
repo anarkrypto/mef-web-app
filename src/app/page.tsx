@@ -97,7 +97,10 @@ export default function HomePage() {
           />
         );
       case 'deliberate':
-        return <DeliberationPhase />;
+        return <DeliberationPhase
+          fundingRoundId={selectedRound.id}
+          fundingRoundName={selectedRound.name}
+        />;
       case 'vote':
         return <VotingPhase />;
       case 'completed':
