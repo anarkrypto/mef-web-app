@@ -27,7 +27,7 @@ interface DialogState {
 
 export function DeliberationPhase({ fundingRoundId, fundingRoundName }: Props) {
   const { user } = useAuth()
-  const { proposals, loading, setProposals, pendingCount, totalCount } = useDeliberationPhase(fundingRoundId)
+  const { proposals, loading, setProposals, pendingCount, totalCount, setPendingCount, setTotalCount } = useDeliberationPhase(fundingRoundId)
   const [expanded, setExpanded] = useState<Record<number, boolean>>({})
   const [dialogProps, setDialogProps] = useState<DialogState>({ open: false })
   
@@ -60,47 +60,68 @@ export function DeliberationPhase({ fundingRoundId, fundingRoundName }: Props) {
       );
 
       if (response) {
-        // Create optimistic comment for reviewers
-        const optimisticComment = recommendation !== undefined ? {
-          id: Date.now().toString(), // Temporary ID
-          feedback,
-          recommendation,
-          createdAt: new Date(),
-          reviewer: {
-            username: user.metadata.username
-          }
-        } : undefined;
-
-        // Optimistically update the UI
-        setProposals(prevProposals =>
-          prevProposals.map(proposal => {
+        // Update proposals and recalculate counts
+        setProposals(prevProposals => {
+          const updatedProposals = prevProposals.map(proposal => {
             if (proposal.id !== dialogProps.proposalId) {
               return proposal;
             }
 
             // Create updated deliberation vote
-            const updatedDeliberation: DeliberationVote = {
+            const updatedDeliberation = {
               feedback,
               recommendation,
               createdAt: new Date(),
               isReviewerVote: proposal.isReviewerEligible ?? false
             };
 
-            // Return updated proposal with new comment if reviewer
+            // For reviewers, update or add the comment
+            const updatedReviewerComments = recommendation !== undefined
+              ? proposal.reviewerComments.some(c => c.reviewer.username === user.metadata.username)
+                ? proposal.reviewerComments.map(c => 
+                    c.reviewer.username === user.metadata.username
+                      ? {
+                          ...c,
+                          feedback,
+                          recommendation,
+                          createdAt: new Date()
+                        }
+                      : c
+                  )
+                : [
+                    ...proposal.reviewerComments,
+                    {
+                      id: response.id, // Use server-provided ID
+                      feedback,
+                      recommendation,
+                      createdAt: new Date(),
+                      reviewer: {
+                        username: user.metadata.username
+                      }
+                    }
+                  ]
+              : proposal.reviewerComments;
+
+            // Return updated proposal
             return {
               ...proposal,
               userDeliberation: updatedDeliberation,
               hasVoted: true,
-              reviewerComments: optimisticComment 
-                ? [...proposal.reviewerComments, optimisticComment]
-                : proposal.reviewerComments
+              reviewerComments: updatedReviewerComments
             };
           }).sort((a, b) => {
             if (!a.userDeliberation && b.userDeliberation) return -1;
             if (a.userDeliberation && !b.userDeliberation) return 1;
             return 0;
-          })
-        );
+          });
+
+          // Update pending and total counts
+          const newPendingCount = updatedProposals.filter(p => !p.hasVoted).length;
+          setPendingCount(newPendingCount);
+          setTotalCount(updatedProposals.length);
+
+          return updatedProposals;
+        });
       }
 
       setDialogProps({ open: false });
