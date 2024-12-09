@@ -2,7 +2,6 @@ import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { getOrCreateUserFromRequest } from "@/lib/auth";
 import { ProposalStatus, Prisma } from "@prisma/client";
-import type { UserMetadata } from "@/services/UserService";
 import logger from "@/logging";
 
 interface FormattedProposal {

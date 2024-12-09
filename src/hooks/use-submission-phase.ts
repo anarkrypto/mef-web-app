@@ -30,7 +30,7 @@ export function useSubmissionPhase(fundingRoundId: string): UseSubmissionPhaseRe
     async function fetchProposals() {
       try {
         const response = await fetch(
-          `/api/funding-rounds/${fundingRoundId}/proposals`
+          `/api/funding-rounds/${fundingRoundId}/submitted-proposals`
         );
 
         if (!response.ok) {
