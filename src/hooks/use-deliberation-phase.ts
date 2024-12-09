@@ -16,6 +16,8 @@ interface UseDeliberationPhaseResult {
   setProposals: React.Dispatch<React.SetStateAction<DeliberationProposal[]>>;
   pendingCount: number;
   totalCount: number;
+  setPendingCount: React.Dispatch<React.SetStateAction<number>>;
+  setTotalCount: React.Dispatch<React.SetStateAction<number>>;
 }
 
 export function useDeliberationPhase(fundingRoundId: string): UseDeliberationPhaseResult {
@@ -61,5 +63,7 @@ export function useDeliberationPhase(fundingRoundId: string): UseDeliberationPha
     setProposals,
     pendingCount,
     totalCount,
+    setPendingCount,
+    setTotalCount,
   }
 } 
