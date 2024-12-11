@@ -1,5 +1,5 @@
 ### Building stage
-FROM node:20-alpine as builder
+FROM node:20.1.0-alpine as builder
 WORKDIR /app
 
 COPY package*.json ./
@@ -20,7 +20,7 @@ RUN npm run build && \
     npm cache clean --force
 
 ### Production stage
-FROM node:20-alpine
+FROM node:20.1.0-alpine
 WORKDIR /app
 
 RUN addgroup --system --gid 1001 nodejs
