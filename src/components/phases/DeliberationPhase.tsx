@@ -59,74 +59,67 @@ export function DeliberationPhase({ fundingRoundId, fundingRoundName }: Props) {
         recommendation
       );
 
-      if (response) {
-        // Update proposals and recalculate counts
-        setProposals(prevProposals => {
-          const updatedProposals = prevProposals.map(proposal => {
-            if (proposal.id !== dialogProps.proposalId) {
-              return proposal;
-            }
+      setProposals(prevProposals => {
+        return prevProposals.map(proposal => {
+          if (proposal.id !== dialogProps.proposalId) {
+            return proposal;
+          }
 
-            // Create updated deliberation vote
-            const updatedDeliberation = {
+          // Create new comment object with proper date handling
+          const newComment: DeliberationComment = {
+            id: response.id,
+            feedback,
+            recommendation: proposal.isReviewerEligible ? recommendation : undefined,
+            createdAt: new Date(), // This ensures it's a proper Date object
+            isReviewerComment: Boolean(proposal.isReviewerEligible),
+            ...(proposal.isReviewerEligible ? {
+              reviewer: {
+                username: user.metadata.username
+              }
+            } : {})
+          };
+
+          // Update comments list with proper date handling
+          let updatedComments = [...proposal.reviewerComments];
+          const existingCommentIndex = updatedComments.findIndex(
+            c => (c.isReviewerComment && c.reviewer?.username === user.metadata.username) ||
+                 (!c.isReviewerComment && !c.reviewer?.username)
+          );
+
+          if (existingCommentIndex !== -1) {
+            updatedComments[existingCommentIndex] = newComment;
+          } else {
+            updatedComments = [...updatedComments, newComment];
+          }
+
+          // Ensure all dates are Date objects before sorting
+          updatedComments = updatedComments.map(comment => ({
+            ...comment,
+            createdAt: new Date(comment.createdAt)
+          }));
+
+          // Sort comments
+          updatedComments.sort((a, b) => 
+            b.createdAt.getTime() - a.createdAt.getTime()
+          );
+
+          return {
+            ...proposal,
+            userDeliberation: {
               feedback,
               recommendation,
               createdAt: new Date(),
-              isReviewerVote: proposal.isReviewerEligible ?? false
-            };
-
-            // For reviewers, update or add the comment
-            const updatedReviewerComments = recommendation !== undefined
-              ? proposal.reviewerComments.some(c => c.reviewer.username === user.metadata.username)
-                ? proposal.reviewerComments.map(c => 
-                    c.reviewer.username === user.metadata.username
-                      ? {
-                          ...c,
-                          feedback,
-                          recommendation,
-                          createdAt: new Date()
-                        }
-                      : c
-                  )
-                : [
-                    ...proposal.reviewerComments,
-                    {
-                      id: response.id, // Use server-provided ID
-                      feedback,
-                      recommendation,
-                      createdAt: new Date(),
-                      reviewer: {
-                        username: user.metadata.username
-                      }
-                    }
-                  ]
-              : proposal.reviewerComments;
-
-            // Return updated proposal
-            return {
-              ...proposal,
-              userDeliberation: updatedDeliberation,
-              hasVoted: true,
-              reviewerComments: updatedReviewerComments
-            };
-          }).sort((a, b) => {
-            if (!a.userDeliberation && b.userDeliberation) return -1;
-            if (a.userDeliberation && !b.userDeliberation) return 1;
-            return 0;
-          });
-
-          // Update pending and total counts
-          const newPendingCount = updatedProposals.filter(p => !p.hasVoted).length;
-          setPendingCount(newPendingCount);
-          setTotalCount(updatedProposals.length);
-
-          return updatedProposals;
+              isReviewerVote: Boolean(proposal.isReviewerEligible)
+            },
+            hasVoted: true,
+            reviewerComments: updatedComments
+          };
         });
-      }
+      });
 
       setDialogProps({ open: false });
     } catch (error) {
-      console.error("Failed to submit deliberation:", error);
+      console.error("Failed to submit vote:", error);
     }
   };
 
