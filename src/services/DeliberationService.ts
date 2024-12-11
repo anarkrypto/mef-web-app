@@ -1,35 +1,51 @@
-import { PrismaClient, Prisma, CommunityDeliberationVote, ReviewerDeliberationVote } from "@prisma/client";
+import { PrismaClient, Prisma, ProposalStatus } from "@prisma/client";
 import { AppError } from "@/lib/errors";
 import { UserMetadata } from "./UserService";
 
-type ProposalWithVotes = Prisma.ProposalGetPayload<{
-  include: {
-    user: {
-      select: {
-        metadata: true;
-      };
-    };
-    deliberationCommunityVotes: true;
-    deliberationReviewerVotes: true;
-    fundingRound: {
-      include: {
-        topic: {
-          include: {
-            reviewerGroups: {
-              include: {
-                reviewerGroup: {
-                  include: {
-                    members: true;
-                  };
-                };
-              };
-            };
-          };
+// Define types for the votes
+interface ReviewerDeliberationVote {
+  id: string;
+  feedback: string;
+  recommendation: boolean;
+  createdAt: Date;
+  userId: string;
+  user: {
+    metadata: UserMetadata;
+  };
+}
+
+interface CommunityDeliberationVote {
+  id: string;
+  feedback: string;
+  createdAt: Date;
+  userId: string;
+  user: {
+    metadata: UserMetadata;
+  };
+}
+
+// Define the proposal type with included relations
+interface ProposalWithVotes {
+  id: number;
+  status: ProposalStatus;
+  proposalName: string;
+  abstract: string;
+  createdAt: Date;
+  user: {
+    metadata: UserMetadata;
+  };
+  deliberationReviewerVotes: ReviewerDeliberationVote[];
+  deliberationCommunityVotes: CommunityDeliberationVote[];
+  fundingRound: {
+    topic: {
+      reviewerGroups: {
+        reviewerGroup: {
+          members: Array<{ userId: string }>;
         };
-      };
+      }[];
     };
   };
-}>;
+}
 
 export class DeliberationService {
   constructor(private prisma: PrismaClient) {}
@@ -69,21 +85,31 @@ export class DeliberationService {
     const proposals = await this.prisma.proposal.findMany({
       where: {
         fundingRoundId,
-        status: 'DELIBERATION',
+        status: 'DELIBERATION' as ProposalStatus,
       },
       include: {
+        deliberationReviewerVotes: {
+          include: {
+            user: {
+              select: {
+                metadata: true,
+              },
+            },
+          },
+        },
+        deliberationCommunityVotes: {
+          include: {
+            user: {
+              select: {
+                metadata: true,
+              },
+            },
+          },
+        },
         user: {
           select: {
             metadata: true,
           },
-        },
-        deliberationCommunityVotes: {
-          where: { userId },
-          take: 1,
-        },
-        deliberationReviewerVotes: {
-          where: { userId },
-          take: 1,
         },
         fundingRound: {
           include: {
@@ -103,86 +129,67 @@ export class DeliberationService {
           },
         },
       },
-      orderBy: {
-        createdAt: 'desc',
-      },
-    });
+    }) as unknown as ProposalWithVotes[];
 
-    // Get reviewer deliberations separately
-    const reviewerDeliberations = await this.prisma.reviewerDeliberationVote.findMany({
-      where: {
-        proposalId: {
-          in: proposals.map(p => p.id),
-        },
-      },
-      include: {
-        user: {
-          select: {
-            metadata: true,
-          },
-        },
-      },
-      orderBy: {
-        createdAt: 'desc',
-      },
-    });
-
-    // Check if user is a reviewer
-    const isReviewer = fundingRound.topic.reviewerGroups.some(
-      group => group.reviewerGroup.members.length > 0
-    );
-
-    // Transform the data for the frontend
+    // Transform the proposals
     const transformedProposals = proposals.map(proposal => {
-      const userReviewerVote = proposal.deliberationReviewerVotes[0];
-      const userCommunityVote = proposal.deliberationCommunityVotes[0];
-      
-      // Use reviewer vote if exists, otherwise use community vote
-      const userDeliberation = userReviewerVote 
-        ? {
-            feedback: userReviewerVote.feedback,
-            recommendation: userReviewerVote.recommendation,
-            createdAt: userReviewerVote.createdAt,
-            isReviewerVote: true,
-          }
-        : userCommunityVote
-          ? {
-              feedback: userCommunityVote.feedback,
-              recommendation: undefined,
-              createdAt: userCommunityVote.createdAt,
-              isReviewerVote: false,
-            }
-          : null;
+      // Get reviewer comments
+      const reviewerComments = proposal.deliberationReviewerVotes.map(vote => ({
+        id: vote.id,
+        feedback: vote.feedback,
+        recommendation: vote.recommendation,
+        createdAt: vote.createdAt,
+        reviewer: {
+          username: (vote.user?.metadata as UserMetadata)?.username || 'Unknown',
+        },
+        isReviewerComment: true,
+      }));
+
+      // Get community comments
+      const communityComments = proposal.deliberationCommunityVotes.map(vote => ({
+        id: vote.id,
+        feedback: vote.feedback,
+        createdAt: vote.createdAt,
+        isReviewerComment: false,
+      }));
+
+      // Combine and sort all comments
+      const allComments = [...reviewerComments, ...communityComments].sort(
+        (a, b) => b.createdAt.getTime() - a.createdAt.getTime()
+      );
+
+      // Find user's own deliberation
+      const userReviewerVote = proposal.deliberationReviewerVotes.find(
+        vote => vote.userId === userId
+      );
+      const userCommunityVote = proposal.deliberationCommunityVotes.find(
+        vote => vote.userId === userId
+      );
+      const userDeliberation = userReviewerVote || userCommunityVote;
 
       return {
         id: proposal.id,
         proposalName: proposal.proposalName,
         abstract: proposal.abstract,
         submitter: (proposal.user?.metadata as UserMetadata)?.username || 'Unknown',
-        isReviewerEligible: isReviewer,
-        userDeliberation,
-        hasVoted: Boolean(userReviewerVote || userCommunityVote),
-        reviewerComments: reviewerDeliberations
-          .filter(d => d.proposalId === proposal.id)
-          .map(comment => ({
-            id: comment.id,
-            feedback: comment.feedback,
-            recommendation: comment.recommendation,
-            createdAt: comment.createdAt,
-            reviewer: {
-              username: (comment.user?.metadata as UserMetadata)?.username || 'Unknown',
-            },
-          })),
+        isReviewerEligible: fundingRound.topic.reviewerGroups.some(
+          group => group.reviewerGroup.members.length > 0
+        ),
+        reviewerComments: allComments,
+        userDeliberation: userDeliberation ? {
+          feedback: userDeliberation.feedback,
+          recommendation: 'recommendation' in userDeliberation ? userDeliberation.recommendation : undefined,
+          createdAt: userDeliberation.createdAt,
+          isReviewerVote: 'recommendation' in userDeliberation
+        } : undefined,
+        hasVoted: Boolean(userDeliberation),
         createdAt: proposal.createdAt,
       };
     });
 
-    // Calculate pending count
-    const pendingCount = transformedProposals.filter(p => !p.hasVoted).length;
-
     return {
       proposals: transformedProposals,
-      pendingCount,
+      pendingCount: transformedProposals.filter(p => !p.hasVoted).length,
       totalCount: transformedProposals.length,
     };
   }

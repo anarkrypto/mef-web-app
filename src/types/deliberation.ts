@@ -3,11 +3,12 @@ import type { ConsiderationProposal } from './consideration'
 export interface DeliberationComment {
   id: string;
   feedback: string;
-  recommendation: boolean;
+  recommendation?: boolean;
   createdAt: Date;
-  reviewer: {
+  reviewer?: {
     username: string;
   };
+  isReviewerComment: boolean;
 }
 
 export interface DeliberationVote {
