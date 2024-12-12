@@ -1,11 +1,23 @@
 import { useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
+import { ProposalStatus } from '@prisma/client';
+
+interface VoteResponse {
+  proposal: {
+    id: number;
+    status: ProposalStatus;
+  };
+}
 
 interface UseConsiderationVoteProps {
   fundingRoundId: string;
+  onVoteSuccess: (proposalId: number, newStatus: ProposalStatus) => void;
 }
 
-export function useConsiderationVote({ fundingRoundId }: UseConsiderationVoteProps) {
+export function useConsiderationVote({ 
+  fundingRoundId, 
+  onVoteSuccess 
+}: UseConsiderationVoteProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
@@ -29,12 +41,17 @@ export function useConsiderationVote({ fundingRoundId }: UseConsiderationVotePro
         throw new Error(data.error || 'Failed to submit vote');
       }
 
+      const data: VoteResponse = await response.json();
+      
+      // Call the callback with the updated status
+      onVoteSuccess(proposalId, data.proposal.status);
+
       toast({
         title: "Vote submitted",
         description: "Your vote has been recorded successfully.",
       });
 
-      return await response.json();
+      return data;
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to submit vote';
       setError(message);

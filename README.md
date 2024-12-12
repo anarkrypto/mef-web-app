@@ -68,7 +68,19 @@ DATABASE_URL="postgresql://postgres:your_secure_password_here@db:5432/govbot?sch
 
 # OCV API, a.k.a. 'Granola OCV'
 NEXT_PUBLIC_OCV_API_BASE_URL=http://on-chain-voting-server:8080
+
+CONSIDERATION_REVIEWER_APPROVAL_THRESHOLD=2 # Minimum number of reviewer approvals needed for a proposal to move to deliberation. Default: 2
 ```
+
+#### Proposal Review Configuration
+
+- `CONSIDERATION_REVIEWER_APPROVAL_THRESHOLD` (default: 2)
+  - Defines the minimum number of reviewer approvals required for a proposal to move from consideration to deliberation phase
+  - Must be a positive integer (>= 1)
+  - If invalid value is provided, defaults to 2
+  - Example values:
+    - `CONSIDERATION_REVIEWER_APPROVAL_THRESHOLD=2` (default, requires 2 approvals)
+    - `CONSIDERATION_REVIEWER_APPROVAL_THRESHOLD=3` (requires 3 approvals)
 
 ### Development with Docker
 

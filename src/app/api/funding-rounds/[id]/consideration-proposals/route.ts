@@ -47,10 +47,13 @@ export async function GET(
       )
     );
 
+    // Get both consideration and deliberation proposals for this funding round
     const proposals = await prisma.proposal.findMany({
       where: {
         fundingRoundId,
-        status: 'CONSIDERATION',
+        status: {
+          in: ['CONSIDERATION', 'DELIBERATION']
+        },
       },
       include: {
         user: {
@@ -116,14 +119,22 @@ export async function GET(
         } : undefined,
         createdAt: p.createdAt,
         isReviewerEligible: isReviewer,
-        voteStats: voteCounts || { approved: 0, rejected: 0, total: 0 }
+        voteStats: voteCounts || { approved: 0, rejected: 0, total: 0 },
+        currentPhase: p.status // Add the current phase to distinguish between CONSIDERATION and DELIBERATION
       };
     });
 
-    // Sort proposals: pending first, then voted
+    // Sort proposals: 
+    // 1. Consideration phase pending first
+    // 2. Consideration phase voted
+    // 3. Deliberation phase
     const sortedProposals = formattedProposals.sort((a, b) => {
-      if (a.status === 'pending' && b.status !== 'pending') return -1;
-      if (a.status !== 'pending' && b.status === 'pending') return 1;
+      if (a.currentPhase === 'CONSIDERATION' && b.currentPhase === 'DELIBERATION') return -1;
+      if (a.currentPhase === 'DELIBERATION' && b.currentPhase === 'CONSIDERATION') return 1;
+      if (a.currentPhase === b.currentPhase) {
+        if (a.status === 'pending' && b.status !== 'pending') return -1;
+        if (a.status !== 'pending' && b.status === 'pending') return 1;
+      }
       return 0;
     });
 
