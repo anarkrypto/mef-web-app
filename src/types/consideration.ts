@@ -1,3 +1,5 @@
+import { ProposalStatus } from '@prisma/client';
+
 export interface ConsiderationVoteStats {
   approved: number;
   rejected: number;
@@ -19,5 +21,6 @@ export interface ConsiderationProposal {
   isReviewerEligible?: boolean;
   voteStats: ConsiderationVoteStats;
   createdAt: Date;
+  currentPhase: ProposalStatus;
 }
  
