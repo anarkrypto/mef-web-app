@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo, useCallback } from 'react'
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card"
@@ -11,14 +11,9 @@ import { useConsiderationVote } from '@/hooks/use-consideration-vote'
 import Link from 'next/link'
 import { cn } from '@/lib/utils'
 import { Label } from "@/components/ui/label"
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip"
 import type { ConsiderationProposal } from '@/types/consideration';
 import { OCVVoteButton } from "@/components/web3/OCVVoteButton"
+import { ProposalStatus } from '@prisma/client';
 
 interface Props {
   fundingRoundId: string;
@@ -55,7 +50,21 @@ export function ConsiderationProposalList({ fundingRoundId, fundingRoundName }: 
   const [decisions, setDecisions] = useState<Record<number, string>>({});
   const [newDecision, setNewDecision] = useState<Record<number, string>>({});
   const [expanded, setExpanded] = useState<ExpandedState>({});
-  const { submitVote, isLoading: isSubmitting } = useConsiderationVote({ fundingRoundId });
+
+  const handleVoteSuccess = useCallback((proposalId: number, newStatus: ProposalStatus) => {
+    setProposals(prevProposals => 
+      prevProposals.map(proposal => 
+        proposal.id === proposalId 
+          ? { ...proposal, currentPhase: newStatus }
+          : proposal
+      )
+    );
+  }, [setProposals]);
+
+  const { submitVote, isLoading: isVoting } = useConsiderationVote({ 
+    fundingRoundId, 
+    onVoteSuccess: handleVoteSuccess 
+  });
 
   useEffect(() => {
     proposals.forEach((proposal: ConsiderationProposal) => {
@@ -202,14 +211,14 @@ export function ConsiderationProposalList({ fundingRoundId, fundingRoundName }: 
           variant="default"
           className="bg-green-600 hover:bg-green-700"
           onClick={() => submitNewDecision(proposal.id, 'APPROVED')}
-          disabled={isSubmitting}
+          disabled={isVoting}
         >
           ✅ Approve for Deliberation
         </Button>
         <Button
           variant="destructive"
           onClick={() => submitNewDecision(proposal.id, 'REJECTED')}
-          disabled={isSubmitting}
+          disabled={isVoting}
         >
           ❌ Reject for Deliberation
         </Button>
@@ -294,6 +303,13 @@ export function ConsiderationProposalList({ fundingRoundId, fundingRoundName }: 
     );
   };
 
+  // Group proposals by phase
+  const groupedProposals = useMemo(() => {
+    const considerationProposals = proposals.filter(p => p.currentPhase === 'CONSIDERATION');
+    const deliberationProposals = proposals.filter(p => p.currentPhase === 'DELIBERATION');
+    return { considerationProposals, deliberationProposals };
+  }, [proposals]);
+
   if (loading) {
     return (
       <div className="flex items-center justify-center p-8">
@@ -315,146 +331,322 @@ export function ConsiderationProposalList({ fundingRoundId, fundingRoundName }: 
         </div>
 
         <div className="space-y-6">
-          {proposals.map((proposal: ConsiderationProposal) => (
-            <Card key={proposal.id} className={cn(
-              "hover:bg-muted/50 transition-colors",
-              proposal.status === 'approved' && "border-green-500/20 bg-green-50/50 dark:bg-green-900/10",
-              proposal.status === 'rejected' && "border-red-500/20 bg-red-50/50 dark:bg-red-900/10"
-            )}>
-              <CardHeader>
-                <div className="flex items-start justify-between">
-                  <div>
-                    <CardTitle className="text-2xl">{proposal.proposalName}</CardTitle>
-                    <CardDescription>
-                      👤 Submitted by {proposal.submitter}
-                    </CardDescription>
-                    <div className="mt-4 space-y-2">
-                      <div className="flex items-center justify-between text-sm">
-                        <div className="flex gap-4">
-                          <span className="text-green-600 flex items-center gap-1">
-                            <span>✓ {proposal.voteStats.approved}</span>
-                            {proposal.voteStats.total > 0 && (
-                              <span className="text-muted-foreground">
-                                ({Math.round((proposal.voteStats.approved / proposal.voteStats.total) * 100)}%)
+          {/* Consideration Phase Proposals */}
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <h2 className="text-2xl font-bold">Consideration Phase</h2>
+              <span className="text-muted-foreground">
+                {groupedProposals.considerationProposals.length} proposals
+              </span>
+            </div>
+            <div className="grid gap-4">
+              {groupedProposals.considerationProposals.map((proposal) => (
+                <Card key={proposal.id} className={cn(
+                  "transition-all duration-200",
+                  proposal.status === 'approved' && "border-green-500/20 bg-green-50/50 dark:bg-green-900/10",
+                  proposal.status === 'rejected' && "border-red-500/20 bg-red-50/50 dark:bg-red-900/10"
+                )}>
+                  <CardHeader>
+                    <div className="flex items-start justify-between">
+                      <div>
+                        <CardTitle className="text-2xl">{proposal.proposalName}</CardTitle>
+                        <CardDescription>
+                          👤 Submitted by {proposal.submitter}
+                        </CardDescription>
+                        <div className="mt-4 space-y-2">
+                          <div className="flex items-center justify-between text-sm">
+                            <div className="flex gap-4">
+                              <span className="text-green-600 flex items-center gap-1">
+                                <span>✓ {proposal.voteStats.approved}</span>
+                                {proposal.voteStats.total > 0 && (
+                                  <span className="text-muted-foreground">
+                                    ({Math.round((proposal.voteStats.approved / proposal.voteStats.total) * 100)}%)
+                                  </span>
+                                )}
                               </span>
-                            )}
-                          </span>
-                          <span className="text-red-600 flex items-center gap-1">
-                            <span>✗ {proposal.voteStats.rejected}</span>
-                            {proposal.voteStats.total > 0 && (
-                              <span className="text-muted-foreground">
-                                ({Math.round((proposal.voteStats.rejected / proposal.voteStats.total) * 100)}%)
+                              <span className="text-red-600 flex items-center gap-1">
+                                <span>✗ {proposal.voteStats.rejected}</span>
+                                {proposal.voteStats.total > 0 && (
+                                  <span className="text-muted-foreground">
+                                    ({Math.round((proposal.voteStats.rejected / proposal.voteStats.total) * 100)}%)
+                                  </span>
+                                )}
                               </span>
-                            )}
-                          </span>
+                            </div>
+                            <span className="text-muted-foreground">
+                              {proposal.voteStats.total} total {proposal.voteStats.total === 1 ? 'vote' : 'votes'}
+                            </span>
+                          </div>
+                          <div className="relative h-2 overflow-hidden rounded-full bg-muted">
+                            <div className="absolute inset-0 flex w-full">
+                              <div 
+                                className="bg-green-500 transition-all duration-300" 
+                                style={{ 
+                                  width: `${proposal.voteStats.total > 0 
+                                    ? (proposal.voteStats.approved / proposal.voteStats.total) * 100 
+                                    : 0}%` 
+                                }} 
+                              />
+                              <div 
+                                className="bg-red-500 transition-all duration-300" 
+                                style={{ 
+                                  width: `${proposal.voteStats.total > 0 
+                                    ? (proposal.voteStats.rejected / proposal.voteStats.total) * 100 
+                                    : 0}%` 
+                                }} 
+                              />
+                            </div>
+                          </div>
                         </div>
-                        <span className="text-muted-foreground">
-                          {proposal.voteStats.total} total {proposal.voteStats.total === 1 ? 'vote' : 'votes'}
-                        </span>
                       </div>
-                      <div className="relative h-2 overflow-hidden rounded-full bg-muted">
-                        <div className="absolute inset-0 flex w-full">
-                          <div 
-                            className="bg-green-500 transition-all duration-300" 
-                            style={{ 
-                              width: `${proposal.voteStats.total > 0 
-                                ? (proposal.voteStats.approved / proposal.voteStats.total) * 100 
-                                : 0}%` 
-                            }} 
-                          />
-                          <div 
-                            className="bg-red-500 transition-all duration-300" 
-                            style={{ 
-                              width: `${proposal.voteStats.total > 0 
-                                ? (proposal.voteStats.rejected / proposal.voteStats.total) * 100 
-                                : 0}%` 
-                            }} 
-                          />
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                  {proposal.status !== 'pending' && (
-                    <Badge variant={proposal.status === 'approved' ? 'default' : 'destructive'}>
-                      {proposal.status === 'approved' ? '✅ Approved' : '❌ Rejected'}
-                    </Badge>
-                  )}
-                </div>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div>
-                  <h3 className="text-xl font-semibold mb-2">Abstract</h3>
-                  {expanded[proposal.id] ? (
-                    <>
-                      <p className="text-muted-foreground mb-4">{proposal.abstract}</p>
-                      <Link
-                        href={`/proposals/${proposal.id}`}
-                        className="text-primary hover:underline"
-                      >
-                        View full proposal details ↗
-                      </Link>
-                    </>
-                  ) : (
-                    <p className="text-muted-foreground line-clamp-3">{proposal.abstract}</p>
-                  )}
-                </div>
-
-                {renderFeedbackSection(proposal)}
-              </CardContent>
-              <CardFooter className="flex justify-between items-center">
-                <Button 
-                  variant="ghost" 
-                  className="gap-2"
-                  onClick={() => toggleExpanded(proposal.id)}
-                >
-                  {expanded[proposal.id] ? (
-                    <>
-                      See less
-                      <ChevronDown className="h-4 w-4" />
-                    </>
-                  ) : (
-                    <>
-                      See more
-                      <ChevronRight className="h-4 w-4" />
-                    </>
-                  )}
-                </Button>
-
-                <div className="flex items-center gap-4">
-                  {reviewStates[proposal.id] === 'editing' ? (
-                    <>
-                      <Button
-                        variant="outline"
-                        onClick={() => cancelEdit(proposal.id)}
-                      >
-                        ❌ Cancel
-                      </Button>
-                      {renderEditButtons(proposal)}
-                    </>
-                  ) : reviewStates[proposal.id] === 'decided' ? (
-                    <>
-                      {proposal.isReviewerEligible && (
-                        <Button
-                          variant="ghost"
-                          className="underline"
-                          onClick={() => startEdit(proposal.id)}
-                        >
-                          ✏️ Edit Decision
-                        </Button>
+                      {proposal.status !== 'pending' && (
+                        <Badge variant={proposal.status === 'approved' ? 'default' : 'destructive'}>
+                          {proposal.status === 'approved' ? '✅ Approved' : '❌ Rejected'}
+                        </Badge>
                       )}
-                      <Badge variant={proposal.status === 'approved' ? 'default' : 'destructive'}>
-                        {proposal.status === 'approved' ? '✅ Approved' : '❌ Rejected'} for Deliberation
-                      </Badge>
-                    </>
-                  ) : (
-                    <>
-                      {renderVoteButtons(proposal)}
-                    </>
-                  )}
+                    </div>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div>
+                      <h3 className="text-xl font-semibold mb-2">Abstract</h3>
+                      {expanded[proposal.id] ? (
+                        <>
+                          <p className="text-muted-foreground mb-4">{proposal.abstract}</p>
+                          <Link
+                            href={`/proposals/${proposal.id}`}
+                            className="text-primary hover:underline"
+                          >
+                            View full proposal details ↗
+                          </Link>
+                        </>
+                      ) : (
+                        <p className="text-muted-foreground line-clamp-3">{proposal.abstract}</p>
+                      )}
+                    </div>
+
+                    {renderFeedbackSection(proposal)}
+                  </CardContent>
+                  <CardFooter className="flex justify-between items-center">
+                    <Button 
+                      variant="ghost" 
+                      className="gap-2"
+                      onClick={() => toggleExpanded(proposal.id)}
+                    >
+                      {expanded[proposal.id] ? (
+                        <>
+                          See less
+                          <ChevronDown className="h-4 w-4" />
+                        </>
+                      ) : (
+                        <>
+                          See more
+                          <ChevronRight className="h-4 w-4" />
+                        </>
+                      )}
+                    </Button>
+
+                    <div className="flex items-center gap-4">
+                      {reviewStates[proposal.id] === 'editing' ? (
+                        <>
+                          <Button
+                            variant="outline"
+                            onClick={() => cancelEdit(proposal.id)}
+                          >
+                            ❌ Cancel
+                          </Button>
+                          {renderEditButtons(proposal)}
+                        </>
+                      ) : reviewStates[proposal.id] === 'decided' ? (
+                        <>
+                          {proposal.isReviewerEligible && (
+                            <Button
+                              variant="ghost"
+                              className="underline"
+                              onClick={() => startEdit(proposal.id)}
+                            >
+                              ✏️ Edit Decision
+                            </Button>
+                          )}
+                          <Badge variant={proposal.status === 'approved' ? 'default' : 'destructive'}>
+                            {proposal.status === 'approved' ? '✅ Approved' : '❌ Rejected'} for Deliberation
+                          </Badge>
+                        </>
+                      ) : (
+                        <>
+                          {renderVoteButtons(proposal)}
+                        </>
+                      )}
+                    </div>
+                  </CardFooter>
+                </Card>
+              ))}
+            </div>
+          </div>
+
+          {/* Deliberation Phase Proposals */}
+          {groupedProposals.deliberationProposals.length > 0 && (
+            <div className="space-y-4 pt-8 border-t">
+              <div className="flex items-center justify-between">
+                <div className="space-y-1">
+                  <h2 className="text-2xl font-bold">Moving to Deliberation Phase</h2>
+                  <p className="text-muted-foreground">
+                    These proposals have reached the required approval threshold and are moving to deliberation.
+                    Reviewers can still modify their consideration votes.
+                  </p>
                 </div>
-              </CardFooter>
-            </Card>
-          ))}
+                <span className="text-muted-foreground">
+                  {groupedProposals.deliberationProposals.length} proposals
+                </span>
+              </div>
+              <div className="grid gap-4">
+                {groupedProposals.deliberationProposals.map((proposal) => (
+                  <Card key={proposal.id} className={cn(
+                    "transition-all duration-200 border-purple-500/20 bg-purple-50/50 dark:bg-purple-900/10",
+                    "relative overflow-hidden"
+                  )}>
+                    <div className="absolute top-4 right-4">
+                      <Badge variant="secondary" className="bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-100">
+                        ✨ Moving to Deliberation
+                      </Badge>
+                    </div>
+                    
+                    <CardHeader className="pt-12">
+                      <div className="flex items-start justify-between">
+                        <div>
+                          <CardTitle className="text-2xl">{proposal.proposalName}</CardTitle>
+                          <CardDescription>
+                            👤 Submitted by {proposal.submitter}
+                          </CardDescription>
+                          <div className="mt-4 space-y-2">
+                            <div className="flex items-center justify-between text-sm">
+                              <div className="flex gap-4">
+                                <span className="text-green-600 flex items-center gap-1">
+                                  <span>✓ {proposal.voteStats.approved}</span>
+                                  {proposal.voteStats.total > 0 && (
+                                    <span className="text-muted-foreground">
+                                      ({Math.round((proposal.voteStats.approved / proposal.voteStats.total) * 100)}%)
+                                    </span>
+                                  )}
+                                </span>
+                                <span className="text-red-600 flex items-center gap-1">
+                                  <span>✗ {proposal.voteStats.rejected}</span>
+                                  {proposal.voteStats.total > 0 && (
+                                    <span className="text-muted-foreground">
+                                      ({Math.round((proposal.voteStats.rejected / proposal.voteStats.total) * 100)}%)
+                                    </span>
+                                  )}
+                                </span>
+                              </div>
+                              <span className="text-muted-foreground">
+                                {proposal.voteStats.total} total {proposal.voteStats.total === 1 ? 'vote' : 'votes'}
+                              </span>
+                            </div>
+                            <div className="relative h-2 overflow-hidden rounded-full bg-muted">
+                              <div className="absolute inset-0 flex w-full">
+                                <div 
+                                  className="bg-green-500 transition-all duration-300" 
+                                  style={{ 
+                                    width: `${proposal.voteStats.total > 0 
+                                      ? (proposal.voteStats.approved / proposal.voteStats.total) * 100 
+                                      : 0}%` 
+                                  }} 
+                                />
+                                <div 
+                                  className="bg-red-500 transition-all duration-300" 
+                                  style={{ 
+                                    width: `${proposal.voteStats.total > 0 
+                                      ? (proposal.voteStats.rejected / proposal.voteStats.total) * 100 
+                                      : 0}%` 
+                                  }} 
+                                />
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                        {proposal.status !== 'pending' && (
+                          <Badge variant={proposal.status === 'approved' ? 'default' : 'destructive'}>
+                            {proposal.status === 'approved' ? '✅ Approved' : '❌ Rejected'}
+                          </Badge>
+                        )}
+                      </div>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      <div>
+                        <h3 className="text-xl font-semibold mb-2">Abstract</h3>
+                        {expanded[proposal.id] ? (
+                          <>
+                            <p className="text-muted-foreground mb-4">{proposal.abstract}</p>
+                            <Link
+                              href={`/proposals/${proposal.id}`}
+                              className="text-primary hover:underline"
+                            >
+                              View full proposal details ↗
+                            </Link>
+                          </>
+                        ) : (
+                          <p className="text-muted-foreground line-clamp-3">{proposal.abstract}</p>
+                        )}
+                      </div>
+
+                      {renderFeedbackSection(proposal)}
+                    </CardContent>
+                    <CardFooter className="flex justify-between items-center">
+                      <Button 
+                        variant="ghost" 
+                        className="gap-2"
+                        onClick={() => toggleExpanded(proposal.id)}
+                      >
+                        {expanded[proposal.id] ? (
+                          <>
+                            See less
+                            <ChevronDown className="h-4 w-4" />
+                          </>
+                        ) : (
+                          <>
+                            See more
+                            <ChevronRight className="h-4 w-4" />
+                          </>
+                        )}
+                      </Button>
+
+                      <div className="flex items-center gap-4">
+                        {reviewStates[proposal.id] === 'editing' ? (
+                          <>
+                            <Button
+                              variant="outline"
+                              onClick={() => cancelEdit(proposal.id)}
+                            >
+                              ❌ Cancel
+                            </Button>
+                            {renderEditButtons(proposal)}
+                          </>
+                        ) : reviewStates[proposal.id] === 'decided' ? (
+                          <>
+                            {proposal.isReviewerEligible && (
+                              <Button
+                                variant="ghost"
+                                className="underline"
+                                onClick={() => startEdit(proposal.id)}
+                              >
+                                ✏️ Edit Decision
+                              </Button>
+                            )}
+                            <Badge variant={proposal.status === 'approved' ? 'default' : 'destructive'}>
+                              {proposal.status === 'approved' ? '✅ Approved' : '❌ Rejected'} for Deliberation
+                            </Badge>
+                          </>
+                        ) : (
+                          <>
+                            {renderVoteButtons(proposal)}
+                          </>
+                        )}
+                      </div>
+                    </CardFooter>
+                  </Card>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </div>
