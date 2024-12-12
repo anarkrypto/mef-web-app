@@ -6,9 +6,7 @@ interface VoteResponse {
   proposal: {
     id: number;
     status: ProposalStatus;
-    // ... other fields
   };
-  // ... other fields
 }
 
 interface UseConsiderationVoteProps {

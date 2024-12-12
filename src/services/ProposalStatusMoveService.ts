@@ -2,9 +2,24 @@ import { PrismaClient, ProposalStatus, ConsiderationDecision, Proposal } from "@
 import { AppError } from "@/lib/errors";
 import logger from "@/logging";
 
+function parseMinReviewerApprovals(): number {
+  const DEFAULT_CONSIDERATION_REVIEWER_APPROVAL_THRESHOLD = 2;
+    const minApprovals = process.env.CONSIDERATION_REVIEWER_APPROVAL_THRESHOLD;
+
+    if (minApprovals !== undefined) {
+        const parsed = parseInt(minApprovals, 10);
+        if (isNaN(parsed) || parsed < 1) {
+            logger.warn(`Invalid CONSIDERATION_REVIEWER_APPROVAL_THRESHOLD value: ${minApprovals}, using default: ${DEFAULT_CONSIDERATION_REVIEWER_APPROVAL_THRESHOLD}`);
+            return DEFAULT_CONSIDERATION_REVIEWER_APPROVAL_THRESHOLD;
+        }
+        return parsed;
+    }
+    return DEFAULT_CONSIDERATION_REVIEWER_APPROVAL_THRESHOLD;
+}
+
 class Constants {
     static Consideration = {
-        minReviewerApprovals: 2
+        minReviewerApprovals: parseMinReviewerApprovals()
     }
 }
 
