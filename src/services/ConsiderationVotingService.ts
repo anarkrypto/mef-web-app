@@ -1,6 +1,6 @@
 // src/services/ConsiderationVotingService.ts
 
-import { PrismaClient, ConsiderationDecision, ProposalStatus, ConsiderationVote } from "@prisma/client";
+import { PrismaClient, ConsiderationDecision, ProposalStatus, ConsiderationVote, Prisma } from "@prisma/client";
 import { ProposalStatusMoveService } from "./ProposalStatusMoveService";
 import { FundingRoundService } from "./FundingRoundService";
 import logger from "@/logging";
@@ -56,7 +56,7 @@ const voteIncludeQuery = {
       metadata: true
     }
   }
-} as const;
+} satisfies Prisma.ConsiderationVoteInclude;
 
 export class ConsiderationVotingService {
   private statusMoveService: ProposalStatusMoveService;
@@ -86,24 +86,48 @@ export class ConsiderationVotingService {
   ): Promise<VoteEligibility> {
     const fundingRound = await this.fundingRoundService.getFundingRoundById(fundingRoundId);
     
-    if (!fundingRound || fundingRound === null) {
+    if (!fundingRound) {
       return { eligible: false, message: "Funding round not found" };
     }
 
-    // Ensure all required phases exist
-    if (!fundingRound.submissionPhase || 
-        !fundingRound.considerationPhase || 
-        !fundingRound.deliberationPhase || 
-        !fundingRound.votingPhase) {
+    // Ensure all required phases exist and have proper dates
+    if (!fundingRound.submissionPhase?.startDate || 
+        !fundingRound.submissionPhase?.endDate ||
+        !fundingRound.considerationPhase?.startDate || 
+        !fundingRound.considerationPhase?.endDate ||
+        !fundingRound.deliberationPhase?.startDate || 
+        !fundingRound.deliberationPhase?.endDate ||
+        !fundingRound.votingPhase?.startDate || 
+        !fundingRound.votingPhase?.endDate) {
       return { 
         eligible: false, 
         message: "Funding round is not properly configured" 
       };
     }
 
+    // Now we can safely pass the funding round with its phases
+    const currentPhase = this.fundingRoundService.getCurrentPhase({
+      ...fundingRound,
+      submissionPhase: {
+        startDate: fundingRound.submissionPhase.startDate,
+        endDate: fundingRound.submissionPhase.endDate
+      },
+      considerationPhase: {
+        startDate: fundingRound.considerationPhase.startDate,
+        endDate: fundingRound.considerationPhase.endDate
+      },
+      deliberationPhase: {
+        startDate: fundingRound.deliberationPhase.startDate,
+        endDate: fundingRound.deliberationPhase.endDate
+      },
+      votingPhase: {
+        startDate: fundingRound.votingPhase.startDate,
+        endDate: fundingRound.votingPhase.endDate
+      }
+    });
+
     // Check current phase
-    const currentPhase = this.fundingRoundService.getCurrentPhase(fundingRound);
-    if (currentPhase !== 'consideration') {
+    if (currentPhase.toUpperCase() !== ProposalStatus.CONSIDERATION) {
       return { 
         eligible: false, 
         message: "Voting is only allowed during the consideration phase" 
@@ -120,8 +144,8 @@ export class ConsiderationVotingService {
     }
 
     // Allow voting if proposal is in CONSIDERATION or DELIBERATION status
-    if (proposal.status !== ProposalStatus.CONSIDERATION && 
-        proposal.status !== ProposalStatus.DELIBERATION) {
+    if (proposal.status.toUpperCase() !== ProposalStatus.CONSIDERATION && 
+        proposal.status.toUpperCase() !== ProposalStatus.DELIBERATION) {
       return { 
         eligible: false, 
         message: "Proposal is not eligible for consideration votes" 
@@ -170,20 +194,37 @@ export class ConsiderationVotingService {
     proposalId: number, 
     voterId: string
   ): Promise<VoteQueryResult | null> {
-    return this.prisma.considerationVote.findUnique({
+    const vote = await this.prisma.considerationVote.findUnique({
       where: {
         proposalId_voterId: { proposalId, voterId }
       },
       include: voteIncludeQuery
     });
+
+    if (!vote) return null;
+
+    return {
+      ...vote,
+      proposal: {
+        ...vote.proposal,
+        user: {
+          metadata: vote.proposal.user.metadata as Prisma.JsonValue as UserMetadata
+        }
+      },
+      voter: {
+        metadata: vote.voter.metadata as Prisma.JsonValue as UserMetadata
+      }
+    };
   }
 
   private async createOrUpdateVote(
     input: VoteInput,
     existingVote: VoteQueryResult | null
   ): Promise<VoteQueryResult> {
+    let returnValue;
+
     if (existingVote) {
-      return this.prisma.considerationVote.update({
+      returnValue = await this.prisma.considerationVote.update({
         where: {
           proposalId_voterId: {
             proposalId: input.proposalId,
@@ -196,17 +237,30 @@ export class ConsiderationVotingService {
         },
         include: voteIncludeQuery
       });
+    } else {
+      returnValue = await this.prisma.considerationVote.create({
+        data: {
+          proposalId: input.proposalId,
+          voterId: input.voterId,
+          decision: input.decision,
+          feedback: input.feedback,
+        },
+        include: voteIncludeQuery
+      });
     }
 
-    return this.prisma.considerationVote.create({
-      data: {
-        proposalId: input.proposalId,
-        voterId: input.voterId,
-        decision: input.decision,
-        feedback: input.feedback,
+    return {
+      ...returnValue,
+      proposal: {
+        ...returnValue.proposal,
+        user: {
+          metadata: returnValue.proposal.user.metadata as Prisma.JsonValue as UserMetadata
+        }
       },
-      include: voteIncludeQuery
-    });
+      voter: {
+        metadata: returnValue.voter.metadata as Prisma.JsonValue as UserMetadata
+      }
+    };
   }
 
   private async refreshVoteData(
@@ -224,6 +278,17 @@ export class ConsiderationVotingService {
       `Vote refreshed for proposal ${proposalId}. Current status: ${vote.proposal.status}`
     );
 
-    return vote;
+    return {
+      ...vote,
+      proposal: {
+        ...vote.proposal,
+        user: {
+          metadata: vote.proposal.user.metadata as UserMetadata
+        }
+      },
+      voter: {
+        metadata: vote.voter.metadata as UserMetadata
+      }
+    };
   }
 }
