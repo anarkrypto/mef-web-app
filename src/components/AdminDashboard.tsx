@@ -2,7 +2,7 @@
 
 import { Button } from "@/components/ui/button"
 import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Users, MessageSquare, Coins, FileCheck, Vote } from 'lucide-react'
+import { Users, MessageSquare, Coins, FileCheck, Vote, Activity } from 'lucide-react'
 import Link from "next/link"
 
 export function AdminDashboardComponent() {
@@ -36,6 +36,12 @@ export function AdminDashboardComponent() {
       description: "Count Votes for a Funding Round..",
       icon: <Vote className="h-5 w-5" />,
       href: "/admin/votes"
+    },
+    {
+      title: "Worker Heartbeats",
+      description: "Monitor background job statuses",
+      icon: <Activity className="h-5 w-5" />,
+      href: "/admin/worker-heartbeats"
     }
   ]
 

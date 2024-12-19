@@ -1,0 +1,303 @@
+import logger from '@/logging';
+import dotenv from "dotenv";
+import path from "path";
+import readline from 'readline';
+
+// Try to load .env file
+try {
+  const envPath = path.resolve(process.cwd(), ".env");
+  dotenv.config({ path: envPath });
+} catch (error) {
+  logger.warn("\x1b[33mNo .env file found, using environment variables\x1b[0m");
+}
+
+// Validate required env vars
+const DISCOURSE_API_KEY = process.env.DISCOURSE_API_KEY;
+const DISCOURSE_BASE_URL = 'https://forums.minaprotocol.com';
+
+if (!DISCOURSE_API_KEY) {
+  logger.error("Missing required environment variable: DISCOURSE_API_KEY");
+  process.exit(1);
+}
+
+// ANSI color codes from toggle-admin-status.ts
+const colors = {
+  reset: "\x1b[0m",
+  bright: "\x1b[1m",
+  dim: "\x1b[2m",
+  red: "\x1b[31m",
+  green: "\x1b[32m",
+  yellow: "\x1b[33m",
+  blue: "\x1b[34m",
+  cyan: "\x1b[36m",
+  gray: "\x1b[90m",
+};
+
+// Create readline interface
+const rl = readline.createInterface({
+  input: process.stdin,
+  output: process.stdout
+});
+
+// Promisify readline question
+const question = (query: string): Promise<string> => {
+  return new Promise((resolve) => {
+    rl.question(query, resolve);
+  });
+};
+
+// API client for Discourse
+class DiscourseClient {
+  private headers: HeadersInit;
+
+  constructor() {
+    this.headers = {
+      'Api-Key': DISCOURSE_API_KEY!,
+      'Api-Username': 'system', // 'system' for API-only operations, as per docs
+      'Accept': 'application/json'
+    };
+  }
+
+  async createTopic(categoryId: number, title: string, raw: string): Promise<any> {
+    const response = await fetch(`${DISCOURSE_BASE_URL}/posts.json`, {
+      method: 'POST',
+      headers: this.headers,
+      body: JSON.stringify({
+        title,
+        raw,
+        category: categoryId
+      })
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(`Failed to create topic: ${JSON.stringify(error)}`);
+    }
+
+    return response.json();
+  }
+
+  async createPost(topicId: number, raw: string): Promise<any> {
+    const response = await fetch(`${DISCOURSE_BASE_URL}/posts.json`, {
+      method: 'POST',
+      headers: this.headers,
+      body: JSON.stringify({
+        topic_id: topicId,
+        raw
+      })
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(`Failed to create post: ${JSON.stringify(error)}`);
+    }
+
+    return response.json();
+  }
+
+  async updatePost(postId: number, raw: string): Promise<any> {
+    const response = await fetch(`${DISCOURSE_BASE_URL}/posts/${postId}.json`, {
+      method: 'PUT',
+      headers: this.headers,
+      body: JSON.stringify({
+        post: { raw }
+      })
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(`Failed to update post: ${JSON.stringify(error)}`);
+    }
+
+    return response.json();
+  }
+
+  async getCategories(): Promise<any> {
+    const response = await fetch(`${DISCOURSE_BASE_URL}/categories.json?include_subcategories=true`, {
+      headers: {
+        'Accept': 'application/json'
+      }
+    });
+
+    console.log(response);
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(`Failed to fetch categories: ${JSON.stringify(error)}`);
+    }
+
+    return response.json();
+  }
+
+  async testConnection(): Promise<void> {
+    console.log('\n🔍 Testing API connection and permissions...');
+    
+    try {
+      // Test 1: Basic connection and authentication
+      console.log('\n1️⃣ Testing basic connection and authentication...');
+      const response = await fetch(`${DISCOURSE_BASE_URL}/latest.json`, {
+        headers: this.headers
+      });
+
+      if (!response.ok) {
+        throw new Error(`Connection failed: ${response.status} ${response.statusText}`);
+      }
+      console.log(`${colors.green}✓${colors.reset} Basic connection successful`);
+
+      // Test 2: Categories access (requires read permissions)
+      console.log('\n2️⃣ Testing categories access...');
+      const categoriesResponse = await fetch(`${DISCOURSE_BASE_URL}/categories.json`, {
+        headers: {
+          'Accept': 'application/json'
+        }
+      });
+
+      if (!categoriesResponse.ok) {
+        throw new Error(`Categories access failed: ${categoriesResponse.status} ${categoriesResponse.statusText}`);
+      }
+      console.log(`${colors.green}✓${colors.reset} Categories access successful`);
+
+      // Test 3: Post creation permissions (dry run)
+      console.log('\n3️⃣ Testing post creation permissions...');
+      const createResponse = await fetch(`${DISCOURSE_BASE_URL}/posts.json`, {
+        method: 'POST',
+        headers: this.headers,
+        body: JSON.stringify({
+          title: 'API Test',
+          raw: 'API test post - please ignore',
+          category: 1
+        })
+      });
+
+      if (createResponse.status === 403) {
+        console.log(`${colors.red}✗${colors.reset} Post creation permission denied`);
+      } else if (createResponse.ok) {
+        console.log(`${colors.green}✓${colors.reset} Post creation permission granted`);
+        // If a test post was created, we should delete it
+        const result = await createResponse.json();
+        console.log(result);
+        if (result.id) {
+          await this.deletePost(result.id);
+        }
+      }
+
+      console.log('\n📋 API Configuration:');
+      console.log('══════════════════');
+      console.log(`🌐 Base URL: ${colors.cyan}${DISCOURSE_BASE_URL}${colors.reset}`);
+      console.log(`🔑 API Key: ${colors.cyan}${DISCOURSE_API_KEY?.substring(0, 8)}...${colors.reset}`);
+      console.log(`👤 Username: ${colors.cyan}system${colors.reset}`);
+      console.log('──────────────────');
+
+    } catch (error) {
+      console.error(`\n${colors.red}Error testing API:${colors.reset}`, error instanceof Error ? error.message : 'Unknown error');
+      throw error;
+    }
+  }
+
+  async deletePost(postId: number): Promise<void> {
+    const response = await fetch(`${DISCOURSE_BASE_URL}/posts/${postId}.json`, {
+      method: 'DELETE',
+      headers: this.headers
+    });
+
+    if (!response.ok) {
+      throw new Error(`Failed to delete post: ${response.statusText}`);
+    }
+  }
+}
+
+async function promptForAction(): Promise<'test-api' | 'create-topic' | 'create-post' | 'edit-post' | 'exit'> {
+  console.log('\n📝 Available actions:');
+  console.log(`${colors.bright}1${colors.reset}) Test API connection`);
+  console.log(`${colors.bright}2${colors.reset}) Create new topic`);
+  console.log(`${colors.bright}3${colors.reset}) Create new post in topic`);
+  console.log(`${colors.bright}4${colors.reset}) Edit existing post`);
+  console.log(`${colors.bright}5${colors.reset}) Exit`);
+  
+  const answer = await question('\nChoose an action (1-5): ');
+  
+  switch (answer.trim()) {
+    case '1': return 'test-api';
+    case '2': return 'create-topic';
+    case '3': return 'create-post';
+    case '4': return 'edit-post';
+    case '5': return 'exit';
+    default: return promptForAction();
+  }
+}
+
+async function displayCategories(client: DiscourseClient) {
+  const { category_list } = await client.getCategories();
+  
+  console.log('\n📂 Available categories:');
+  console.log('═══════════════════════');
+  category_list.categories.forEach((category: any) => {
+    console.log(`${colors.cyan}${category.id}${colors.reset}: ${category.name}`);
+  });
+  console.log('───────────────────────');
+}
+
+async function main() {
+  const client = new DiscourseClient();
+
+  try {
+    while (true) {
+      const action = await promptForAction();
+      
+      if (action === 'exit') {
+        console.log(`\n${colors.gray}Goodbye! 👋${colors.reset}`);
+        break;
+      }
+
+      switch (action) {
+        case 'test-api': {
+          await client.testConnection();
+          break;
+        }
+        case 'create-topic': {
+          await displayCategories(client);
+          const categoryId = parseInt(await question(`${colors.yellow}?${colors.reset} Enter category ID: `));
+          const title = await question(`${colors.yellow}?${colors.reset} Enter topic title: `);
+          const content = await question(`${colors.yellow}?${colors.reset} Enter topic content: `);
+          
+          const result = await client.createTopic(categoryId, title, content);
+          console.log(`\n${colors.green}✓${colors.reset} Topic created successfully!`);
+          console.log(`${colors.bright}Topic ID:${colors.reset} ${colors.cyan}${result.topic_id}${colors.reset}`);
+          console.log(`${colors.bright}Post ID:${colors.reset} ${colors.cyan}${result.id}${colors.reset}`);
+          console.log(`${colors.bright}URL:${colors.reset} ${colors.cyan}${DISCOURSE_BASE_URL}/t/${result.topic_slug}/${result.topic_id}${colors.reset}`);
+          break;
+        }
+
+        case 'create-post': {
+          const topicId = parseInt(await question(`${colors.yellow}?${colors.reset} Enter topic ID: `));
+          const content = await question(`${colors.yellow}?${colors.reset} Enter post content: `);
+          
+          const result = await client.createPost(topicId, content);
+          console.log(`\n${colors.green}✓${colors.reset} Post created successfully!`);
+          console.log(`${colors.bright}Post ID:${colors.reset} ${colors.cyan}${result.id}${colors.reset}`);
+          break;
+        }
+
+        case 'edit-post': {
+          const postId = parseInt(await question(`${colors.yellow}?${colors.reset} Enter post ID to edit: `));
+          const content = await question(`${colors.yellow}?${colors.reset} Enter new content: `);
+          
+          await client.updatePost(postId, content);
+          console.log(`\n${colors.green}✓${colors.reset} Post updated successfully!`);
+          break;
+        }
+      }
+    }
+  } catch (error) {
+    console.error(`${colors.red}Error:${colors.reset}`, error instanceof Error ? error.message : 'Unknown error occurred');
+    process.exit(1);
+  } finally {
+    rl.close();
+  }
+}
+
+// Handle errors
+main().catch((error) => {
+  console.error(`${colors.red}Fatal error:${colors.reset}`, error instanceof Error ? error.message : error);
+  process.exit(1);
+});
