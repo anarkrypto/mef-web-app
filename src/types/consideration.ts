@@ -12,6 +12,7 @@ export interface ConsiderationVoteStats {
     voters: Array<{
       address: string;
       timestamp: number;
+      hash: string;
     }>;
   };
   reviewerEligible: boolean;
@@ -39,6 +40,7 @@ export interface ConsiderationProposal {
 export interface OCVVote {
   account: string;
   timestamp: number;
+  hash: string;
 }
 
 export interface OCVVoteData {

@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useMemo } from "react"
 import { Button } from "@/components/ui/button"
 import { useWallet } from "@/contexts/WalletContext"
 import { WalletConnectorDialog } from "./WalletConnectorDialog"
@@ -8,17 +8,44 @@ import { ManualVoteDialog } from "./dialogs/OCVManualInstructions"
 import { OCVTransactionDialog } from "./dialogs/OCVTransactionDialog"
 import { Icons } from "@/components/icons"
 import { TARGET_NETWORK } from "@/contexts/WalletContext"
+import { 
+  Tooltip, 
+  TooltipContent, 
+  TooltipTrigger,
+  TooltipProvider 
+} from "@/components/ui/tooltip"
+import { formatDistanceToNow } from "date-fns"
+import type { ConsiderationVoteStats } from "@/types/consideration"
 
 interface OCVVoteButtonProps {
   proposalId: string
   useWallet?: boolean
+  voteStats: ConsiderationVoteStats
 }
 
-export function OCVVoteButton({ proposalId, useWallet: isWalletEnabled = true }: OCVVoteButtonProps) {
+// Add type for voter
+interface Voter {
+  address: string
+  timestamp: number
+  hash: string
+}
+
+export function OCVVoteButton({ 
+  proposalId, 
+  useWallet: isWalletEnabled = true,
+  voteStats 
+}: OCVVoteButtonProps) {
   const { state, enforceTargetNetwork } = useWallet()
   const [showWalletDialog, setShowWalletDialog] = useState(false)
   const [showManualDialog, setShowManualDialog] = useState(false)
   const [showTransactionDialog, setShowTransactionDialog] = useState(false)
+
+  const existingVote = useMemo(() => {
+    if (!state.wallet?.address) return null
+    return voteStats.communityVotes.voters.find(
+      (voter: Voter) => voter.address.toLowerCase() === state.wallet!.address.toLowerCase()
+    )
+  }, [voteStats.communityVotes.voters, state.wallet])
 
   const handleVoteClick = async () => {
     if (!isWalletEnabled) {
@@ -43,20 +70,50 @@ export function OCVVoteButton({ proposalId, useWallet: isWalletEnabled = true }:
 
   const buttonText = isWalletEnabled 
     ? state.wallet 
-      ? "Vote with Wallet"
+      ? existingVote
+        ? "Already Voted"
+        : "Vote with Wallet"
       : "Connect Wallet to Vote"
     : "Vote Without Wallet"
 
+  const walletButton = (
+    <Button
+      variant={isWalletEnabled ? "default" : "outline"}
+      onClick={handleVoteClick}
+      className="gap-2"
+      disabled={Boolean(isWalletEnabled && state.wallet && existingVote)}
+    >
+      {isWalletEnabled && <Icons.wallet className="h-4 w-4" />}
+      {buttonText}
+    </Button>
+  )
+
   return (
     <>
-      <Button
-        variant={isWalletEnabled ? "default" : "outline"}
-        onClick={handleVoteClick}
-        className="gap-2"
-      >
-        {isWalletEnabled && <Icons.wallet className="h-4 w-4" />}
-        {buttonText}
-      </Button>
+      {isWalletEnabled && state.wallet && existingVote ? (
+        <TooltipProvider delayDuration={0}>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <div>{walletButton}</div>
+            </TooltipTrigger>
+            <TooltipContent 
+              side="top" 
+              align="center"
+              className="max-w-[300px] p-4 bg-popover text-popover-foreground"
+            >
+              <div className="space-y-2">
+                <p className="font-medium">You have already voted on this proposal</p>
+                <div className="text-xs text-muted-foreground space-y-1">
+                  <p>Time: {formatDistanceToNow(existingVote.timestamp)} ago</p>
+                  <p className="break-all">Transaction: {existingVote.hash}</p>
+                </div>
+              </div>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+      ) : (
+        walletButton
+      )}
 
       <WalletConnectorDialog 
         open={showWalletDialog} 
@@ -68,6 +125,7 @@ export function OCVVoteButton({ proposalId, useWallet: isWalletEnabled = true }:
         onOpenChange={setShowManualDialog}
         voteId={proposalId}
         voteType="YES"
+        existingVote={existingVote}
       />
 
       {state.wallet && (
