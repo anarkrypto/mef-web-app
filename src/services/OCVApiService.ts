@@ -23,11 +23,19 @@ export interface OCVVoteResponse {
   votes: OCVVote[];
 }
 
+
 export class OCVApiService {
-  private baseUrl: string;
+
+  private static readonly FALLBACK_OCV_API_BASE_URL = "https://on-chain-voting-staging-devnet.minaprotocol.network/";
+  private baseUrl: string|undefined;
 
   constructor() {
-    this.baseUrl = process.env.NEXT_PUBLIC_OCV_API_BASE_URL!;
+    const envUrl = process.env.NEXT_PUBLIC_OCV_API_BASE_URL;
+    this.baseUrl = envUrl ?? OCVApiService.FALLBACK_OCV_API_BASE_URL;
+    
+    if (!envUrl) {
+      logger.warn('[OCVApiService] NEXT_PUBLIC_OCV_API_BASE_URL not set, using fallback URL:', this.baseUrl);
+    }
   }
 
   async getConsiderationVotes(
@@ -46,15 +54,15 @@ export class OCVApiService {
       });
 
       if (!response.ok) {
-        throw new Error(`OCV API error: ${response.statusText}`);
+        throw new Error(`[OCVApiService] OCV API error: ${response.statusText}`);
       }
 
       const data = await response.json();
-      logger.debug(`OCV vote data for proposal ${proposalId}:`, data);
+      logger.debug(`[OCVApiService] OCV vote data for proposal ${proposalId}:`, data);
       
       return data;
     } catch (error) {
-      logger.error(`Failed to fetch OCV votes for proposal ${proposalId}:`, error);
+      logger.error(`[OCVApiService] Failed to fetch OCV votes for proposal ${proposalId}:`, error);
       throw error;
     }
   }

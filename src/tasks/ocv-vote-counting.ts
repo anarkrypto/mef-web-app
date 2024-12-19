@@ -7,7 +7,6 @@ import { ProposalStatus, WorkerStatus } from '@prisma/client';
 import { randomUUID } from 'crypto';
 import { Prisma } from '@prisma/client';
 
-// Types for metadata tracking
 interface ProposalVoteInfo {
   ocv_eligible: boolean;
   reviewer_votes_given: number;
@@ -28,6 +27,8 @@ interface CleanupWorkerMetadata {
 }
 
 const LOCK_KEY = 'ocv_vote_counting_job';
+
+const PROCESS_PROPOSALS_HEARTBEAT_INTERVAL = 5000;
 
 // Define job names as constants
 const WORKER_JOBS = {
@@ -160,7 +161,7 @@ async function processProposals() {
     await updateHeartbeat(jobId, WORKER_JOBS.OCV_VOTE_COUNTING, WorkerStatus.RUNNING);
     heartbeatInterval = setInterval(
       () => updateHeartbeat(jobId, WORKER_JOBS.OCV_VOTE_COUNTING, WorkerStatus.RUNNING), 
-      30000
+      PROCESS_PROPOSALS_HEARTBEAT_INTERVAL
     );
 
     // Get active proposals

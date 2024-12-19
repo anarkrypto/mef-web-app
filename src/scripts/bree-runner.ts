@@ -9,10 +9,17 @@ const bree = new Bree({
     {
       name: 'ocv-vote-counting',
       path: path.join(process.cwd(), 'dist', 'tasks', 'ocv-vote-counting.js'),
-      interval: '1m',
+      interval: '10m', // run every 10 minutes
       timeout: 0, // start immediatly when this script is run
+      closeWorkerAfterMs: 9 * 60 * 1000 // Kill after 9 minutes if stuck
     }
-  ]
+  ],
+  errorHandler: (error, workerMetadata) => {
+    logger.error(`[Bree Runner] Worker ${workerMetadata.name} encountered an error:`, error);
+  },
+  workerMessageHandler: (name, message) => {
+    logger.error(`[Bree Runner] Message from worker ${name}`);
+  }
 });
 
 const graceful = new Graceful({ brees: [bree] });
