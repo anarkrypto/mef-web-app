@@ -2,7 +2,40 @@ import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { getOrCreateUserFromRequest } from "@/lib/auth";
 import type { UserMetadata } from '@/services/UserService';
+import type { JsonValue } from '@prisma/client/runtime/library';
 import logger from "@/logging";
+import { OCVVotesService } from "@/services/OCVVotesService";
+import { ProposalStatusMoveService } from "@/services/ProposalStatusMoveService";
+import type { OCVVoteData, OCVVote } from '@/types/consideration';
+
+// Add this helper function to safely parse OCV vote data
+function parseOCVVoteData(data: JsonValue | null | undefined): OCVVoteData {
+  const defaultData: OCVVoteData = {
+    total_community_votes: 0,
+    total_positive_community_votes: 0,
+    positive_stake_weight: "0",
+    elegible: false,
+    votes: []
+  };
+
+  if (!data || typeof data !== 'object') {
+    return defaultData;
+  }
+
+  // Type assertion after runtime check
+  const voteData = data as Record<string, unknown>;
+  
+  return {
+    total_community_votes: typeof voteData.total_community_votes === 'number' ? voteData.total_community_votes : 0,
+    total_positive_community_votes: typeof voteData.total_positive_community_votes === 'number' ? voteData.total_positive_community_votes : 0,
+    positive_stake_weight: typeof voteData.positive_stake_weight === 'string' ? voteData.positive_stake_weight : "0",
+    elegible: Boolean(voteData.elegible),
+    votes: Array.isArray(voteData.votes) ? voteData.votes.map(vote => ({
+      account: String(vote.account || ''),
+      timestamp: Number(vote.timestamp || 0)
+    })) : []
+  };
+}
 
 export async function GET(
   request: Request,
@@ -70,6 +103,7 @@ export async function GET(
             feedback: true
           }
         },
+        OCVConsiderationVote: true,
         _count: {
           select: {
             considerationVotes: true
@@ -78,26 +112,44 @@ export async function GET(
       }
     });
 
+    const statusMoveService = new ProposalStatusMoveService(prisma);
+    const minReviewerApprovals = statusMoveService.minReviewerApprovals;
+
     // Get vote counts for each proposal
     const proposalVoteCounts = await Promise.all(
       proposals.map(async (proposal) => {
-        const voteCounts = await prisma.considerationVote.groupBy({
-          by: ['decision'],
-          where: {
-            proposalId: proposal.id
-          },
-          _count: true
-        });
+        const [reviewerVotes, ocvVotes] = await Promise.all([
+          prisma.considerationVote.groupBy({
+            by: ['decision'],
+            where: {
+              proposalId: proposal.id
+            },
+            _count: true
+          }),
+          parseOCVVoteData(proposal.OCVConsiderationVote?.voteData)
+        ]);
 
-        const approved = voteCounts.find(v => v.decision === 'APPROVED')?._count || 0;
-        const rejected = voteCounts.find(v => v.decision === 'REJECTED')?._count || 0;
+        const approved = reviewerVotes.find(v => v.decision === 'APPROVED')?._count || 0;
+        const rejected = reviewerVotes.find(v => v.decision === 'REJECTED')?._count || 0;
 
         return {
           proposalId: proposal.id,
           voteStats: {
             approved,
             rejected,
-            total: approved + rejected
+            total: approved + rejected,
+            communityVotes: {
+              total: ocvVotes.total_community_votes || 0,
+              positive: ocvVotes.total_positive_community_votes || 0,
+              positiveStakeWeight: ocvVotes.positive_stake_weight || "0",
+              isEligible: ocvVotes.elegible || false,
+              voters: ocvVotes.votes?.map((v: OCVVote) => ({
+                address: v.account,
+                timestamp: v.timestamp
+              })) || []
+            },
+            reviewerEligible: approved >= minReviewerApprovals,
+            requiredReviewerApprovals: minReviewerApprovals
           }
         };
       })
@@ -119,8 +171,19 @@ export async function GET(
         } : undefined,
         createdAt: p.createdAt,
         isReviewerEligible: isReviewer,
-        voteStats: voteCounts || { approved: 0, rejected: 0, total: 0 },
-        currentPhase: p.status // Add the current phase to distinguish between CONSIDERATION and DELIBERATION
+        voteStats: voteCounts || {
+          approved: 0,
+          rejected: 0,
+          total: 0,
+          communityVotes: {
+            total: 0,
+            positive: 0,
+            positiveStakeWeight: "0",
+            isEligible: false
+          },
+          reviewerEligible: false
+        },
+        currentPhase: p.status
       };
     });
 

@@ -14,6 +14,11 @@ import { Label } from "@/components/ui/label"
 import type { ConsiderationProposal } from '@/types/consideration';
 import { OCVVoteButton } from "@/components/web3/OCVVoteButton"
 import { ProposalStatus } from '@prisma/client';
+import {
+  HoverCard,
+  HoverCardContent,
+  HoverCardTrigger,
+} from "@/components/ui/hover-card"
 
 interface Props {
   fundingRoundId: string;
@@ -26,9 +31,13 @@ interface ExpandedState {
   [key: number]: boolean;
 }
 
-function calculateVoteStats(proposal: ConsiderationProposal, newVote?: { decision: 'APPROVED' | 'REJECTED' }) {
+function calculateVoteStats(
+  proposal: ConsiderationProposal, 
+  newVote?: { decision: 'APPROVED' | 'REJECTED' }
+) {
   const stats = { ...proposal.voteStats };
   
+  // Update vote counts
   if (proposal.userVote && newVote) {
     if (proposal.userVote.decision === 'APPROVED') stats.approved--;
     if (proposal.userVote.decision === 'REJECTED') stats.rejected--;
@@ -40,8 +49,129 @@ function calculateVoteStats(proposal: ConsiderationProposal, newVote?: { decisio
     if (newVote.decision === 'REJECTED') stats.rejected++;
     stats.total++;
   }
+
+  // Recalculate reviewer eligibility based on new vote counts
+  stats.reviewerEligible = stats.approved >= stats.requiredReviewerApprovals;
   
   return stats;
+}
+
+// Add this helper component for vote stats
+function VoteStatusCard({ 
+  icon, 
+  title, 
+  eligibilityStatus, 
+  isEligible, 
+  stats, 
+  children 
+}: {
+  icon: string;
+  title: string;
+  eligibilityStatus: string;
+  isEligible: boolean;
+  stats?: React.ReactNode;
+  children?: React.ReactNode;
+}) {
+  return (
+    <div className="rounded-lg border bg-card p-4 shadow-sm">
+      <div className="flex items-center justify-between mb-3">
+        <div className="flex items-center gap-2">
+          <span className="text-lg">{icon}</span>
+          <h4 className="font-semibold text-sm">{title}</h4>
+        </div>
+        <Badge 
+          variant={isEligible ? "default" : "secondary"}
+          className={cn(
+            "transition-all",
+            isEligible && "bg-green-500/15 text-green-600 hover:bg-green-500/25",
+            !isEligible && "bg-amber-500/15 text-amber-600 hover:bg-amber-500/25"
+          )}
+        >
+          {eligibilityStatus}
+        </Badge>
+      </div>
+      {stats}
+      {children}
+    </div>
+  );
+}
+
+// Add this helper component for vote progress
+function VoteProgress({ approved, rejected, total }: { approved: number; rejected: number; total: number }) {
+  const approvedPercent = total > 0 ? (approved / total) * 100 : 0;
+  const rejectedPercent = total > 0 ? (rejected / total) * 100 : 0;
+
+  return (
+    <div className="space-y-1">
+      <div className="flex justify-between text-xs text-muted-foreground">
+        <div className="flex gap-4">
+          <span className="text-green-600 font-medium">
+            {approved} Approved ({Math.round(approvedPercent)}%)
+          </span>
+          <span className="text-red-600 font-medium">
+            {rejected} Rejected ({Math.round(rejectedPercent)}%)
+          </span>
+        </div>
+        <span>&nbsp;{total} total</span>
+      </div>
+      <div className="relative h-2 overflow-hidden rounded-full bg-muted">
+        <div className="absolute inset-0 flex w-full">
+          <div 
+            className="bg-green-500 transition-all duration-300" 
+            style={{ width: `${approvedPercent}%` }} 
+          />
+          <div 
+            className="bg-red-500 transition-all duration-300" 
+            style={{ width: `${rejectedPercent}%` }} 
+          />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// First, add this helper component for formatting timestamps
+function FormattedTimestamp({ timestamp }: { timestamp: number }) {
+  const date = new Date(timestamp);
+  return (
+    <span className="text-xs text-muted-foreground whitespace-nowrap">
+      {date.toLocaleString(undefined, {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      })}
+    </span>
+  );
+}
+
+// Add this helper function at the top level
+function formatAddress(address: string): string {
+  if (!address) return '';
+  const start = address.slice(0, 6);
+  const end = address.slice(-4);
+  return `${start}...${end}`;
+}
+
+// Add this component for the address display
+function VoterAddress({ address }: { address: string }) {
+  const [isExpanded, setIsExpanded] = useState(false);
+  
+  return (
+    <div className="flex-1 min-w-0">
+      <code 
+        className={cn(
+          "font-mono text-xs bg-muted px-1.5 py-0.5 rounded cursor-pointer transition-all hover:bg-muted/80 inline-block max-w-full",
+          isExpanded ? "break-all" : "truncate"
+        )}
+        onClick={() => setIsExpanded(!isExpanded)}
+        title={isExpanded ? "Click to collapse" : "Click to expand"}
+      >
+        {isExpanded ? address : formatAddress(address)}
+      </code>
+    </div>
+  );
 }
 
 export function ConsiderationProposalList({ fundingRoundId, fundingRoundName }: Props) {
@@ -353,49 +483,104 @@ export function ConsiderationProposalList({ fundingRoundId, fundingRoundName }: 
                         <CardDescription>
                           👤 Submitted by {proposal.submitter}
                         </CardDescription>
-                        <div className="mt-4 space-y-2">
-                          <div className="flex items-center justify-between text-sm">
-                            <div className="flex gap-4">
-                              <span className="text-green-600 flex items-center gap-1">
-                                <span>✓ {proposal.voteStats.approved}</span>
-                                {proposal.voteStats.total > 0 && (
-                                  <span className="text-muted-foreground">
-                                    ({Math.round((proposal.voteStats.approved / proposal.voteStats.total) * 100)}%)
-                                  </span>
-                                )}
-                              </span>
-                              <span className="text-red-600 flex items-center gap-1">
-                                <span>✗ {proposal.voteStats.rejected}</span>
-                                {proposal.voteStats.total > 0 && (
-                                  <span className="text-muted-foreground">
-                                    ({Math.round((proposal.voteStats.rejected / proposal.voteStats.total) * 100)}%)
-                                  </span>
-                                )}
-                              </span>
-                            </div>
-                            <span className="text-muted-foreground">
-                              {proposal.voteStats.total} total {proposal.voteStats.total === 1 ? 'vote' : 'votes'}
-                            </span>
-                          </div>
-                          <div className="relative h-2 overflow-hidden rounded-full bg-muted">
-                            <div className="absolute inset-0 flex w-full">
-                              <div 
-                                className="bg-green-500 transition-all duration-300" 
-                                style={{ 
-                                  width: `${proposal.voteStats.total > 0 
-                                    ? (proposal.voteStats.approved / proposal.voteStats.total) * 100 
-                                    : 0}%` 
-                                }} 
-                              />
-                              <div 
-                                className="bg-red-500 transition-all duration-300" 
-                                style={{ 
-                                  width: `${proposal.voteStats.total > 0 
-                                    ? (proposal.voteStats.rejected / proposal.voteStats.total) * 100 
-                                    : 0}%` 
-                                }} 
-                              />
-                            </div>
+                        <div className="mt-4">
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            {/* Reviewer Votes */}
+                            <VoteStatusCard
+                              icon="👥"
+                              title="Reviewer Votes"
+                              eligibilityStatus={proposal.voteStats.reviewerEligible 
+                                ? "Eligible" 
+                                : `Need ${proposal.voteStats.requiredReviewerApprovals - proposal.voteStats.approved} more`}
+                              isEligible={proposal.voteStats.reviewerEligible}
+                              stats={
+                                <VoteProgress
+                                  approved={proposal.voteStats.approved}
+                                  rejected={proposal.voteStats.rejected}
+                                  total={proposal.voteStats.total}
+                                />
+                              }
+                            >
+                              <div />
+                            </VoteStatusCard>
+
+                            {/* Community Votes */}
+                            <VoteStatusCard
+                              icon="🌍"
+                              title="Community Votes"
+                              eligibilityStatus={proposal.voteStats.communityVotes.isEligible 
+                                ? "Eligible" 
+                                : "Not Eligible"}
+                              isEligible={proposal.voteStats.communityVotes.isEligible}
+                            >
+                              <HoverCard>
+                                <HoverCardTrigger asChild>
+                                  <div className="flex items-center justify-between cursor-help">
+                                    <div className="flex items-center gap-2">
+                                      <span className="text-sm text-green-600 font-medium">
+                                        {proposal.voteStats.communityVotes.positive} votes
+                                      </span>
+                                      <span className="text-xs text-muted-foreground">
+                                        ({proposal.voteStats.communityVotes.positiveStakeWeight} stake)
+                                      </span>
+                                    </div>
+                                    <Button variant="ghost" size="sm" className="text-muted-foreground text-xs">
+                                      View Voters ↗
+                                    </Button>
+                                  </div>
+                                </HoverCardTrigger>
+                                <HoverCardContent 
+                                  className="w-[340px]" 
+                                  align="end"
+                                  side="left"
+                                >
+                                  <div className="space-y-3">
+                                    <div className="flex items-center justify-between">
+                                      <h4 className="text-sm font-semibold">Community Voters</h4>
+                                      <Badge variant="outline" className="text-xs">
+                                        {proposal.voteStats.communityVotes.voters.length} total
+                                      </Badge>
+                                    </div>
+                                    
+                                    <div className="text-xs text-muted-foreground bg-muted/50 p-2 rounded">
+                                      Note: OCV votes may take up to 10 minutes to appear here. Don&apos;t worry if your vote 
+                                      doesn&apos;t show up immediately after voting.
+                                    </div>
+                                    
+                                    {proposal.voteStats.communityVotes.voters.length > 0 ? (
+                                      <div className="max-h-[240px] overflow-y-auto space-y-1.5 pr-2 -mr-2">
+                                        {proposal.voteStats.communityVotes.voters.map((voter, i) => (
+                                          <div 
+                                            key={i} 
+                                            className="flex items-center justify-between p-1.5 hover:bg-muted rounded-md transition-colors"
+                                          >
+                                            <div className="flex items-center gap-2 min-w-0 flex-1">
+                                              <span className="w-5 h-5 rounded-full bg-primary/10 flex items-center justify-center text-xs text-primary flex-shrink-0">
+                                                {i + 1}
+                                              </span>
+                                              <VoterAddress address={voter.address} />
+                                            </div>
+                                            <div className="pl-2 flex-shrink-0">
+                                              <FormattedTimestamp timestamp={voter.timestamp} />
+                                            </div>
+                                          </div>
+                                        ))}
+                                      </div>
+                                    ) : (
+                                      <div className="text-center py-4 text-muted-foreground text-sm">
+                                        No votes yet
+                                      </div>
+                                    )}
+                                    
+                                    <div className="pt-2 border-t">
+                                      <p className="text-xs text-muted-foreground">
+                                        Total Stake Weight: {proposal.voteStats.communityVotes.positiveStakeWeight}
+                                      </p>
+                                    </div>
+                                  </div>
+                                </HoverCardContent>
+                              </HoverCard>
+                            </VoteStatusCard>
                           </div>
                         </div>
                       </div>
@@ -517,49 +702,104 @@ export function ConsiderationProposalList({ fundingRoundId, fundingRoundName }: 
                           <CardDescription>
                             👤 Submitted by {proposal.submitter}
                           </CardDescription>
-                          <div className="mt-4 space-y-2">
-                            <div className="flex items-center justify-between text-sm">
-                              <div className="flex gap-4">
-                                <span className="text-green-600 flex items-center gap-1">
-                                  <span>✓ {proposal.voteStats.approved}</span>
-                                  {proposal.voteStats.total > 0 && (
-                                    <span className="text-muted-foreground">
-                                      ({Math.round((proposal.voteStats.approved / proposal.voteStats.total) * 100)}%)
-                                    </span>
-                                  )}
-                                </span>
-                                <span className="text-red-600 flex items-center gap-1">
-                                  <span>✗ {proposal.voteStats.rejected}</span>
-                                  {proposal.voteStats.total > 0 && (
-                                    <span className="text-muted-foreground">
-                                      ({Math.round((proposal.voteStats.rejected / proposal.voteStats.total) * 100)}%)
-                                    </span>
-                                  )}
-                                </span>
-                              </div>
-                              <span className="text-muted-foreground">
-                                {proposal.voteStats.total} total {proposal.voteStats.total === 1 ? 'vote' : 'votes'}
-                              </span>
-                            </div>
-                            <div className="relative h-2 overflow-hidden rounded-full bg-muted">
-                              <div className="absolute inset-0 flex w-full">
-                                <div 
-                                  className="bg-green-500 transition-all duration-300" 
-                                  style={{ 
-                                    width: `${proposal.voteStats.total > 0 
-                                      ? (proposal.voteStats.approved / proposal.voteStats.total) * 100 
-                                      : 0}%` 
-                                  }} 
-                                />
-                                <div 
-                                  className="bg-red-500 transition-all duration-300" 
-                                  style={{ 
-                                    width: `${proposal.voteStats.total > 0 
-                                      ? (proposal.voteStats.rejected / proposal.voteStats.total) * 100 
-                                      : 0}%` 
-                                  }} 
-                                />
-                              </div>
+                          <div className="mt-4">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                              {/* Reviewer Votes */}
+                              <VoteStatusCard
+                                icon="👥"
+                                title="Reviewer Votes"
+                                eligibilityStatus={proposal.voteStats.reviewerEligible 
+                                  ? "Eligible" 
+                                  : `Need ${proposal.voteStats.requiredReviewerApprovals - proposal.voteStats.approved} more`}
+                                isEligible={proposal.voteStats.reviewerEligible}
+                                stats={
+                                  <VoteProgress
+                                    approved={proposal.voteStats.approved}
+                                    rejected={proposal.voteStats.rejected}
+                                    total={proposal.voteStats.total}
+                                  />
+                                }
+                              >
+                                <div />
+                              </VoteStatusCard>
+
+                              {/* Community Votes */}
+                              <VoteStatusCard
+                                icon="🌍"
+                                title="Community Votes"
+                                eligibilityStatus={proposal.voteStats.communityVotes.isEligible 
+                                  ? "Eligible" 
+                                  : "Not Eligible"}
+                                isEligible={proposal.voteStats.communityVotes.isEligible}
+                              >
+                                <HoverCard>
+                                  <HoverCardTrigger asChild>
+                                    <div className="flex items-center justify-between cursor-help">
+                                      <div className="flex items-center gap-2">
+                                        <span className="text-sm text-green-600 font-medium">
+                                          {proposal.voteStats.communityVotes.positive} votes
+                                        </span>
+                                        <span className="text-xs text-muted-foreground">
+                                          ({proposal.voteStats.communityVotes.positiveStakeWeight} stake)
+                                        </span>
+                                      </div>
+                                      <Button variant="ghost" size="sm" className="text-muted-foreground text-xs">
+                                        View Voters ↗
+                                      </Button>
+                                    </div>
+                                  </HoverCardTrigger>
+                                  <HoverCardContent 
+                                    className="w-[340px]" 
+                                    align="end"
+                                    side="left"
+                                  >
+                                    <div className="space-y-3">
+                                      <div className="flex items-center justify-between">
+                                        <h4 className="text-sm font-semibold">Community Voters</h4>
+                                        <Badge variant="outline" className="text-xs">
+                                          {proposal.voteStats.communityVotes.voters.length} total
+                                        </Badge>
+                                      </div>
+                                      
+                                      <div className="text-xs text-muted-foreground bg-muted/50 p-2 rounded">
+                                        Note: OCV votes may take up to 10 minutes to appear here. Don&apos;t worry if your vote 
+                                        doesn&apos;t show up immediately after voting.
+                                      </div>
+                                      
+                                      {proposal.voteStats.communityVotes.voters.length > 0 ? (
+                                        <div className="max-h-[240px] overflow-y-auto space-y-1.5 pr-2 -mr-2">
+                                          {proposal.voteStats.communityVotes.voters.map((voter, i) => (
+                                            <div 
+                                              key={i} 
+                                              className="flex items-center justify-between p-1.5 hover:bg-muted rounded-md transition-colors"
+                                            >
+                                              <div className="flex items-center gap-2 min-w-0 flex-1">
+                                                <span className="w-5 h-5 rounded-full bg-primary/10 flex items-center justify-center text-xs text-primary flex-shrink-0">
+                                                  {i + 1}
+                                                </span>
+                                                <VoterAddress address={voter.address} />
+                                              </div>
+                                              <div className="pl-2 flex-shrink-0">
+                                                <FormattedTimestamp timestamp={voter.timestamp} />
+                                              </div>
+                                            </div>
+                                          ))}
+                                        </div>
+                                      ) : (
+                                        <div className="text-center py-4 text-muted-foreground text-sm">
+                                          No votes yet
+                                        </div>
+                                      )}
+                                      
+                                      <div className="pt-2 border-t">
+                                        <p className="text-xs text-muted-foreground">
+                                          Total Stake Weight: {proposal.voteStats.communityVotes.positiveStakeWeight}
+                                        </p>
+                                      </div>
+                                    </div>
+                                  </HoverCardContent>
+                                </HoverCard>
+                              </VoteStatusCard>
                             </div>
                           </div>
                         </div>
