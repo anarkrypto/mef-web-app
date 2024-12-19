@@ -61,7 +61,7 @@ interface ProposalWithVotes extends ProposalWithVotesBase {
 
 interface MoveResult {
   newStatus: ProposalStatus;
-  ocvEligible: boolean;
+  ocvElegible: boolean;
   reviewerVotesGiven: number;
   reviewerVotesRequired: number;
 }
@@ -107,13 +107,13 @@ export class ProposalStatusMoveService {
 
       const numReviewerApprovals = this.countValidApprovals(proposal);
       const ocvData = proposal.OCVConsiderationVote?.voteData as OCVVoteResponse | undefined;
-      const isEligible = ocvData?.eligible ?? false;
+      const isElegible = ocvData?.elegible ?? false;
 
       const thresholdReviewerApprovals = this.config.considerationPhase.minReviewerApprovals;
       
       return {
         newStatus,
-        ocvEligible: isEligible,
+        ocvElegible: isElegible,
         reviewerVotesGiven: numReviewerApprovals,
         reviewerVotesRequired: thresholdReviewerApprovals
       };
@@ -158,24 +158,24 @@ export class ProposalStatusMoveService {
     const approvalCount = this.countValidApprovals(proposal);
     const isMinApprovals = approvalCount >= this.config.considerationPhase.minReviewerApprovals;
     const ocvData = proposal.OCVConsiderationVote?.voteData as OCVVoteResponse | undefined;
-    const ocvEligible = ocvData?.eligible ?? false;
+    const ocvElegible = ocvData?.elegible ?? false;
 
     logger.info(`OCV data: ${JSON.stringify(ocvData)}`);
-    logger.info(`Proposal ${proposal.id} should move to DELIBERATION. Approval count: ${approvalCount}, min approvals: ${this.config.considerationPhase.minReviewerApprovals}, OCV eligible: ${ocvEligible}`);
+    logger.info(`Proposal ${proposal.id} should move to DELIBERATION. Approval count: ${approvalCount}, min approvals: ${this.config.considerationPhase.minReviewerApprovals}, OCV elegible: ${ocvElegible}`);
 
-    return isMinApprovals || ocvEligible;
+    return isMinApprovals || ocvElegible;
   }
 
   private async shouldMoveBackToConsideration(proposal: ProposalWithVotes): Promise<boolean> {
     const approvalCount = this.countValidApprovals(proposal);
     const isMinApprovals = approvalCount >= this.config.considerationPhase.minReviewerApprovals;
     const ocvData = proposal.OCVConsiderationVote?.voteData as OCVVoteResponse | undefined; 
-    const ocvEligible = ocvData?.eligible ?? false;
+    const ocvElegible = ocvData?.elegible ?? false;
   
     logger.info(`OCV data: ${JSON.stringify(ocvData)}`);
-    logger.info(`Proposal ${proposal.id} should move back to CONSIDERATION. Approval count: ${approvalCount}, min approvals: ${this.config.considerationPhase.minReviewerApprovals}, OCV eligible: ${ocvEligible}`);
+    logger.info(`Proposal ${proposal.id} should move back to CONSIDERATION. Approval count: ${approvalCount}, min approvals: ${this.config.considerationPhase.minReviewerApprovals}, OCV elegible: ${ocvElegible}`);
  
-    return !isMinApprovals && !ocvEligible;
+    return !isMinApprovals && !ocvElegible;
   }
 
   private countValidApprovals(proposal: ProposalWithVotes): number {

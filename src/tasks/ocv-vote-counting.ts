@@ -221,7 +221,7 @@ async function processProposals() {
         
         if (moveResult) {
           const voteInfo: ProposalVoteInfo = {
-            ocv_eligible: moveResult.ocvEligible,
+            ocv_eligible: moveResult.ocvElegible,
             reviewer_votes_given: moveResult.reviewerVotesGiven,
             reviewer_votes_required: moveResult.reviewerVotesRequired
           };
