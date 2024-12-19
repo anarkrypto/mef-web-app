@@ -87,14 +87,15 @@ export class ProposalStatusMoveService {
     }
 
     // Only process proposals in CONSIDERATION or DELIBERATION status
-    if (proposal.status !== ProposalStatus.CONSIDERATION && 
-        proposal.status !== ProposalStatus.DELIBERATION) {
+    if (![ProposalStatus.CONSIDERATION.toString(), ProposalStatus.DELIBERATION.toString()].includes(proposal.status.toString())) {
       return null;
     }
 
     const shouldMove = proposal.status === ProposalStatus.CONSIDERATION
       ? await this.shouldMoveToDeliberation(proposal)
       : await this.shouldMoveBackToConsideration(proposal);
+
+    logger.info(`Proposal ${proposalId} should move to ${shouldMove ? ProposalStatus.DELIBERATION : ProposalStatus.CONSIDERATION}. Proposal status: ${proposal.status}t statu`);
 
     if (shouldMove) {
       const newStatus = proposal.status === ProposalStatus.CONSIDERATION
@@ -158,6 +159,8 @@ export class ProposalStatusMoveService {
     const ocvData = proposal.OCVConsiderationVote?.voteData as OCVVoteResponse | undefined;
     const ocvEligible = ocvData?.eligible ?? false;
 
+    logger.info(`Proposal ${proposal.id} should move to DELIBERATION. Approval count: ${approvalCount}, min approvals: ${this.config.considerationPhase.minReviewerApprovals}, OCV eligible: ${ocvEligible}`);
+
     return isMinApprovals || ocvEligible;
   }
 
@@ -166,6 +169,8 @@ export class ProposalStatusMoveService {
     const isMinApprovals = approvalCount >= this.config.considerationPhase.minReviewerApprovals;
     const ocvData = proposal.OCVConsiderationVote?.voteData as OCVVoteResponse | undefined;
     const ocvEligible = ocvData?.eligible ?? false;
+
+    logger.info(`Proposal ${proposal.id} should move back to CONSIDERATION. Approval count: ${approvalCount}, min approvals: ${this.config.considerationPhase.minReviewerApprovals}, OCV eligible: ${ocvEligible}`);
  
     return !(isMinApprovals || ocvEligible);
   }

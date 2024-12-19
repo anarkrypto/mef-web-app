@@ -30,7 +30,6 @@ const LOCK_KEY = 'ocv_vote_counting_job';
 
 const PROCESS_PROPOSALS_HEARTBEAT_INTERVAL = 5000;
 
-// Define job names as constants
 const WORKER_JOBS = {
   OCV_VOTE_COUNTING: 'ocv-vote-counter',
   STALE_JOB_CLEANUP: 'ocv-worker-cleanup'
