@@ -8,7 +8,7 @@ import { randomUUID } from 'crypto';
 import { Prisma } from '@prisma/client';
 
 interface ProposalVoteInfo {
-  ocv_eligible: boolean;
+  ocv_elegible: boolean;
   reviewer_votes_given: number;
   reviewer_votes_required: number;
 }
@@ -221,7 +221,7 @@ async function processProposals() {
         
         if (moveResult) {
           const voteInfo: ProposalVoteInfo = {
-            ocv_eligible: moveResult.ocvElegible,
+            ocv_elegible: moveResult.ocvElegible,
             reviewer_votes_given: moveResult.reviewerVotesGiven,
             reviewer_votes_required: moveResult.reviewerVotesRequired
           };

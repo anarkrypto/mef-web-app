@@ -42,6 +42,12 @@ export function AdminDashboardComponent() {
       description: "Monitor background job statuses",
       icon: <Activity className="h-5 w-5" />,
       href: "/admin/worker-heartbeats"
+    },
+    {
+      title: "Consideration OCV Votes",
+      description: "Monitor OCV consideration votes",
+      icon: <Vote className="h-5 w-5" />,
+      href: "/admin/ocv-votes"
     }
   ]
 
