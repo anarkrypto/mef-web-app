@@ -95,7 +95,8 @@ export class ProposalStatusMoveService {
       ? await this.shouldMoveToDeliberation(proposal)
       : await this.shouldMoveBackToConsideration(proposal);
 
-    logger.info(`Proposal ${proposalId} should move to ${shouldMove ? ProposalStatus.DELIBERATION : ProposalStatus.CONSIDERATION}. Proposal status: ${proposal.status}t statu`);
+
+    logger.info(`Proposal ${proposalId} should move to ${shouldMove ? ProposalStatus.DELIBERATION : ProposalStatus.CONSIDERATION}. Proposal status: ${proposal.status}`);
 
     if (shouldMove) {
       const newStatus = proposal.status === ProposalStatus.CONSIDERATION
@@ -159,6 +160,7 @@ export class ProposalStatusMoveService {
     const ocvData = proposal.OCVConsiderationVote?.voteData as OCVVoteResponse | undefined;
     const ocvEligible = ocvData?.eligible ?? false;
 
+    logger.info(`OCV data: ${JSON.stringify(ocvData)}`);
     logger.info(`Proposal ${proposal.id} should move to DELIBERATION. Approval count: ${approvalCount}, min approvals: ${this.config.considerationPhase.minReviewerApprovals}, OCV eligible: ${ocvEligible}`);
 
     return isMinApprovals || ocvEligible;
@@ -167,12 +169,13 @@ export class ProposalStatusMoveService {
   private async shouldMoveBackToConsideration(proposal: ProposalWithVotes): Promise<boolean> {
     const approvalCount = this.countValidApprovals(proposal);
     const isMinApprovals = approvalCount >= this.config.considerationPhase.minReviewerApprovals;
-    const ocvData = proposal.OCVConsiderationVote?.voteData as OCVVoteResponse | undefined;
+    const ocvData = proposal.OCVConsiderationVote?.voteData as OCVVoteResponse | undefined; 
     const ocvEligible = ocvData?.eligible ?? false;
-
+  
+    logger.info(`OCV data: ${JSON.stringify(ocvData)}`);
     logger.info(`Proposal ${proposal.id} should move back to CONSIDERATION. Approval count: ${approvalCount}, min approvals: ${this.config.considerationPhase.minReviewerApprovals}, OCV eligible: ${ocvEligible}`);
  
-    return !(isMinApprovals || ocvEligible);
+    return !isMinApprovals && !ocvEligible;
   }
 
   private countValidApprovals(proposal: ProposalWithVotes): number {
