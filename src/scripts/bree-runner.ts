@@ -17,8 +17,8 @@ const bree = new Bree({
   errorHandler: (error, workerMetadata) => {
     logger.error(`[Bree Runner] Worker ${workerMetadata.name} encountered an error:`, error);
   },
-  workerMessageHandler: (name, message) => {
-    logger.error(`[Bree Runner] Message from worker ${name}`);
+  workerMessageHandler: (message, workerMetadata) => {
+    // empty intentionally
   }
 });
 
