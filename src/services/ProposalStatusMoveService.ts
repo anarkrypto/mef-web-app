@@ -79,6 +79,10 @@ export class ProposalStatusMoveService {
     };
   }
 
+  public get minReviewerApprovals(): number {
+    return this.config.considerationPhase.minReviewerApprovals;
+  }
+
   async checkAndMoveProposal(proposalId: number): Promise<MoveResult | null> {
     const proposal = await this.getProposalWithVotes(proposalId);
     
@@ -95,8 +99,6 @@ export class ProposalStatusMoveService {
       ? await this.shouldMoveToDeliberation(proposal)
       : await this.shouldMoveBackToConsideration(proposal);
 
-
-    logger.info(`Proposal ${proposalId} should move to ${shouldMove ? ProposalStatus.DELIBERATION : ProposalStatus.CONSIDERATION}. Proposal status: ${proposal.status}`);
 
     if (shouldMove) {
       const newStatus = proposal.status === ProposalStatus.CONSIDERATION
@@ -160,8 +162,7 @@ export class ProposalStatusMoveService {
     const ocvData = proposal.OCVConsiderationVote?.voteData as OCVVoteResponse | undefined;
     const ocvElegible = ocvData?.elegible ?? false;
 
-    logger.info(`OCV data: ${JSON.stringify(ocvData)}`);
-    logger.info(`Proposal ${proposal.id} should move to DELIBERATION. Approval count: ${approvalCount}, min approvals: ${this.config.considerationPhase.minReviewerApprovals}, OCV elegible: ${ocvElegible}`);
+    logger.debug(`Proposal ${proposal.id} should move to DELIBERATION. Approval count: ${approvalCount}, min approvals: ${this.config.considerationPhase.minReviewerApprovals}, OCV elegible: ${ocvElegible}`);
 
     return isMinApprovals || ocvElegible;
   }
@@ -172,8 +173,7 @@ export class ProposalStatusMoveService {
     const ocvData = proposal.OCVConsiderationVote?.voteData as OCVVoteResponse | undefined; 
     const ocvElegible = ocvData?.elegible ?? false;
   
-    logger.info(`OCV data: ${JSON.stringify(ocvData)}`);
-    logger.info(`Proposal ${proposal.id} should move back to CONSIDERATION. Approval count: ${approvalCount}, min approvals: ${this.config.considerationPhase.minReviewerApprovals}, OCV elegible: ${ocvElegible}`);
+    logger.debug(`Proposal ${proposal.id} should move back to CONSIDERATION. Approval count: ${approvalCount}, min approvals: ${this.config.considerationPhase.minReviewerApprovals}, OCV elegible: ${ocvElegible}`);
  
     return !isMinApprovals && !ocvElegible;
   }

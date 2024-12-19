@@ -52,8 +52,6 @@ export async function GET(request: Request) {
       },
     });
 
-    logger.info(`Fetched ${heartbeats.length} worker heartbeats (page ${page}/${totalPages})`);
-
     // Return paginated response
     return ApiResponse.success({
       data: heartbeats,
