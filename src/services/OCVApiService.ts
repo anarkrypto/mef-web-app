@@ -19,7 +19,7 @@ export interface OCVVoteResponse {
   positive_stake_weight: string;
   negative_stake_weight: string;
   vote_status: string;
-  eligible: boolean;
+  elegible: boolean;
   votes: OCVVote[];
 }
 
