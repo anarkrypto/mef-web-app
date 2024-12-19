@@ -1,6 +1,8 @@
 import { PrismaClient, ProposalStatus, ConsiderationDecision, Proposal } from "@prisma/client";
 import { AppError } from "@/lib/errors";
 import logger from "@/logging";
+import { OCVVoteResponse } from './OCVApiService';
+import { JsonValue } from 'type-fest';
 
 function parseMinReviewerApprovals(): number {
   const DEFAULT_CONSIDERATION_REVIEWER_APPROVAL_THRESHOLD = 2;
@@ -29,7 +31,7 @@ interface StatusMoveConfig {
   };
 }
 
-interface ProposalWithVotes {
+interface ProposalWithVotesBase {
   id: number;
   status: ProposalStatus;
   considerationVotes: {
@@ -47,6 +49,23 @@ interface ProposalWithVotes {
   } | null;
 }
 
+interface ProposalWithVotes extends ProposalWithVotesBase {
+  OCVConsiderationVote?: {
+    id: number;
+    proposalId: number;
+    voteData: JsonValue;
+    createdAt: Date;
+    updatedAt: Date;
+  } | null;
+}
+
+interface MoveResult {
+  newStatus: ProposalStatus;
+  ocvEligible: boolean;
+  reviewerVotesGiven: number;
+  reviewerVotesRequired: number;
+}
+
 export class ProposalStatusMoveService {
   private prisma: PrismaClient;
   private config: StatusMoveConfig;
@@ -60,7 +79,7 @@ export class ProposalStatusMoveService {
     };
   }
 
-  async checkAndMoveProposal(proposalId: number): Promise<void> {
+  async checkAndMoveProposal(proposalId: number): Promise<MoveResult | null> {
     const proposal = await this.getProposalWithVotes(proposalId);
     
     if (!proposal) {
@@ -70,7 +89,7 @@ export class ProposalStatusMoveService {
     // Only process proposals in CONSIDERATION or DELIBERATION status
     if (proposal.status !== ProposalStatus.CONSIDERATION && 
         proposal.status !== ProposalStatus.DELIBERATION) {
-      return;
+      return null;
     }
 
     const shouldMove = proposal.status === ProposalStatus.CONSIDERATION
@@ -83,9 +102,22 @@ export class ProposalStatusMoveService {
         : ProposalStatus.CONSIDERATION;
 
       await this.updateProposalStatus(proposalId, newStatus);
+
+      const numReviewerApprovals = this.countValidApprovals(proposal);
+      const ocvData = proposal.OCVConsiderationVote?.voteData as OCVVoteResponse | undefined;
+      const isEligible = ocvData?.eligible ?? false;
+
+      const thresholdReviewerApprovals = this.config.considerationPhase.minReviewerApprovals;
       
-      logger.info(`Proposal ${proposalId} moved from ${proposal.status} to ${newStatus}. ${this.countValidApprovals(proposal)} approvals.`);
+      return {
+        newStatus,
+        ocvEligible: isEligible,
+        reviewerVotesGiven: numReviewerApprovals,
+        reviewerVotesRequired: thresholdReviewerApprovals
+      };
     }
+
+    return null;
   }
 
   private async getProposalWithVotes(proposalId: number): Promise<ProposalWithVotes | null> {
@@ -98,6 +130,7 @@ export class ProposalStatusMoveService {
             voterId: true
           }
         },
+        OCVConsiderationVote: true,
         fundingRound: {
           include: {
             topic: {
@@ -121,12 +154,20 @@ export class ProposalStatusMoveService {
 
   private async shouldMoveToDeliberation(proposal: ProposalWithVotes): Promise<boolean> {
     const approvalCount = this.countValidApprovals(proposal);
-    return approvalCount >= this.config.considerationPhase.minReviewerApprovals;
+    const isMinApprovals = approvalCount >= this.config.considerationPhase.minReviewerApprovals;
+    const ocvData = proposal.OCVConsiderationVote?.voteData as OCVVoteResponse | undefined;
+    const ocvEligible = ocvData?.eligible ?? false;
+
+    return isMinApprovals || ocvEligible;
   }
 
   private async shouldMoveBackToConsideration(proposal: ProposalWithVotes): Promise<boolean> {
     const approvalCount = this.countValidApprovals(proposal);
-    return approvalCount < this.config.considerationPhase.minReviewerApprovals;
+    const isMinApprovals = approvalCount >= this.config.considerationPhase.minReviewerApprovals;
+    const ocvData = proposal.OCVConsiderationVote?.voteData as OCVVoteResponse | undefined;
+    const ocvEligible = ocvData?.eligible ?? false;
+ 
+    return !(isMinApprovals || ocvEligible);
   }
 
   private countValidApprovals(proposal: ProposalWithVotes): number {

@@ -18,6 +18,13 @@ enum FundingRoundStatus {
   CANCELLED
 }
 
+enum WorkerStatus {
+  RUNNING
+  COMPLETED
+  FAILED
+  NOT_STARTED
+}
+
 model User {
   id        String     @id @db.Uuid // UUID v5 derived from authSource
   linkId    String     @db.Uuid // UUID v4 for account linking
@@ -35,6 +42,8 @@ model User {
   considerationVotes         ConsiderationVote[]
   deliberationCommunityVotes CommunityDeliberationVote[]
   deliberationReviewerVotes  ReviewerDeliberationVote[]
+  ocvConsiderationVote       OCVConsiderationVote?       @relation(fields: [oCVConsiderationVoteId], references: [id])
+  oCVConsiderationVoteId     Int?
 
   @@index([id])
   @@index([linkId])
@@ -64,6 +73,7 @@ model Proposal {
   considerationVotes         ConsiderationVote[]
   deliberationCommunityVotes CommunityDeliberationVote[]
   deliberationReviewerVotes  ReviewerDeliberationVote[]
+  OCVConsiderationVote       OCVConsiderationVote?
 
   // Indexes
   @@index([userId])
@@ -276,4 +286,27 @@ model ReviewerDeliberationVote {
 
   @@unique([proposalId, userId])
   @@index([userId])
+}
+
+model OCVConsiderationVote {
+  id         Int      @id @default(autoincrement())
+  proposalId Int      @unique
+  proposal   Proposal @relation(fields: [proposalId], references: [id])
+  voteData   Json
+  updatedAt  DateTime @updatedAt
+  createdAt  DateTime @default(now())
+  User       User[]
+
+  @@index([proposalId])
+}
+
+model WorkerHeartbeat {
+  id            String       @id @default(uuid()) @db.Uuid
+  name          String       @db.VarChar(100) // For identifying job type
+  lastHeartbeat DateTime     @updatedAt
+  status        WorkerStatus @default(RUNNING)
+  metadata      Json?        // Optional JSON column for storing job-specific data
+  createdAt     DateTime     @default(now())
+
+  @@index([name, status])
 }
