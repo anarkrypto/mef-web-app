@@ -33,11 +33,11 @@ import * as esbuild from 'esbuild'
 async function buildWorkers() {
   try {
     await esbuild.build({
-      entryPoints: ['src/tasks/*.ts'],
+      entryPoints: ['src/tasks/*.ts', 'src/scripts/bree-runner.ts'],
       bundle: true,
       platform: 'node',
       target: 'node20',
-      outdir: 'dist/tasks',
+      outdir: 'dist/',
       format: 'esm',
       banner: {
         js: `
@@ -57,4 +57,4 @@ async function buildWorkers() {
   }
 }
 
-buildWorkers() 
+buildWorkers()

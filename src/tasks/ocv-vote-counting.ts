@@ -97,8 +97,6 @@ async function cleanupStaleJobs(): Promise<void> {
         select: { id: true, name: true }
       });
 
-      logger.info(`runningJobs: ${JSON.stringify(runningJobs)}`);
-
       if (runningJobs.length > 0) {
         // Update their status to FAILED
         await prisma.workerHeartbeat.updateMany({
@@ -235,7 +233,7 @@ async function processProposals() {
           metadata.project_vote_status[proposal.id] = voteInfo;
         }
 
-        logger.info(`[OCV Vote Counting] Successfully processed proposal ${proposal.id}`, { 
+        logger.debug(`[OCV Vote Counting] Successfully processed proposal ${proposal.id}`, { 
           jobId,
           proposalId: proposal.id 
         });
