@@ -164,11 +164,17 @@ async function processProposals() {
       PROCESS_PROPOSALS_HEARTBEAT_INTERVAL
     );
 
-    // Get active proposals
+    // Get set of active proposals. An active proposal is one whose funding round currently in consideratoin dates, and the proposal's status is either CONSIDERATION or DELIBERATION
     const activeProposals = await prisma.proposal.findMany({
       where: {
         status: {
           in: [ProposalStatus.CONSIDERATION, ProposalStatus.DELIBERATION]
+        },
+        fundingRound: {
+          considerationPhase: {
+            startDate: { lte: new Date() },
+            endDate: { gte: new Date() }
+          }
         }
       },
       include: {
