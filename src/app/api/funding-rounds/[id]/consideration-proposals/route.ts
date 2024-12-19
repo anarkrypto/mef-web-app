@@ -32,7 +32,8 @@ function parseOCVVoteData(data: JsonValue | null | undefined): OCVVoteData {
     elegible: Boolean(voteData.elegible),
     votes: Array.isArray(voteData.votes) ? voteData.votes.map(vote => ({
       account: String(vote.account || ''),
-      timestamp: Number(vote.timestamp || 0)
+      timestamp: Number(vote.timestamp || 0),
+      hash: String(vote.hash || '')
     })) : []
   };
 }
@@ -145,7 +146,8 @@ export async function GET(
               isEligible: ocvVotes.elegible || false,
               voters: ocvVotes.votes?.map((v: OCVVote) => ({
                 address: v.account,
-                timestamp: v.timestamp
+                timestamp: v.timestamp,
+                hash: v.hash
               })) || []
             },
             reviewerEligible: approved >= minReviewerApprovals,

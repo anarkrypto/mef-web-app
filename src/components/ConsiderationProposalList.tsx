@@ -300,8 +300,16 @@ export function ConsiderationProposalList({ fundingRoundId, fundingRoundName }: 
     if (!proposal.isReviewerEligible) {
       return (
         <div className="flex gap-2">
-          <OCVVoteButton proposalId={proposal.id.toString()} useWallet={true} />
-          <OCVVoteButton proposalId={proposal.id.toString()} useWallet={false} />
+          <OCVVoteButton 
+            proposalId={proposal.id.toString()} 
+            useWallet={true} 
+            voteStats={proposal.voteStats}
+          />
+          <OCVVoteButton 
+            proposalId={proposal.id.toString()} 
+            useWallet={false} 
+            voteStats={proposal.voteStats}
+          />
         </div>
       );
     }
@@ -329,8 +337,16 @@ export function ConsiderationProposalList({ fundingRoundId, fundingRoundName }: 
     if (!proposal.isReviewerEligible) {
       return (
         <div className="flex gap-2">
-          <OCVVoteButton proposalId={proposal.id.toString()} useWallet={true} />
-          <OCVVoteButton proposalId={proposal.id.toString()} useWallet={false} />
+          <OCVVoteButton 
+            proposalId={proposal.id.toString()} 
+            useWallet={true} 
+            voteStats={proposal.voteStats}
+          />
+          <OCVVoteButton 
+            proposalId={proposal.id.toString()} 
+            useWallet={false} 
+            voteStats={proposal.voteStats}
+          />
         </div>
       );
     }
