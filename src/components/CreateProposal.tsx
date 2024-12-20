@@ -47,10 +47,6 @@ const proposalSchema = z.object({
       PV.BUDGET_REQUEST.ERROR_MESSAGES.MAX_VALUE
     ),
     
-  discord: z.string()
-    .max(PV.DISCORD.MAX, PV.DISCORD.ERROR_MESSAGES.MAX)
-    .regex(PV.DISCORD.PATTERN, PV.DISCORD.ERROR_MESSAGES.PATTERN),
-    
   email: z.string()
     .email(PV.EMAIL.ERROR_MESSAGES.FORMAT)
     .max(PV.EMAIL.MAX, PV.EMAIL.ERROR_MESSAGES.MAX)
@@ -76,7 +72,6 @@ export default function CreateProposal({ mode = 'create', proposalId }: Props) {
     deliveryRequirements: '',
     securityAndPerformance: '',
     budgetRequest: '',
-    discord: '',
     email: ''
   })
   const [errors, setErrors] = useState<ValidationErrors>({})
@@ -95,7 +90,6 @@ const fetchProposal = async () => {
         deliveryRequirements: data.deliveryRequirements,
         securityAndPerformance: data.securityAndPerformance,
         budgetRequest: data.budgetRequest.toString(),
-        discord: data.discord,
         email: data.email
       })
     } catch (error) {
@@ -342,27 +336,6 @@ const fetchProposal = async () => {
             {errors.budgetRequest && (
               <p className="text-sm text-red-500">{errors.budgetRequest}</p>
             )}
-          </div>
-
-          <div className="space-y-4">
-            <Label htmlFor="discord" className="text-xl font-semibold">
-              Discord Handle
-            </Label>
-            <Input
-              id="discord"
-              name="discord"
-              value={formData.discord}
-              onChange={handleInputChange}
-              placeholder="Your Discord username"
-              className={`bg-muted ${errors.discord ? 'border-red-500' : ''}`}
-              maxLength={PV.DISCORD.MAX}
-            />
-            {errors.discord && (
-              <p className="text-sm text-red-500">{errors.discord}</p>
-            )}
-            <p className="text-sm text-muted-foreground">
-              {getRemainingChars('discord', PV.DISCORD.MAX)} characters remaining
-            </p>
           </div>
 
           <div className="space-y-4">

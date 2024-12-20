@@ -1,6 +1,3 @@
--- First delete all existing proposals
-DELETE FROM "Proposal";
-
 /*
   Warnings:
 
