@@ -61,7 +61,6 @@ model Proposal {
   deliveryRequirements   String         @db.Text
   securityAndPerformance String         @db.Text
   budgetRequest          Decimal        @db.Decimal(16, 2)
-  discord                String         @db.VarChar(32)
   email                  String         @db.VarChar(254)
   createdAt              DateTime       @default(now()) @db.Timestamptz(6)
   updatedAt              DateTime       @updatedAt @db.Timestamptz(6)
