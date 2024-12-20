@@ -18,13 +18,24 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip"
 import { useFundingRounds } from "@/hooks/use-funding-rounds"
+import type { UserMetadata } from '@/services/UserService'
+
+interface LinkedAccount {
+  id: string;
+  authSource: {
+    type: string;
+    id: string;
+    username: string;
+  };
+}
 
 interface ProposalWithAccess extends Proposal {
   isOwner: boolean;
   user: {
-    metadata: {
-      username: string;
-    };
+    id: string;
+    linkId: string;
+    metadata: UserMetadata;
+    linkedAccounts: LinkedAccount[];
   };
   fundingRound?: {
     id: string;
@@ -72,6 +83,12 @@ const fetchProposal = useCallback(async () => {
       const response = await fetch(`/api/proposals/${proposalId}`)
       if (!response.ok) throw new Error('Failed to fetch proposal')
       const data = await response.json()
+      
+      // Validate that we have the required data
+      if (!data.user?.metadata?.authSource) {
+        throw new Error('Invalid proposal data structure')
+      }
+      
       setProposal(data)
     } catch (error) {
       toast({
@@ -165,7 +182,7 @@ const fetchProposal = useCallback(async () => {
       <div className="border rounded-lg p-6 space-y-6">
         <div className="space-y-4">
           <h2 className="text-2xl font-bold">{proposal.proposalName}</h2>
-          <p className="text-muted-foreground">by {proposal.user.metadata.username}</p>
+          <p className="text-muted-foreground">by {proposal.user.metadata?.username}</p>
           <div className="flex gap-2">
             <span className="px-2 py-1 rounded-full bg-muted text-sm">
               Status: {proposal.status.toLowerCase()}
@@ -219,8 +236,28 @@ const fetchProposal = useCallback(async () => {
 
               <div>
                 <h3 className="text-xl font-semibold mb-2">Contact Information</h3>
-                <p className="text-muted-foreground">Discord: {proposal.discord}</p>
-                <p className="text-muted-foreground">Email: {proposal.email}</p>
+                <div className="space-y-2">
+                  {/* Show Discord info if author is a Discord user */}
+                  {proposal.user.metadata.authSource.type === 'discord' ? (
+                    <p className="text-muted-foreground">
+                      Discord: {proposal.user.metadata.authSource.username}
+                    </p>
+                  ) : (
+                    /* Check for linked Discord account */
+                    proposal.user.linkedAccounts?.some(account => account.authSource.type === 'discord') ? (
+                      <p className="text-muted-foreground">
+                        Discord: {proposal.user.linkedAccounts.find(account => 
+                          account.authSource.type === 'discord'
+                        )?.authSource.username} (linked account)
+                      </p>
+                    ) : (
+                      <p className="text-muted-foreground text-sm italic">
+                        No Discord account linked
+                      </p>
+                    )
+                  )}
+                  <p className="text-muted-foreground">Email: {proposal.email}</p>
+                </div>
               </div>
             </>
           )}

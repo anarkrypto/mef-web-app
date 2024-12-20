@@ -27,7 +27,6 @@ export const proposalSchema = z.object({
     .string()
     .regex(PV.BUDGET_REQUEST.PATTERN)
     .transform((val) => parseFloat(val)),
-  discord: z.string().max(PV.DISCORD.MAX).regex(PV.DISCORD.PATTERN),
   email: z.string().email().max(PV.EMAIL.MAX),
 });
 

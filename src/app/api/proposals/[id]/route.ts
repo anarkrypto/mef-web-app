@@ -1,14 +1,16 @@
 import { NextResponse } from "next/server";
 import { ProposalService } from "@/services/ProposalService";
+import { UserService } from "@/services/UserService";
 import prisma from "@/lib/prisma";
 import { getOrCreateUserFromRequest } from "@/lib/auth";
 import { ZodError } from "zod";
 import logger from "@/logging";
 import { ApiResponse } from '@/lib/api-response';
 import { AppError } from '@/lib/errors';
-import { AuthErrors } from '@/constants/errors';
+import { AuthErrors, HTTPStatus } from '@/constants/errors';
 
 const proposalService = new ProposalService(prisma);
+const userService = new UserService(prisma);
 
 interface RouteContext {
   params: Promise<{
@@ -20,13 +22,19 @@ export async function GET(request: Request, context: RouteContext) {
   try {
     const user = await getOrCreateUserFromRequest(request);
     if (!user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      return ApiResponse.unauthorized("Please log in to view proposals");
     }
 
     const proposal = await prisma.proposal.findUnique({
       where: { id: parseInt((await context.params).id) },
       include: {
-        user: true,
+        user: {
+          select: {
+            id: true,
+            linkId: true,
+            metadata: true,
+          }
+        },
         fundingRound: {
           include: {
             considerationPhase: true,
@@ -38,28 +46,33 @@ export async function GET(request: Request, context: RouteContext) {
     });
 
     if (!proposal) {
-      return NextResponse.json(
-        { error: "Proposal not found" },
-        { status: 404 }
-      );
+      return ApiResponse.notFound("Proposal not found");
+    }
+
+    // Get user info including linked accounts
+    const userInfo = await userService.getUserInfo(proposal.user.id);
+    if (!userInfo) {
+      throw new AppError("Failed to fetch user information", HTTPStatus.INTERNAL_ERROR);
     }
 
     // Check if user is owner or linked user
     const isOwner = proposal.userId === user.id || proposal.user.linkId === user.linkId;
 
-    // Add access control flags
+    // Combine proposal data with user info
     const response = {
       ...proposal,
-      isOwner, 
+      isOwner,
+      user: {
+        ...proposal.user,
+        metadata: userInfo.user.metadata,
+        linkedAccounts: userInfo.linkedAccounts,
+      },
     };
 
-    return NextResponse.json(response);
+    return ApiResponse.success(response);
   } catch (error) {
     logger.error("Failed to fetch proposal:", error);
-    return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500 }
-    );
+    return ApiResponse.error(error);
   }
 }
 
