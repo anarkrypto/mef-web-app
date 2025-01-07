@@ -8,6 +8,7 @@ import {
   MessageCircle,
   Users,
   Coins,
+  Info,
 } from "lucide-react"
 import {
   HoverCard,
@@ -20,6 +21,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip"
+import { Button } from "@/components/ui/button"
 import { ProposalWithUniqueId} from "./types"
 
 /* -------------------------------------------------------------
@@ -78,14 +80,56 @@ export const ProposalContent: React.FC<{
   
         <div className="flex items-center gap-4 text-sm text-muted-foreground px-2">
           <TooltipProvider>
-            {/* Proposal ID */}
-            <Tooltip>
-              <TooltipTrigger className="flex items-center gap-1">
-                <span className="text-xs">#{proposal.id}</span>
-              </TooltipTrigger>
-              <TooltipContent>Proposal ID</TooltipContent>
-            </Tooltip>
-  
+            {/* Proposal ID & Info */}
+            <HoverCard>
+              <HoverCardTrigger className="flex items-center gap-1 hover:text-primary transition-colors">
+                <Info className="w-3 h-3" />
+                <span className="text-xs font-mono">#{proposal.id}</span>
+              </HoverCardTrigger>
+              <HoverCardContent 
+                align="start"
+                className="w-80 p-4"
+              >
+                <div className="space-y-4">
+                  {/* Header with ID and Link */}
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs font-mono text-muted-foreground">
+                        Proposal ID: {proposal.id}
+                      </span>
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-auto p-0 text-xs hover:bg-transparent"
+                      asChild
+                    >
+                      <a
+                        href={`/proposals/${proposal.id}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-primary hover:text-primary/80 font-medium"
+                      >
+                        View Full Details →
+                      </a>
+                    </Button>
+                  </div>
+
+                  {/* Scrollable Abstract */}
+                  <div className="space-y-2">
+                    <h4 className="text-sm font-medium">Abstract</h4>
+                    <div 
+                      className="text-xs text-muted-foreground max-h-24 overflow-y-auto pr-2
+                                scrollbar-thin scrollbar-thumb-gray-200 hover:scrollbar-thumb-gray-300
+                                scrollbar-track-transparent"
+                    >
+                      {proposal.abstract}
+                    </div>
+                  </div>
+                </div>
+              </HoverCardContent>
+            </HoverCard>
+
             {/* Author */}
             <Tooltip>
               <TooltipTrigger className="flex items-center gap-1">

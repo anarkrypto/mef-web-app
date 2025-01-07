@@ -4,6 +4,7 @@ export interface Proposal {
   reviewerVoteCount: number
   status: string
   budgetRequest: number
+  abstract: string
   author: {
     username: string
     authType: "discord" | "wallet"

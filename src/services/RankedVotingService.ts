@@ -8,6 +8,7 @@ export interface RankedProposalAPIResponse {
   reviewerVoteCount: number;
   status: ProposalStatus;
   budgetRequest: number;
+  abstract: string;
   author: {
     username: string;
     authType: "discord" | "wallet";
@@ -86,6 +87,7 @@ export class RankedVotingService {
             id: true,
             proposalName: true,
             status: true,
+            abstract: true,
             budgetRequest: true,
             user: {
               select: {
@@ -132,6 +134,7 @@ export class RankedVotingService {
       return {
         id: p.id,
         proposalName: p.proposalName,
+        abstract: p.abstract,
         reviewerVoteCount: p.deliberationReviewerVotes.length,
         status: p.status,
         budgetRequest: p.budgetRequest.toNumber(),
