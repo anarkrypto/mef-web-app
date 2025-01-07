@@ -15,35 +15,8 @@ import { RankedVoteTransactionDialog } from "@/components/web3/dialogs/RankedVot
 import { WalletConnectorDialog } from "@/components/web3/WalletConnectorDialog"
 import { ManualVoteDialog, ManualVoteDialogVoteType } from "@/components/web3/dialogs/OCVManualInstructions"
 import { GetRankedEligibleProposalsAPIResponse } from "@/services/RankedVotingService"
+import { ProposalWithUniqueId } from "./types"
 
-/* -------------------------------------------------------------
- * Types & Interfaces
- * ------------------------------------------------------------- */
-interface Proposal {
-  id: number
-  proposalName: string
-  reviewerVoteCount: number
-  status: string
-  budgetRequest: number
-  author: {
-    username: string
-    authType: "discord" | "wallet"
-    id: string
-  }
-  reviewerVotes: {
-    approved: number
-    rejected: number
-    total: number
-  }
-  communityVotes: {
-    positiveStakeWeight: string
-    totalVotes: number
-  }
-}
-
-interface ProposalWithUniqueId extends Proposal {
-  uniqueId: string
-}
 
 interface RankedVoteListProps {
   fundingRoundMEFId: number

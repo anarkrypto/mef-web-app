@@ -20,36 +20,11 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip"
+import { ProposalWithUniqueId} from "./types"
 
 /* -------------------------------------------------------------
  * Types & Interfaces
  * ------------------------------------------------------------- */
-interface Proposal {
-  id: number
-  proposalName: string
-  reviewerVoteCount: number
-  status: string
-  budgetRequest: number
-  author: {
-    username: string
-    authType: "discord" | "wallet"
-    id: string
-  }
-  reviewerVotes: {
-    approved: number
-    rejected: number
-    total: number
-  }
-  communityVotes: {
-    positiveStakeWeight: string
-    totalVotes: number
-  }
-}
-
-interface ProposalWithUniqueId extends Proposal {
-  uniqueId: string
-}
-
 /* -------------------------------------------------------------
  * The proposal UI content (with tooltips, icons, etc.)
  * Also includes the "grip" handle where we start the reorder drag
