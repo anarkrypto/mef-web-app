@@ -99,7 +99,7 @@ export function VotingPhase({ fundingRoundId, fundingRoundName }: VotingPhasePro
         onSaveToMemo={handleSaveToMemo}
         onConnectWallet={handleConnectWallet}
         title={`Rank your vote - ${fundingRoundName}`}
-        fundingRoundMEFId={1}
+        fundingRoundMEFId={proposals?.fundingRound.mefId || 0}
       />
 
       <WalletConnectorDialog
@@ -111,7 +111,7 @@ export function VotingPhase({ fundingRoundId, fundingRoundName }: VotingPhasePro
         open={showTransactionDialog}
         onOpenChange={setShowTransactionDialog}
         selectedProposals={selectedProposals??[]}
-        fundingRoundId={parseInt(fundingRoundId)}
+        fundingRoundMEFId={parseInt(fundingRoundId)}
       />
     </>
   );

@@ -32,6 +32,7 @@ export interface GetRankedEligibleProposalsAPIResponse {
 export interface _FundingRound {
   id: string;
   name: string;
+  mefId: number,
 }
 
 export class RankedVotingService {
@@ -67,9 +68,9 @@ export class RankedVotingService {
       return `YES ${proposalIds.join(' ')}`;
     },
 
-    formatRankedVoteMemoVoting: (fundingRoundId: number, proposalIds: number[]): string => {
+    formatRankedVoteMemoVoting: (fundingRoundMEFId: number, proposalIds: number[]): string => {
       // the format is MEF <round number> <project_id1> ... <project_idn>
-      return `MEF ${fundingRoundId} ${proposalIds.join(' ')}`;
+      return `MEF ${fundingRoundMEFId} ${proposalIds.join(' ')}`;
     }
   }
 
@@ -78,6 +79,7 @@ export class RankedVotingService {
       where: { id: fundingRoundId },
       select: {
         name: true,
+        mefId: true,
         proposals: {
           where: { status: 'DELIBERATION' },
           select: {
@@ -125,8 +127,7 @@ export class RankedVotingService {
       const ocvVoteData = ocvData && this.isOCVVoteData(ocvData) ? ocvData : null;
 
       const positiveStakeWeight = ocvVoteData?.positive_stake_weight ?? "0";
-      const totalVotes = ocvVoteData?.total_community_votes ?? 0;
-      
+      const totalVotes = ocvVoteData?.total_community_votes ?? 0; 
 
       return {
         id: p.id,
@@ -155,6 +156,7 @@ export class RankedVotingService {
       proposals,
       fundingRound: {
         id: fundingRoundId,
+        mefId: result.mefId,
         name: result.name
       }
     };

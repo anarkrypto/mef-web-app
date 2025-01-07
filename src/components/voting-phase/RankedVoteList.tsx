@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useCallback, useRef, useState } from "react"
+import React, { useCallback, useRef, useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { Progress } from "@/components/ui/progress"
@@ -183,7 +183,7 @@ const DraggableProposal = ({
 }
 
 const DndContent = ({
-  fundingRoundId,
+  fundingRoundMEFId,
   availableProposals,
   rankedProposals,
   onMoveProposal,
@@ -193,7 +193,7 @@ const DndContent = ({
   onConnectWallet,
   onSaveToMemo,
 }: {
-  fundingRoundId: number
+  fundingRoundMEFId: number,
   availableProposals: ProposalWithUniqueId[]
   rankedProposals: ProposalWithUniqueId[]
   onMoveProposal: (dragIndex: number, hoverIndex: number) => void
@@ -221,7 +221,7 @@ const DndContent = ({
   };
 
   // Create a string of ranked proposal IDs
-  const rankedVoteId = ['0', ...rankedProposals.map(p => p.id)].join(' ');
+  const rankedVoteId: string = [fundingRoundMEFId, ...rankedProposals.map(p => p.id)].join(' ');
 
   return (
     <div className="grid md:grid-cols-2 gap-6">
@@ -298,7 +298,7 @@ const DndContent = ({
           open={showTransactionDialog}
           onOpenChange={setShowTransactionDialog}
           selectedProposals={rankedProposals}
-          fundingRoundId={fundingRoundId}
+          fundingRoundMEFId={fundingRoundMEFId}
         />
 
         <ManualVoteDialog
@@ -316,6 +316,7 @@ const DndContent = ({
 const MAX_RANKED_CHOICES = 10
 
 export default function RankedVoteList({
+  fundingRoundMEFId,
   proposals,
   onSubmit,
   onSaveToMemo,
@@ -325,13 +326,22 @@ export default function RankedVoteList({
   const { state } = useWallet();
 
   // Move all hooks to the top level
-  const [availableProposals, setAvailableProposals] = React.useState<ProposalWithUniqueId[]>(
-    proposals?.proposals.map((p) => ({
-      ...p,
-      uniqueId: `available-${p.id}-${Math.random().toString(36).substr(2, 9)}`,
-    })) || []
-  );
+  const [availableProposals, setAvailableProposals] = React.useState<ProposalWithUniqueId[]>([]);
   const [rankedProposals, setRankedProposals] = React.useState<ProposalWithUniqueId[]>([]);
+
+  // Add effect to update proposals when they change
+  React.useEffect(() => {
+    if (proposals) {
+      setAvailableProposals(
+        proposals.proposals.map((p) => ({
+          ...p,
+          uniqueId: `available-${p.id}-${Math.random().toString(36).substr(2, 9)}`,
+        }))
+      );
+      // Reset ranked proposals when switching funding rounds
+      setRankedProposals([]);
+    }
+  }, [proposals]);
 
   const moveRankedProposal = useCallback((dragIndex: number, hoverIndex: number) => {
     setRankedProposals((prevProposals) => {
@@ -426,7 +436,7 @@ export default function RankedVoteList({
         </div>
 
         <DndContent
-          fundingRoundId={0}
+          fundingRoundMEFId={fundingRoundMEFId}
           availableProposals={availableProposals}
           rankedProposals={rankedProposals}
           onMoveProposal={moveRankedProposal}

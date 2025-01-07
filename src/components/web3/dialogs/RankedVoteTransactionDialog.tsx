@@ -19,7 +19,7 @@ interface RankedVoteTransactionDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   selectedProposals: { id: number }[]
-  fundingRoundId: number
+  fundingRoundMEFId: number
 }
 
 interface TransactionToastProps {
@@ -87,11 +87,16 @@ export function RankedVoteTransactionDialog({
   open,
   onOpenChange,
   selectedProposals,
-  fundingRoundId,
+  fundingRoundMEFId,
 }: RankedVoteTransactionDialogProps) {
   const { state } = useWallet()
   const { toast } = useToast()
   const [isSubmitting, setIsSubmitting] = useState(false)
+
+  const memo = RankedVotingService.Formatter.formatRankedVoteMemoVoting(
+        fundingRoundMEFId,
+        selectedProposals.map(p => p.id)
+      );
 
   const handleSubmitVote = async () => {
     if (!state.wallet?.address) {
@@ -104,13 +109,9 @@ export function RankedVoteTransactionDialog({
     }
 
     setIsSubmitting(true)
-
+    
     try {
-      const memo = RankedVotingService.Formatter.formatRankedVoteMemoVoting(
-        fundingRoundId,
-        selectedProposals.map(p => p.id)
-      );
-      
+       
       let hash: string
 
       switch (state.wallet.provider) {
@@ -177,6 +178,7 @@ export function RankedVoteTransactionDialog({
     }
   }
 
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
@@ -196,7 +198,7 @@ export function RankedVoteTransactionDialog({
               <ul className="list-disc pl-4 space-y-1">
                 <li>Amount: 0 MINA</li>
                 <li>Recipient: Your wallet address</li>
-                <li>Memo: MEF {fundingRoundId} {selectedProposals?.map(p => p.id).join(' ')}</li>
+                <li>Memo: {memo}</li>
                 <li>Fee: 0.1 MINA</li>
               </ul>
             </div>
