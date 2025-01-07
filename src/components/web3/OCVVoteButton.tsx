@@ -4,7 +4,7 @@ import { useState, useMemo } from "react"
 import { Button } from "@/components/ui/button"
 import { useWallet } from "@/contexts/WalletContext"
 import { WalletConnectorDialog } from "./WalletConnectorDialog"
-import { ManualVoteDialog } from "./dialogs/OCVManualInstructions"
+import { ManualVoteDialog, ManualVoteDialogVoteType } from "./dialogs/OCVManualInstructions"
 import { OCVTransactionDialog } from "./dialogs/OCVTransactionDialog"
 import { Icons } from "@/components/icons"
 import { TARGET_NETWORK } from "@/contexts/WalletContext"
@@ -124,7 +124,7 @@ export function OCVVoteButton({
         open={showManualDialog}
         onOpenChange={setShowManualDialog}
         voteId={proposalId}
-        voteType="YES"
+        voteType={ManualVoteDialogVoteType.YES}
         existingVote={existingVote}
       />
 

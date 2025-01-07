@@ -1,6 +1,6 @@
 {
   "name": "pgt-web-app",
-  "version": "0.1.29",
+  "version": "0.1.30",
   "private": true,
   "type": "module",
   "scripts": {
@@ -47,6 +47,7 @@
     "decimal.js": "^10.4.3",
     "discord.js": "^14.16.3",
     "dotenv": "^16.4.5",
+    "framer-motion": "^11.15.0",
     "hash-wasm": "^4.11.0",
     "jose": "^5.9.6",
     "loglevel": "^1.9.2",
@@ -58,6 +59,9 @@
     "next-themes": "^0.3.0",
     "react": "18.3.1",
     "react-day-picker": "^8.10.1",
+    "react-dnd": "^16.0.1",
+    "react-dnd-html5-backend": "^16.0.1",
+    "react-dnd-touch-backend": "^16.0.1",
     "react-dom": "18.3.1",
     "tailwind-merge": "^2.5.4",
     "tailwindcss-animate": "^1.0.7",

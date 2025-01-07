@@ -102,7 +102,10 @@ export default function HomePage() {
           fundingRoundName={selectedRound.name}
         />;
       case 'vote':
-        return <VotingPhase />;
+        return <VotingPhase
+          fundingRoundId={selectedRound.id}
+          fundingRoundName={selectedRound.name}
+        />;
       case 'completed':
         return <CompletedPhase />;
       default:

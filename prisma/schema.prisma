@@ -151,6 +151,7 @@ model TopicReviewerGroup {
 
 model FundingRound {
   id          String             @id @default(uuid()) @db.Uuid
+  mefId       Int               @default(autoincrement()) @unique
   createdById String             @db.Uuid
   topicId     String             @db.Uuid
   name        String             @db.VarChar(100)

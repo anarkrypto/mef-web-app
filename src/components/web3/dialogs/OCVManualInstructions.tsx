@@ -12,12 +12,17 @@ import {
 import { cn } from "@/lib/utils"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { formatDistanceToNow } from "date-fns"
+export enum ManualVoteDialogVoteType {
+  YES = "YES",
+  NO = "NO",
+  MEF = "MEF",
+}
 
 interface ManualVoteDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   voteId: string
-  voteType: "YES" | "NO"
+  voteType: ManualVoteDialogVoteType,
   existingVote?: {
     address: string
     timestamp: number
@@ -33,7 +38,7 @@ export function ManualVoteDialog({
   existingVote
 }: ManualVoteDialogProps) {
   const [copied, setCopied] = useState(false)
-  const memo = `${voteType} ${voteId}`
+  const memo = `${voteType} ${voteId}` 
 
   const copyToClipboard = async () => {
     try {
