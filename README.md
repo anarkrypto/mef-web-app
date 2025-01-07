@@ -218,6 +218,31 @@ Bree.js is for running background tasks in separate threads:
    - Hot reload of workers **NOT** supported via `npm run dev`
    - Production builds include worker compilation
 
+### Funding Round Identifiers
+
+Each funding round has two unique identifiers:
+
+1. **UUID Identifier (`id`)**:
+   - Primary identifier used throughout most of the application
+   - UUID v4 format
+   - Used in API routes and database relations
+
+2. **Numeric Identifier (`mefId`)**:
+   - Auto-incrementing integer
+   - Added later in development
+   - More compact representation for blockchain operations
+   - Used specifically during voting phase where memo space is limited
+
+The dual identifier system exists because during the development of the voting phase, it became apparent that using UUIDs in blockchain transaction memos would consume too much space. The `mefId` was introduced as a more space-efficient alternative.
+
+
+**Future Considerations**:
+- Both identifiers can be used interchangeably throughout the application
+- Long-term plan may involve transitioning away from UUIDs to exclusively use `mefId`
+- Such transition would require  refactoring of existing codebase
+- For now, both systems coexist to maintain backward compatibility while achieving the goal of compressed memos
+
+
 
 ## API Routes
 
