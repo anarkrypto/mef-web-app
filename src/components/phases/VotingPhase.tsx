@@ -14,14 +14,19 @@ interface VotingPhaseProps {
   fundingRoundName: string;
 }
 
+
+interface SelectedProposalId {
+ id: number 
+}
+
 export function VotingPhase({ fundingRoundId, fundingRoundName }: VotingPhaseProps) {
-  const { state } = useWallet()
-  const { toast } = useToast()
-  const [proposals, setProposals] = useState<GetRankedEligibleProposalsAPIResponse>()
-  const [isLoading, setIsLoading] = useState(true)
-  const [showWalletDialog, setShowWalletDialog] = useState(false)
-  const [showTransactionDialog, setShowTransactionDialog] = useState(false)
-  const [selectedProposals, setSelectedProposals] = useState<GetRankedEligibleProposalsAPIResponse>()
+  const { state } = useWallet();
+  const { toast } = useToast();
+  const [proposals, setProposals] = useState<GetRankedEligibleProposalsAPIResponse>();
+  const [isLoading, setIsLoading] = useState(true);
+  const [showWalletDialog, setShowWalletDialog] = useState(false);
+  const [showTransactionDialog, setShowTransactionDialog] = useState(false);
+  const [selectedProposals, setSelectedProposals] = useState<SelectedProposalId[]>();
 
   useEffect(() => {
     const fetchProposals = async () => {
@@ -47,7 +52,9 @@ export function VotingPhase({ fundingRoundId, fundingRoundName }: VotingPhasePro
   }, [fundingRoundId, toast]);
 
   const handleSubmit = (selectedProposals: GetRankedEligibleProposalsAPIResponse) => {
-    setSelectedProposals(selectedProposals);
+    const proposalIds: SelectedProposalId[] = selectedProposals?.proposals.map(p => ({ id: p.id })) ?? [];
+    
+    setSelectedProposals(proposalIds);
     setShowTransactionDialog(true);
   };
 
@@ -92,7 +99,7 @@ export function VotingPhase({ fundingRoundId, fundingRoundName }: VotingPhasePro
         onSaveToMemo={handleSaveToMemo}
         onConnectWallet={handleConnectWallet}
         title={`Rank your vote - ${fundingRoundName}`}
-        fundingRoundId={parseInt(fundingRoundId)}
+        fundingRoundMEFId={1}
       />
 
       <WalletConnectorDialog
@@ -103,7 +110,7 @@ export function VotingPhase({ fundingRoundId, fundingRoundName }: VotingPhasePro
       <RankedVoteTransactionDialog
         open={showTransactionDialog}
         onOpenChange={setShowTransactionDialog}
-        selectedProposals={selectedProposals}
+        selectedProposals={selectedProposals??[]}
         fundingRoundId={parseInt(fundingRoundId)}
       />
     </>

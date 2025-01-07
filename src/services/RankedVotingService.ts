@@ -1,5 +1,6 @@
 import { PrismaClient, ProposalStatus } from "@prisma/client";
 import { UserMetadata } from "@/services/UserService";
+import { OCVVoteData, OCVVote } from "@/types/consideration";
 
 export interface RankedProposalAPIResponse {
   id: number;
@@ -29,12 +30,37 @@ export interface GetRankedEligibleProposalsAPIResponse {
 }
 
 export interface _FundingRound {
-  id: number;
+  id: string;
   name: string;
 }
 
 export class RankedVotingService {
   constructor(private prisma: PrismaClient) {}
+
+  /**
+   * Manual type-safe parsing of OCVVoteData. There is a way to improve it, but for now
+   * keeping it as it.
+   * DO NOT EXPORT THIS. If needed again, refactor.
+   * @param data data to parse
+   * @returns 
+   */
+  private isOCVVoteData(data: unknown): data is OCVVoteData {
+    if (!data || typeof data !== 'object') return false;
+    const d = data as Record<string, unknown>;
+    return (
+      typeof d.total_community_votes === 'number' &&
+      typeof d.total_positive_community_votes === 'number' &&
+      typeof d.positive_stake_weight === 'string' &&
+      typeof d.elegible === 'boolean' &&
+      Array.isArray(d.votes) &&
+      d.votes.every(v => 
+        typeof v === 'object' && v !== null &&
+        typeof (v as OCVVote).account === 'string' &&
+        typeof (v as OCVVote).timestamp === 'number' &&
+        typeof (v as OCVVote).hash === 'string'
+      )
+    );
+  }
 
   static Formatter = {
     formatRankedVoteMemoConsideration: (proposalIds: number[]): string => {
@@ -95,7 +121,12 @@ export class RankedVotingService {
       const authType = p.user.linkId ? ("discord" as const) : ("wallet" as const);
       const approvedVotes = p.deliberationReviewerVotes.filter(v => v.recommendation).length;
       const rejectedVotes = p.deliberationReviewerVotes.filter(v => !v.recommendation).length;
-      const ocvData = p.OCVConsiderationVote?.voteData as any || {};
+      const ocvData = p.OCVConsiderationVote?.voteData;
+      const ocvVoteData = ocvData && this.isOCVVoteData(ocvData) ? ocvData : null;
+
+      const positiveStakeWeight = ocvVoteData?.positive_stake_weight ?? "0";
+      const totalVotes = ocvVoteData?.total_community_votes ?? 0;
+      
 
       return {
         id: p.id,
@@ -114,8 +145,8 @@ export class RankedVotingService {
           total: approvedVotes + rejectedVotes
         },
         communityVotes: {
-          positiveStakeWeight: ocvData.positive_stake_weight || "0",
-          totalVotes: ocvData.total_community_votes || 0
+          positiveStakeWeight: positiveStakeWeight,
+          totalVotes: totalVotes
         }
       } satisfies RankedProposalAPIResponse;
     });

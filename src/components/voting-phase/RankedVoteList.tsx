@@ -13,7 +13,7 @@ import { isTouchDevice } from "@/lib/utils"
 import { useWallet } from '@/contexts/WalletContext'
 import { RankedVoteTransactionDialog } from "@/components/web3/dialogs/RankedVoteTransactionDialog"
 import { WalletConnectorDialog } from "@/components/web3/WalletConnectorDialog"
-import { ManualVoteDialog } from "@/components/web3/dialogs/OCVManualInstructions"
+import { ManualVoteDialog, ManualVoteDialogVoteType } from "@/components/web3/dialogs/OCVManualInstructions"
 import { GetRankedEligibleProposalsAPIResponse } from "@/services/RankedVotingService"
 
 /* -------------------------------------------------------------
@@ -46,9 +46,10 @@ interface ProposalWithUniqueId extends Proposal {
 }
 
 interface RankedVoteListProps {
+  fundingRoundMEFId: number
   proposals?: GetRankedEligibleProposalsAPIResponse | null
-  onSubmit: (selectedProposals: Proposal[]) => void
-  onSaveToMemo: (selectedProposals: Proposal[]) => void
+  onSubmit: (selectedProposals: GetRankedEligibleProposalsAPIResponse) => void
+  onSaveToMemo: (selectedProposals: GetRankedEligibleProposalsAPIResponse) => void
   onConnectWallet: () => void
   title?: string
 }
@@ -200,7 +201,7 @@ const DndContent = ({
   onDropToRanked: (item: DragItem) => void
   onDropToAvailable: (item: DragItem) => void
   onConnectWallet: () => void
-  onSaveToMemo: (proposals: ProposalWithUniqueId[]) => void
+  onSaveToMemo: (proposals: GetRankedEligibleProposalsAPIResponse) => void
 }) => {
   const { state } = useWallet();
   const [showWalletDialog, setShowWalletDialog] = useState(false);
@@ -220,7 +221,7 @@ const DndContent = ({
   };
 
   // Create a string of ranked proposal IDs
-  const rankedVoteId = rankedProposals.map(p => p.id).join(' ');
+  const rankedVoteId = ['0', ...rankedProposals.map(p => p.id)].join(' ');
 
   return (
     <div className="grid md:grid-cols-2 gap-6">
@@ -304,7 +305,7 @@ const DndContent = ({
           open={showManualDialog}
           onOpenChange={setShowManualDialog}
           voteId={rankedVoteId}
-          voteType="YES"
+          voteType={ManualVoteDialogVoteType.MEF}
           existingVote={null}
         />
       </Card>
@@ -323,8 +324,62 @@ export default function RankedVoteList({
 }: RankedVoteListProps) {
   const { state } = useWallet();
 
+  // Move all hooks to the top level
+  const [availableProposals, setAvailableProposals] = React.useState<ProposalWithUniqueId[]>(
+    proposals?.proposals.map((p) => ({
+      ...p,
+      uniqueId: `available-${p.id}-${Math.random().toString(36).substr(2, 9)}`,
+    })) || []
+  );
+  const [rankedProposals, setRankedProposals] = React.useState<ProposalWithUniqueId[]>([]);
+
+  const moveRankedProposal = useCallback((dragIndex: number, hoverIndex: number) => {
+    setRankedProposals((prevProposals) => {
+      const newProposals = [...prevProposals];
+      const [removed] = newProposals.splice(dragIndex, 1);
+      newProposals.splice(hoverIndex, 0, removed);
+      return newProposals;
+    });
+  }, []);
+
+  const handleDropToRanked = useCallback((item: DragItem) => {
+    const draggedProposal = item.sourceList === "available" 
+      ? availableProposals.find(p => p.uniqueId === item.id)
+      : rankedProposals.find(p => p.uniqueId === item.id);
+
+    if (!draggedProposal) return;
+
+    if (item.sourceList === "available") {
+      if (rankedProposals.length >= MAX_RANKED_CHOICES) return;
+
+      setAvailableProposals(prev => prev.filter(p => p.uniqueId !== item.id));
+      setRankedProposals(prev => [...prev, draggedProposal]);
+    }
+  }, [availableProposals, rankedProposals]);
+
+  const handleDropToAvailable = useCallback((item: DragItem) => {
+    if (item.sourceList === "ranked") {
+      const draggedProposal = rankedProposals.find(p => p.uniqueId === item.id);
+      if (!draggedProposal) return;
+
+      setRankedProposals(prev => prev.filter(p => p.uniqueId !== item.id));
+      setAvailableProposals(prev => [...prev, draggedProposal]);
+    }
+  }, [rankedProposals]);
+
+  const handleDoubleClick = useCallback((proposal: ProposalWithUniqueId, source: "available" | "ranked") => {
+    if (source === "available") {
+      if (rankedProposals.length >= MAX_RANKED_CHOICES) return;
+      setAvailableProposals(prev => prev.filter(p => p.uniqueId !== proposal.uniqueId));
+      setRankedProposals(prev => [...prev, proposal]);
+    } else {
+      setRankedProposals(prev => prev.filter(p => p.uniqueId !== proposal.uniqueId));
+      setAvailableProposals(prev => [...prev, proposal]);
+    }
+  }, [rankedProposals.length]);
+
   // If no proposals are provided, show a message
-  if (!proposals?.proposals?.length) {
+  if (!proposals) {
     return (
       <div className="container mx-auto px-4 py-8 max-w-7xl">
         <Card className="p-6">
@@ -340,61 +395,8 @@ export default function RankedVoteList({
     );
   }
 
-  const [availableProposals, setAvailableProposals] = React.useState<ProposalWithUniqueId[]>(
-    proposals.proposals.map((p) => ({
-      ...p,
-      uniqueId: `available-${p.id}-${Math.random().toString(36).substr(2, 9)}`,
-    }))
-  )
-  const [rankedProposals, setRankedProposals] = React.useState<ProposalWithUniqueId[]>([])
-
-  const moveRankedProposal = useCallback((dragIndex: number, hoverIndex: number) => {
-    setRankedProposals((prevProposals) => {
-      const newProposals = [...prevProposals]
-      const [removed] = newProposals.splice(dragIndex, 1)
-      newProposals.splice(hoverIndex, 0, removed)
-      return newProposals
-    })
-  }, [])
-
-  const handleDropToRanked = useCallback((item: DragItem) => {
-    const draggedProposal = item.sourceList === "available" 
-      ? availableProposals.find(p => p.uniqueId === item.id)
-      : rankedProposals.find(p => p.uniqueId === item.id)
-
-    if (!draggedProposal) return
-
-    if (item.sourceList === "available") {
-      if (rankedProposals.length >= MAX_RANKED_CHOICES) return
-
-      setAvailableProposals(prev => prev.filter(p => p.uniqueId !== item.id))
-      setRankedProposals(prev => [...prev, draggedProposal])
-    }
-  }, [availableProposals, rankedProposals])
-
-  const handleDropToAvailable = useCallback((item: DragItem) => {
-    if (item.sourceList === "ranked") {
-      const draggedProposal = rankedProposals.find(p => p.uniqueId === item.id)
-      if (!draggedProposal) return
-
-      setRankedProposals(prev => prev.filter(p => p.uniqueId !== item.id))
-      setAvailableProposals(prev => [...prev, draggedProposal])
-    }
-  }, [rankedProposals])
-
-  const handleDoubleClick = useCallback((proposal: ProposalWithUniqueId, source: "available" | "ranked") => {
-    if (source === "available") {
-      if (rankedProposals.length >= MAX_RANKED_CHOICES) return
-      setAvailableProposals(prev => prev.filter(p => p.uniqueId !== proposal.uniqueId))
-      setRankedProposals(prev => [...prev, proposal])
-    } else {
-      setRankedProposals(prev => prev.filter(p => p.uniqueId !== proposal.uniqueId))
-      setAvailableProposals(prev => [...prev, proposal])
-    }
-  }, [rankedProposals.length])
-
-  const progressPercentage = (rankedProposals.length / MAX_RANKED_CHOICES) * 100
-  const remainingChoices = MAX_RANKED_CHOICES - rankedProposals.length
+  const progressPercentage = (rankedProposals.length / MAX_RANKED_CHOICES) * 100;
+  const remainingChoices = MAX_RANKED_CHOICES - rankedProposals.length;
 
   return (
     <DndProvider backend={isTouchDevice() ? TouchBackend : HTML5Backend}>
@@ -402,7 +404,7 @@ export default function RankedVoteList({
         <h1 className="text-3xl font-bold text-gray-900 mb-4">{title}</h1>
         <p className="text-gray-600 mb-8">
           Drag and drop proposals to move them into the Ranked list, or double-click an item to move it.
-          Under <strong>'Your Ranked Choices'</strong>, items should be reordered according to preference, where 1 is the highest preference project to be funded and the last position is the least preference project to be funded.
+          Under <strong>&apos;Your Ranked Choices&apos;</strong>, items should be reordered according to preference, where 1 is the highest preference project to be funded and the last position is the least preference project to be funded.
         </p>
 
         <div className="mb-6">
@@ -424,7 +426,7 @@ export default function RankedVoteList({
         </div>
 
         <DndContent
-          fundingRoundId={proposals.fundingRound.id}
+          fundingRoundId={0}
           availableProposals={availableProposals}
           rankedProposals={rankedProposals}
           onMoveProposal={moveRankedProposal}
