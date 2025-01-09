@@ -1,8 +1,3 @@
-/**
- * In-development verstion of /api/me/info
- * 
- * Later, this will replace /api/me/info and its usages.
- */
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import prisma from "@/lib/prisma";
@@ -11,6 +6,7 @@ import { UserService } from "@/services/UserService";
 import logger from "@/logging";
 import { deriveUserId } from "@/lib/user/derive";
 import { ApiResponse } from "@/lib/api-response";
+import { JWSInvalid, JWSSignatureVerificationFailed, JWTClaimValidationFailed, JWTExpired, JWTInvalid } from "jose/errors";
 
 const userService = new UserService(prisma);
 
@@ -42,10 +38,22 @@ export async function GET() {
     return ApiResponse.success(userInfo);
   } catch (error) {
     logger.error("User info error:", error);
+  
+    if (
+      error instanceof JWTInvalid ||
+      error instanceof JWTExpired ||
+      error instanceof JWTClaimValidationFailed ||
+      error instanceof JWSSignatureVerificationFailed ||
+      error instanceof JWSInvalid
+    ) {
+      return ApiResponse.unauthorized("Invalid or expired access token");
+    }
+
 
     if (error instanceof Error && error.message === "Invalid token") {
       return ApiResponse.unauthorized("Unauthorized");
     }
+ 
 
     return ApiResponse.error("Internal server error");
   }

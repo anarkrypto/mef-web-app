@@ -4,6 +4,7 @@ import { verifyToken } from "./lib/auth/jwt";
 import { AppError } from "./lib/errors";
 import logger from "./logging";
 import { JWTPayload } from "jose";
+import { cookies } from "next/headers";
 
 const getBaseUrl = () => process.env.NEXT_APP_URL;
 
@@ -144,7 +145,7 @@ async function handleTokenRefresh(refreshToken: string, cookieManager: CookieMan
 
     // Get all Set-Cookie headers
     const cookies = refreshResponse.headers.getSetCookie();
-    
+
     // Parse the cookies to get the new tokens
     const newAccessToken = cookies
       .find(cookie => cookie.startsWith('access_token='))
@@ -167,7 +168,7 @@ async function handleTokenRefresh(refreshToken: string, cookieManager: CookieMan
 }
 
 // Update authenticateRequest to use CookieManager
-async function authenticateRequest(cookieManager: CookieManager): Promise<AuthResult> {
+async function authenticateRequest(cookieManager: CookieManager, request: NextRequest): Promise<AuthResult> {
   const { accessToken, refreshToken } = cookieManager.getRequestTokens();
 
   // No tokens available
@@ -197,6 +198,10 @@ async function authenticateRequest(cookieManager: CookieManager): Promise<AuthRe
       if (refreshSuccessful) {
         const { accessToken: newAccessToken } = cookieManager.getResponseTokens();
         if (newAccessToken) {
+          // We don't need to set the cookie on the request anymore since it's handled by cookieManager
+          // and will be propagated through the response
+          const cookieStore = await cookies();
+
           const isAdmin = await checkAdminAccess(newAccessToken);
           return {
             isAuthenticated: true,
@@ -212,31 +217,120 @@ async function authenticateRequest(cookieManager: CookieManager): Promise<AuthRe
   return { isAuthenticated: false, error: "Authentication failed" };
 }
 
-// Update middleware function to use CookieManager
+// Update middleware function to validate tokens first
 export async function middleware(request: NextRequest) {
   const path = request.nextUrl.pathname;
   const routeType = getRouteType(path);
 
   logger.debug("[Middleware] Processing request:", { path, routeType });
 
-  const response = NextResponse.next();
-  const cookieManager = new CookieManager(request, response);
-
-  // For authentication requests, just authenticate
-  if (isAuthPath(path)) {
-    return response;
-  }
-
-  // Not auth request: authenticate and check permissions
-  const authResult = await authenticateRequest(cookieManager);
-
-  // Skip authentication for public paths
+  // Skip token validation for public and auth paths
   if (isPublicPath(path)) {
-    return response;
+    return NextResponse.next();
   }
 
-  // Handle response based on authentication and permissions
-  return handleAuthResponse(request, routeType, authResult, response);
+  if (isAuthPath(path)) {
+    return NextResponse.next();
+  }
+
+  // Get tokens from request
+  const accessToken = request.cookies.get("access_token")?.value;
+  const refreshToken = request.cookies.get("refresh_token")?.value;
+
+  logger.error(`1. accessToken: ${accessToken} refreshToken: ${refreshToken}`);
+
+  // No tokens available
+  if (!accessToken && !refreshToken) {
+    return generateUnauthorizedResponse(routeType, request);
+  }
+
+  // Try to validate access token
+  if (accessToken) {
+    try {
+      await verifyToken(accessToken);
+      const isAdmin = await checkAdminAccess(accessToken);
+      
+      // Token is valid, create response and proceed
+      const response = NextResponse.next();
+      
+      // For admin routes, check permissions
+      if (routeType === 'admin' && !isAdmin) {
+        return generateAdminUnauthorizedResponse(routeType, request);
+      }
+
+      return response;
+    } catch (error) {
+      logger.debug("[Middleware] Access token invalid, will attempt refresh");
+      // Continue to refresh token logic
+    }
+  }
+
+  // Try refresh token if access token is invalid or missing
+  if (refreshToken) {
+    try {
+      const baseUrl = getBaseUrl();
+      const refreshResponse = await fetch(`${baseUrl}/api/auth/refresh`, {
+        method: "POST",
+        headers: {
+          Cookie: `refresh_token=${refreshToken}`,
+        },
+      });
+
+      logger.error(`2. refreshResponse: ${refreshResponse}`);
+
+      if (!refreshResponse.ok) {
+        return generateUnauthorizedResponse(routeType, request);
+      }
+
+      // Get the new tokens from the refresh response
+      const cookies = refreshResponse.headers.getSetCookie();
+      const newAccessToken = cookies
+        .find(cookie => cookie.startsWith('access_token='))
+        ?.split(';')[0]
+        .split('=')[1];
+
+      if (!newAccessToken) {
+        return generateUnauthorizedResponse(routeType, request);
+      }
+
+      logger.error(`3. newAccessToken: ${newAccessToken}`);
+
+      const requestHeaders = new Headers(request.headers);
+      const requestCookies = requestHeaders.get('Cookie') || '';
+      const cookieArray = requestCookies.split('; ');
+      const updatedCookies = cookieArray.filter(cookie => !cookie.startsWith('access_token='));
+      updatedCookies.push(`access_token=${newAccessToken}`);
+      
+      requestHeaders.set('Cookie', updatedCookies.join('; '));
+      
+      const modifiedRequest = new NextRequest(request, {
+        headers: requestHeaders,
+      });
+
+      // Verify admin status with new token
+      const isAdmin = await checkAdminAccess(newAccessToken);
+
+      // Create response with the new tokens
+      const response = NextResponse.next({request: modifiedRequest});
+      
+      // Set each cookie as a separate Set-Cookie header as per HTTP/1.1 spec
+      cookies.forEach(cookie => {
+        response.headers.append('Set-Cookie', cookie);
+      });
+
+      // For admin routes, check permissions
+      if (routeType === 'admin' && !isAdmin) {
+        return generateAdminUnauthorizedResponse(routeType, request);
+      }
+
+      return response;
+    } catch (error) {
+      logger.error("[Middleware] Refresh failed:", error);
+      return generateUnauthorizedResponse(routeType, request);
+    }
+  }
+
+  return generateUnauthorizedResponse(routeType, request);
 }
 
 /**
