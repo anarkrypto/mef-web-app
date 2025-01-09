@@ -12,7 +12,7 @@ export async function getOrCreateUserFromRequest(req: Request): Promise<User | n
     // Get the access token from cookies
     const cookieStore = await cookies();
     const accessToken = cookieStore.get("access_token")?.value;
-
+    
     if (!accessToken) {
       return null;
     }
@@ -22,6 +22,7 @@ export async function getOrCreateUserFromRequest(req: Request): Promise<User | n
 
     // Resolve user from payload
     const user = await userService.findOrCreateUser(payload.authSource);
+
     return user;
   } catch (error) {
     logger.error("Error getting user from request:", error);
