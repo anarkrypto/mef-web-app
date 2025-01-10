@@ -6,7 +6,7 @@ import type { AuroWallet, WalletContextType, WalletProvider, WalletState, Networ
 import { WalletAuthDialog } from '@/components/web3/WalletAuthDialog';
 
 // Define target network - can be toggled between 'mainnet' and 'testnet'
-export const TARGET_NETWORK: NetworkID = 'testnet';
+export const TARGET_NETWORK: NetworkID = 'devnet';
 
 const initialState: WalletState = {
   status: 'disconnected',
@@ -16,12 +16,6 @@ const initialState: WalletState = {
 };
 
 const WalletContext = createContext<WalletContextType | undefined>(undefined);
-
-interface AccountsChangedEvent extends Event {
-  detail: {
-    accounts: string[];
-  };
-}
 
 // Define type for window.mina
 declare global {

@@ -1,6 +1,6 @@
 export type WalletProvider = 'auro' | 'pallard' | 'clorio';
 
-export type NetworkID = 'mainnet' | 'testnet' | 'berkeley';
+export type NetworkID = 'mainnet' | 'devnet' | 'berkeley';
 
 // Wallet event types
 export type WalletEventType = 'accountsChanged' | 'networkChanged' | 'chainChanged' | 'disconnect' | 'connect';
