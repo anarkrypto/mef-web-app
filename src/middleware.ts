@@ -237,8 +237,6 @@ export async function middleware(request: NextRequest) {
   const accessToken = request.cookies.get("access_token")?.value;
   const refreshToken = request.cookies.get("refresh_token")?.value;
 
-  logger.error(`1. accessToken: ${accessToken} refreshToken: ${refreshToken}`);
-
   // No tokens available
   if (!accessToken && !refreshToken) {
     return generateUnauthorizedResponse(routeType, request);
@@ -276,8 +274,6 @@ export async function middleware(request: NextRequest) {
         },
       });
 
-      logger.error(`2. refreshResponse: ${refreshResponse}`);
-
       if (!refreshResponse.ok) {
         return generateUnauthorizedResponse(routeType, request);
       }
@@ -292,8 +288,6 @@ export async function middleware(request: NextRequest) {
       if (!newAccessToken) {
         return generateUnauthorizedResponse(routeType, request);
       }
-
-      logger.error(`3. newAccessToken: ${newAccessToken}`);
 
       const requestHeaders = new Headers(request.headers);
       const requestCookies = requestHeaders.get('Cookie') || '';
