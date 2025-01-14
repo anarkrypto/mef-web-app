@@ -2,7 +2,7 @@
 
 import { Button } from "@/components/ui/button"
 import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Users, MessageSquare, Coins, FileCheck, Vote, Activity } from 'lucide-react'
+import { Users, MessageSquare, Coins, FileCheck, Vote, Activity, MessageCircle } from 'lucide-react'
 import Link from "next/link"
 
 export function AdminDashboardComponent() {
@@ -48,6 +48,12 @@ export function AdminDashboardComponent() {
       description: "Monitor OCV consideration votes",
       icon: <Vote className="h-5 w-5" />,
       href: "/admin/ocv-votes"
+    },
+    {
+      title: "User Feedback",
+      description: "View and manage user feedback submissions",
+      icon: <MessageCircle className="h-5 w-5" />,
+      href: "/admin/feedback"
     }
   ]
 
@@ -61,7 +67,7 @@ export function AdminDashboardComponent() {
           </p>
         </div>
 
-        <div className="grid gap-4 md:grid-cols-2">
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           {adminOptions.map((option, index) => (
             <Link key={index} href={option.href} className="block">
               <Card className="transition-colors hover:bg-muted/50">

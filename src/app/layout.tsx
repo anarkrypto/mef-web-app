@@ -8,6 +8,7 @@ import { Toaster } from "@/components/ui/toaster"
 import { AuthProvider } from "@/contexts/AuthContext"
 import { WalletProvider } from "@/contexts/WalletContext"
 import { Suspense } from "react";
+import { FeedbackDialog } from "@/components/feedback/FeedbackDialog";
 
 const geistSans = localFont({
   src: "./fonts/GeistVF.woff",
@@ -46,6 +47,7 @@ export default function RootLayout({
                   <Header />
                   <main>{children}</main>
                   <Toaster />
+                  <FeedbackDialog />
                 </WalletProvider>
               </AuthProvider>
             </Suspense>
