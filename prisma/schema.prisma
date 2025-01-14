@@ -44,6 +44,7 @@ model User {
   deliberationReviewerVotes  ReviewerDeliberationVote[]
   ocvConsiderationVote       OCVConsiderationVote?       @relation(fields: [oCVConsiderationVoteId], references: [id])
   oCVConsiderationVoteId     Int?
+  feedback UserFeedback[]
 
   @@index([id])
   @@index([linkId])
@@ -309,4 +310,21 @@ model WorkerHeartbeat {
   createdAt     DateTime     @default(now())
 
   @@index([name, status])
+}
+
+model UserFeedback {
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String   @db.Uuid
+  feedback  String   @db.Text
+  image     Bytes?   @db.ByteA  // Optional binary data for screenshot, PostgreSQL BYTEA type
+  metadata  Json     // Flexible JSON storage for additional user data
+  createdAt DateTime @default(now()) @db.Timestamptz(6)
+  updatedAt DateTime @updatedAt @db.Timestamptz(6)
+
+  // Relation to User model
+  user User @relation(fields: [userId], references: [id])
+
+  // Indexes
+  @@index([userId])
+  @@index([createdAt])
 }
