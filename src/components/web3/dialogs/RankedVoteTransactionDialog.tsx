@@ -133,7 +133,6 @@ export function RankedVoteTransactionDialog({
           // Request network to ensure we're on the right network
           if (mina.requestNetwork) {
             const network = await mina.requestNetwork()
-            console.log("Connected to network:", network)
           }
 
           // Send payment to self with memo
