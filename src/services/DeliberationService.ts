@@ -1,6 +1,7 @@
 import { PrismaClient, Prisma, ProposalStatus } from "@prisma/client";
 import { AppError } from "@/lib/errors";
 import { UserMetadata } from "./UserService";
+import { Decimal } from "@prisma/client/runtime/library";
 
 // Define types for the votes
 interface ReviewerDeliberationVote {
@@ -45,6 +46,29 @@ interface ProposalWithVotes {
       }[];
     };
   };
+}
+
+interface DeliberationPhaseSummary {
+  startDate: Date;
+  endDate: Date;
+  totalProposals: number;
+  recommendedProposals: number;
+  notRecommendedProposals: number;
+  budgetBreakdown: {
+    small: number;  // 100-500 MINA
+    medium: number; // 500-1000 MINA
+    large: number;  // 1000+ MINA
+  };
+  proposalVotes: Array<{
+    id: number;
+    proposalName: string;
+    proposer: string;
+    yesVotes: number;
+    noVotes: number;
+    status: ProposalStatus;
+    isRecommended: boolean;
+    budgetRequest: Decimal;
+  }>;
 }
 
 export class DeliberationService {
@@ -284,5 +308,91 @@ export class DeliberationService {
         },
       });
     }
+  }
+
+  async getDeliberationPhaseSummary(fundingRoundId: string): Promise<DeliberationPhaseSummary> {
+    const fundingRound = await this.prisma.fundingRound.findUnique({
+      where: { id: fundingRoundId },
+      include: {
+        deliberationPhase: true,
+        proposals: {
+          where: {
+            status: {
+              in: ['DELIBERATION', 'VOTING', 'APPROVED', 'REJECTED']
+            }
+          },
+          include: {
+            user: {
+              select: {
+                metadata: true
+              }
+            },
+            deliberationReviewerVotes: true
+          }
+        }
+      }
+    });
+
+    if (!fundingRound || !fundingRound.deliberationPhase) {
+      throw new AppError("Funding round or deliberation phase not found", 404);
+    }
+
+    const { proposals, deliberationPhase } = fundingRound;
+
+    // Calculate budget breakdowns
+    const budgetBreakdown = {
+      small: 0,
+      medium: 0,
+      large: 0
+    };
+
+    proposals.forEach(proposal => {
+      const budget = proposal.budgetRequest as unknown as Decimal;
+      const budgetNumber = budget.toNumber();
+      console.log(`Proposal ${proposal.id} has budget: ${budgetNumber}`);
+      
+      if (budgetNumber <= 500) {
+        budgetBreakdown.small++;
+      } else if (budgetNumber <= 1000) {
+        budgetBreakdown.medium++;
+      } else {
+        budgetBreakdown.large++;
+      }
+    });
+
+    // Calculate votes for each proposal
+    const proposalVotes = proposals.map(proposal => {
+      const votes = proposal.deliberationReviewerVotes;
+      const yesVotes = votes.filter(v => v.recommendation).length;
+      const noVotes = votes.filter(v => !v.recommendation).length;
+      
+      return {
+        id: proposal.id,
+        proposalName: proposal.proposalName,
+        proposer: (proposal.user.metadata as UserMetadata).username || 'Unknown',
+        yesVotes,
+        noVotes,
+        status: proposal.status,
+        isRecommended: yesVotes > noVotes,
+        budgetRequest: proposal.budgetRequest,
+      };
+    });
+
+    // Count recommended and not recommended proposals based on reviewer votes
+    const recommendedProposals = proposalVotes.filter(p => p.isRecommended).length;
+    const notRecommendedProposals = proposalVotes.filter(p => !p.isRecommended).length;
+
+    // Sort proposals by yes votes in descending order
+    proposalVotes.sort((a, b) => b.yesVotes - a.yesVotes);
+
+    return {
+      startDate: deliberationPhase.startDate,
+      endDate: deliberationPhase.endDate,
+      totalProposals: proposals.length,
+      recommendedProposals,
+      notRecommendedProposals,
+      budgetBreakdown,
+      proposalVotes
+    };
   }
 } 
