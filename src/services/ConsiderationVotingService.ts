@@ -35,6 +35,62 @@ interface VoteQueryResult {
   };
 }
 
+interface ConsiderationPhaseSummaryResult {
+  phaseTimeInfo: {
+    startDate: Date;
+    endDate: Date;
+  };
+  totalProposals: number;
+  budgetBreakdown: {
+    small: number;
+    medium: number;
+    large: number;
+  };
+  movedForwardProposals: number;
+  notMovedForwardProposals: number;
+  proposalVotes: Array<{
+    id: number;
+    proposalName: string;
+    proposer: string;
+    budgetRequest: Prisma.Decimal;
+    status: ProposalStatus;
+    reviewerVotes: {
+      yesVotes: number;
+      noVotes: number;
+      total: number;
+      requiredReviewerApprovals: number;
+      reviewerEligible: boolean;
+    };
+    communityVotes: {
+      positive: number;
+      positiveStakeWeight: number;
+      voters: Array<{ address: string; timestamp: number; }>;
+      isEligible: boolean;
+    };
+  }>;
+}
+
+interface ProposalWithVotes {
+  id: number;
+  proposalName: string;
+  status: ProposalStatus;
+  budgetRequest: Prisma.Decimal;
+  user: {
+    metadata: UserMetadata;
+  };
+  considerationVotes: Array<{
+    decision: ConsiderationDecision;
+  }>;
+  OCVConsiderationVote: Array<{
+    voteData: {
+      total_community_votes: number;
+      total_positive_community_votes: number;
+      total_negative_community_votes: number;
+      elegible: boolean;
+    };
+  }>;
+}
+
 const voteIncludeQuery = {
   proposal: {
     select: {
@@ -289,6 +345,128 @@ export class ConsiderationVotingService {
       voter: {
         metadata: vote.voter.metadata as UserMetadata
       }
+    };
+  }
+
+  async getConsiderationPhaseSummary(fundingRoundId: string): Promise<ConsiderationPhaseSummaryResult | null> {
+    const fundingRound = await this.prisma.fundingRound.findUnique({
+      where: { id: fundingRoundId },
+      include: {
+        considerationPhase: true,
+        proposals: {
+          select: {
+            id: true,
+            proposalName: true,
+            status: true,
+            budgetRequest: true,
+            user: {
+              select: {
+                metadata: true
+              }
+            },
+            considerationVotes: {
+              select: {
+                decision: true
+              }
+            },
+            OCVConsiderationVote: {
+              select: {
+                voteData: true
+              }
+            }
+          }
+        }
+      }
+    });
+
+    if (!fundingRound || !fundingRound.considerationPhase) {
+      return null;
+    }
+
+    const movedForwardStatuses = [
+      ProposalStatus.DELIBERATION,
+      ProposalStatus.VOTING,
+      ProposalStatus.APPROVED,
+      ProposalStatus.REJECTED
+    ] as const;
+
+    const proposals = (fundingRound.proposals as unknown as Array<{
+      id: number;
+      proposalName: string;
+      status: ProposalStatus;
+      budgetRequest: Prisma.Decimal;
+      user: {
+        metadata: UserMetadata;
+      };
+      considerationVotes: Array<{
+        decision: ConsiderationDecision;
+      }>;
+      OCVConsiderationVote: Array<{
+        voteData: {
+          total_community_votes: number;
+          total_positive_community_votes: number;
+          total_negative_community_votes: number;
+          elegible: boolean;
+        };
+      }>;
+    }>).map(proposal => {
+      const proposer = (proposal.user.metadata as UserMetadata)?.username || 'Anonymous';
+      const yesVotes = proposal.considerationVotes.filter(vote => vote.decision === ConsiderationDecision.APPROVED).length;
+      const noVotes = proposal.considerationVotes.filter(vote => vote.decision === ConsiderationDecision.REJECTED).length;
+      const communityVotes = proposal.OCVConsiderationVote?.[0]?.voteData || {
+        total_community_votes: 0,
+        total_positive_community_votes: 0,
+        total_negative_community_votes: 0,
+        elegible: false
+      };
+
+      return {
+        id: proposal.id,
+        proposalName: proposal.proposalName,
+        proposer,
+        budgetRequest: proposal.budgetRequest,
+        status: proposal.status,
+        reviewerVotes: {
+          yesVotes,
+          noVotes,
+          total: yesVotes + noVotes,
+          requiredReviewerApprovals: 3,
+          reviewerEligible: yesVotes >= 3
+        },
+        communityVotes: {
+          positive: communityVotes.total_positive_community_votes,
+          positiveStakeWeight: 0,
+          voters: [],
+          isEligible: communityVotes.elegible
+        }
+      };
+    });
+
+    const movedForwardCount = proposals.filter(p => movedForwardStatuses.includes(p.status as typeof movedForwardStatuses[number])).length;
+    const notMovedForwardCount = proposals.length - movedForwardCount;
+
+    const budgetBreakdown = proposals.reduce((acc: { small: number; medium: number; large: number }, proposal) => {
+      const budgetAmount = proposal.budgetRequest.toNumber();
+      if (budgetAmount <= 500) {
+        acc.small++;
+      } else if (budgetAmount <= 1000) {
+        acc.medium++;
+      } else {
+        acc.large++;
+      }
+      return acc;
+    }, { small: 0, medium: 0, large: 0 });
+
+    return {
+      phaseTimeInfo: {
+        startDate: fundingRound.considerationPhase.startDate,
+        endDate: fundingRound.considerationPhase.endDate
+      },
+      totalProposals: proposals.length,
+      budgetBreakdown,
+      movedForwardProposals: movedForwardCount,
+      notMovedForwardProposals: notMovedForwardCount,
+      proposalVotes: proposals
     };
   }
 }
