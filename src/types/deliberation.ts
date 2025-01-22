@@ -22,4 +22,21 @@ export interface DeliberationProposal extends ConsiderationProposal {
   reviewerComments: DeliberationComment[];
   userDeliberation?: DeliberationVote;
   hasVoted: boolean;
+}
+
+export interface ProposalComment {
+  id: string;
+  feedback: string;
+  createdAt: Date;
+  isReviewerComment: boolean;
+  recommendation?: boolean;
+  reviewer?: {
+    username: string;
+  };
+}
+
+export interface CategorizedComments {
+  reviewerConsideration: ProposalComment[];
+  reviewerDeliberation: ProposalComment[];
+  communityDeliberation: ProposalComment[];
 } 
