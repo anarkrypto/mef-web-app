@@ -19,6 +19,7 @@ import type { ConsiderationVoteStats } from "@/types/consideration"
 
 interface OCVVoteButtonProps {
   proposalId: string
+  fundingRoundMEFId: number
   useWallet?: boolean
   voteStats: ConsiderationVoteStats
 }
@@ -31,9 +32,10 @@ interface Voter {
 }
 
 export function OCVVoteButton({ 
-  proposalId, 
+  proposalId,
+  fundingRoundMEFId,
   useWallet: isWalletEnabled = true,
-  voteStats 
+  voteStats
 }: OCVVoteButtonProps) {
   const { state, enforceTargetNetwork } = useWallet()
   const [showWalletDialog, setShowWalletDialog] = useState(false)
@@ -133,6 +135,7 @@ export function OCVVoteButton({
           open={showTransactionDialog}
           onOpenChange={setShowTransactionDialog}
           proposalId={proposalId}
+          fundingRoundMEFId={fundingRoundMEFId}
         />
       )}
     </>
