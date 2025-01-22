@@ -349,7 +349,6 @@ export class DeliberationService {
     proposals.forEach(proposal => {
       const budget = proposal.budgetRequest as unknown as Decimal;
       const budgetNumber = budget.toNumber();
-      console.log(`Proposal ${proposal.id} has budget: ${budgetNumber}`);
       
       if (budgetNumber <= 500) {
         budgetBreakdown.small++;

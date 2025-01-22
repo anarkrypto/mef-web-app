@@ -18,6 +18,8 @@ import {
 } from "@/components/ui/tooltip"
 import { useFundingRounds } from "@/hooks/use-funding-rounds"
 import type { UserMetadata } from '@/services/UserService'
+import { ProposalComments } from "@/components/ProposalComments"
+import type { ProposalComment, CategorizedComments } from "@/types/deliberation"
 
 interface LinkedAccount {
   id: string;
@@ -68,9 +70,15 @@ export function ProposalDetails({ proposalId }: Props) {
   const [isExpanded, setIsExpanded] = useState(false)
   const [proposal, setProposal] = useState<ProposalWithAccess | null>(null)
   const [loading, setLoading] = useState(true)
-  const [selectFundingRoundOpen, setSelectFundingRoundOpen] = useState(false);
-  const [viewFundingRoundOpen, setViewFundingRoundOpen] = useState(false);
-  const { loading: checkingRounds, hasAvailableRounds } = useFundingRounds();
+  const [comments, setComments] = useState<CategorizedComments>({
+    reviewerConsideration: [],
+    reviewerDeliberation: [],
+    communityDeliberation: [],
+  })
+  const [loadingComments, setLoadingComments] = useState(true)
+  const [selectFundingRoundOpen, setSelectFundingRoundOpen] = useState(false)
+  const [viewFundingRoundOpen, setViewFundingRoundOpen] = useState(false)
+  const { loading: checkingRounds, hasAvailableRounds } = useFundingRounds()
 
   const { handleAction } = useActionFeedback({
     successMessage: "Action will be implemented soon",
@@ -100,6 +108,42 @@ const fetchProposal = useCallback(async () => {
       setLoading(false)
     }
   }, [toast, router, proposalId]);
+
+  const fetchComments = useCallback(async () => {
+    try {
+      const response = await fetch(`/api/proposals/${proposalId}/comments`)
+      if (!response.ok) throw new Error('Failed to fetch comments')
+      const  data  = await response.json()
+      
+      // Ensure we have a valid comments structure
+      if (data && typeof data === 'object') {
+        setComments({
+          reviewerConsideration: Array.isArray(data.reviewerConsideration) ? data.reviewerConsideration : [],
+          reviewerDeliberation: Array.isArray(data.reviewerDeliberation) ? data.reviewerDeliberation : [],
+          communityDeliberation: Array.isArray(data.communityDeliberation) ? data.communityDeliberation : [],
+        });
+      } else {
+        setComments({
+          reviewerConsideration: [],
+          reviewerDeliberation: [],
+          communityDeliberation: [],
+        });
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to load comments",
+        variant: "destructive"
+      })
+      setComments({
+        reviewerConsideration: [],
+        reviewerDeliberation: [],
+        communityDeliberation: [],
+      });
+    } finally {
+      setLoadingComments(false)
+    }
+  }, [proposalId, toast])
 
   const handleSubmitToFunding = async (roundId: string) => {
     try {
@@ -147,7 +191,8 @@ const fetchProposal = useCallback(async () => {
 
   useEffect(() => {
     fetchProposal()
-  }, [proposalId, fetchProposal]) 
+    fetchComments()
+  }, [proposalId, fetchProposal, fetchComments]) 
 
   const handleSubmitClick = () => {
     if (!hasAvailableRounds) {
@@ -327,6 +372,8 @@ const fetchProposal = useCallback(async () => {
             </div>
           )}
         </div>
+
+        {!loadingComments && comments && <ProposalComments comments={comments} />}
       </div>
 
       <SelectFundingRoundDialog

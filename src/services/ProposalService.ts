@@ -4,6 +4,8 @@ import { ProposalValidation as PV } from "@/constants/validation";
 import { Decimal } from "decimal.js";
 import { AppError } from '@/lib/errors';
 import { ProposalErrors } from '@/constants/errors';
+import type { ProposalComment } from "@/types/deliberation";
+import { UserMetadata } from "./UserService";
 
 // Validation schema (reuse from CreateProposal component)
 export const proposalSchema = z.object({
@@ -31,6 +33,12 @@ export const proposalSchema = z.object({
 });
 
 export type CreateProposalInput = z.infer<typeof proposalSchema>;
+
+interface CategorizedComments {
+  reviewerConsideration: ProposalComment[];
+  reviewerDeliberation: ProposalComment[];
+  communityDeliberation: ProposalComment[];
+}
 
 export class ProposalService {
   private prisma: PrismaClient;
@@ -238,5 +246,65 @@ export class ProposalService {
     }
 
     return parseInt(proposal.fundingRoundId);
+  }
+
+  async getProposalComments(proposalId: number): Promise<CategorizedComments> {
+    const [reviewerDeliberationVotes, communityDeliberationVotes, considerationVotes] = await Promise.all([
+      this.prisma.reviewerDeliberationVote.findMany({
+        where: { proposalId },
+        include: {
+          user: {
+            select: {
+              metadata: true,
+            },
+          },
+        },
+        orderBy: { createdAt: 'desc' },
+      }),
+      this.prisma.communityDeliberationVote.findMany({
+        where: { proposalId },
+        orderBy: { createdAt: 'desc' },
+      }),
+      this.prisma.considerationVote.findMany({
+        where: { proposalId },
+        include: {
+          voter: {
+            select: {
+              metadata: true,
+            },
+          },
+        },
+        orderBy: { createdAt: 'desc' },
+      }),
+    ]);
+
+    return {
+      reviewerDeliberation: reviewerDeliberationVotes.map(vote => ({
+        id: vote.id,
+        feedback: vote.feedback,
+        createdAt: vote.createdAt,
+        isReviewerComment: true,
+        recommendation: vote.recommendation,
+        reviewer: {
+          username: (vote.user.metadata as UserMetadata).username,
+        },
+      })),
+      communityDeliberation: communityDeliberationVotes.map(vote => ({
+        id: vote.id,
+        feedback: vote.feedback,
+        createdAt: vote.createdAt,
+        isReviewerComment: false,
+      })),
+      reviewerConsideration: considerationVotes.map(vote => ({
+        id: vote.id,
+        feedback: vote.feedback,
+        createdAt: vote.createdAt,
+        isReviewerComment: true,
+        recommendation: vote.decision === 'APPROVED',
+        reviewer: {
+          username: (vote.voter.metadata as UserMetadata).username,
+        },
+      })),
+    };
   }
 }
