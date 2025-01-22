@@ -18,6 +18,7 @@ interface OCVTransactionDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   proposalId: string
+  fundingRoundMEFId: number
 }
 
 interface TransactionToastProps {
@@ -73,10 +74,13 @@ export function OCVTransactionDialog({
   open,
   onOpenChange,
   proposalId,
+  fundingRoundMEFId
 }: OCVTransactionDialogProps) {
   const { state } = useWallet()
   const { toast } = useToast()
   const [isSubmitting, setIsSubmitting] = useState(false)
+
+  const rawMemo = `MEF${fundingRoundMEFId} YES ${proposalId}`;
 
   const handleSubmitVote = async () => {
     if (!state.wallet?.address) {
@@ -89,9 +93,7 @@ export function OCVTransactionDialog({
     }
 
     setIsSubmitting(true)
-
     try {
-      const memo = `YES ${proposalId}`
       let hash: string
 
       switch (state.wallet.provider) {
@@ -119,7 +121,7 @@ export function OCVTransactionDialog({
           const response = await mina.sendPayment({
             to: account,
             amount: 0,
-            memo: memo,
+            memo: rawMemo,
           })
           
           hash = response.hash
@@ -176,7 +178,7 @@ export function OCVTransactionDialog({
               <ul className="list-disc pl-4 space-y-1">
                 <li>Amount: 0 MINA</li>
                 <li>Recipient: Your wallet address</li>
-                <li>Memo: YES {proposalId}</li>
+                <li>Memo: {rawMemo}</li>
                 <li>Fee: 0.1 MINA</li>
               </ul>
             </div>

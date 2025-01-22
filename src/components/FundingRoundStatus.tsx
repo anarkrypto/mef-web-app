@@ -23,6 +23,7 @@ interface FundingRound {
   endDate: string;
   totalBudget: string;
   proposals: Proposal[];
+  mefId: number;
   submissionPhase: {
     startDate: string;
     endDate: string;
@@ -57,6 +58,7 @@ interface Props {
     id: string; 
     name: string; 
     phase: PhaseType | null;
+    mefId: number,
     submissionPhase: { startDate: string; endDate: string };
     considerationPhase: { startDate: string; endDate: string };
     deliberationPhase: { startDate: string; endDate: string };
@@ -204,6 +206,7 @@ export function FundingRoundStatus({ onRoundSelect }: Props) {
         id: selectedRound.id,
         name: selectedRound.name,
         phase: currentPhase,
+        mefId: selectedRound.mefId,
         submissionPhase: selectedRound.submissionPhase,
         considerationPhase: selectedRound.considerationPhase,
         deliberationPhase: selectedRound.deliberationPhase,

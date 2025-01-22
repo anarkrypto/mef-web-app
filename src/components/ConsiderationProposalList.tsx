@@ -22,6 +22,7 @@ import {
 
 interface Props {
   fundingRoundId: string;
+  fundingRoundMEFId: number;
   fundingRoundName: string;
 }
 
@@ -174,7 +175,7 @@ function VoterAddress({ address }: { address: string }) {
   );
 }
 
-export function ConsiderationProposalList({ fundingRoundId, fundingRoundName }: Props) {
+export function ConsiderationProposalList({ fundingRoundId, fundingRoundMEFId, fundingRoundName }: Props) {
   const { proposals, loading, setProposals } = useConsiderationPhase(fundingRoundId);
   const [reviewStates, setReviewStates] = useState<Record<number, ReviewState>>({});
   const [decisions, setDecisions] = useState<Record<number, string>>({});
@@ -304,11 +305,13 @@ export function ConsiderationProposalList({ fundingRoundId, fundingRoundName }: 
             proposalId={proposal.id.toString()} 
             useWallet={true} 
             voteStats={proposal.voteStats}
+            fundingRoundMEFId={fundingRoundMEFId}
           />
           <OCVVoteButton 
             proposalId={proposal.id.toString()} 
             useWallet={false} 
             voteStats={proposal.voteStats}
+            fundingRoundMEFId={fundingRoundMEFId}
           />
         </div>
       );
@@ -341,11 +344,13 @@ export function ConsiderationProposalList({ fundingRoundId, fundingRoundName }: 
             proposalId={proposal.id.toString()} 
             useWallet={true} 
             voteStats={proposal.voteStats}
+            fundingRoundMEFId={fundingRoundMEFId}
           />
           <OCVVoteButton 
             proposalId={proposal.id.toString()} 
             useWallet={false} 
             voteStats={proposal.voteStats}
+            fundingRoundMEFId={fundingRoundMEFId}
           />
         </div>
       );

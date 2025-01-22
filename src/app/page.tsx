@@ -19,6 +19,7 @@ type SelectedRound = {
   id: string;
   name: string;
   phase: Phase | null;
+  mefId: number;
   submissionPhase: { startDate: string; endDate: string };
   considerationPhase: { startDate: string; endDate: string };
   deliberationPhase: { startDate: string; endDate: string };
@@ -93,6 +94,7 @@ export default function HomePage() {
         return (
           <ConsiderationProposalList
             fundingRoundId={selectedRound.id}
+            fundingRoundMEFId={selectedRound.mefId}
             fundingRoundName={selectedRound.name}
           />
         );

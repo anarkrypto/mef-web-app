@@ -222,4 +222,21 @@ export class ProposalService {
       throw error;
     }
   }
+
+  async getFundingRoundId(proposalId: number): Promise<number> {
+    const proposal = await this.prisma.proposal.findUnique({
+      where: { id: proposalId },
+      select: { fundingRoundId: true }
+    });
+
+    if (!proposal) {
+      throw AppError.notFound(`Proposal with ID ${proposalId} not found`);
+    }
+
+    if (!proposal.fundingRoundId) {
+      throw AppError.notFound(`Funding round ID not found for proposal ${proposalId}`);
+    }
+
+    return parseInt(proposal.fundingRoundId);
+  }
 }
