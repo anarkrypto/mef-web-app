@@ -11,7 +11,6 @@ import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 
 interface Props {
   summary: SubmissionPhaseSummaryType;
-  fundingRoundId: string;
 }
 
 const SubmissionStatusCard: FC<{ submittedCount: number }> = ({ submittedCount }) => {
@@ -43,7 +42,6 @@ const SubmissionStatusCard: FC<{ submittedCount: number }> = ({ submittedCount }
 
 export const SubmissionPhaseSummary: FC<Props> = ({
   summary,
-  fundingRoundId
 }) => {
   const phaseStatus = getPhaseStatus(summary.phaseTimeInfo);
   const progress = getPhaseProgress(summary.phaseTimeInfo);
@@ -64,7 +62,7 @@ export const SubmissionPhaseSummary: FC<Props> = ({
   return (
     <TooltipProvider>
       <BasePhaseSummary
-        title="Submission Phase Summary"
+        title={`${summary.fundingRoundName}'s Submission Phase Summary`}
         description="Overview of the submission phase progress and submitted proposals"
         phaseStatus={phaseStatus}
         leftColumn={

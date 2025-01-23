@@ -22,32 +22,12 @@ import {
   TooltipTrigger,
   TooltipProvider 
 } from '@/components/ui/tooltip';
-import { Decimal } from '@prisma/client/runtime/library';
+
+import { DeliberationPhaseSummary as DeliberationPhaseSummaryType } from '@/services/DeliberationService';
+
 
 interface DeliberationPhaseSummaryProps {
-  summary: {
-    startDate: Date;
-    endDate: Date;
-    totalProposals: number;
-    recommendedProposals: number;
-    notRecommendedProposals: number;
-    budgetBreakdown: {
-      small: number;
-      medium: number;
-      large: number;
-    };
-    proposalVotes: Array<{
-      id: number;
-      proposalName: string;
-      proposer: string;
-      yesVotes: number;
-      noVotes: number;
-      status: string;
-      isRecommended: boolean;
-      budgetRequest: Decimal;
-    }>;
-  };
-  fundingRoundId: string;
+  summary: DeliberationPhaseSummaryType;
 }
 
 const getPhaseStatus = (startDate: Date, endDate: Date) => {
@@ -110,12 +90,11 @@ const numberToEmoji: Record<string, string> = {
 };
 
 const getEmojiRank = (position: number): string => {
-  return position.toString().split('').map(digit => numberToEmoji[digit]).join('');
+  return position.toString();
 };
 
 export const DeliberationPhaseSummary: FC<DeliberationPhaseSummaryProps> = ({
   summary,
-  fundingRoundId
 }) => {
   const phaseStatus = getPhaseStatus(summary.startDate, summary.endDate);
 
@@ -209,7 +188,7 @@ export const DeliberationPhaseSummary: FC<DeliberationPhaseSummaryProps> = ({
         <div className="flex justify-between items-center">
           <div>
             <div className="flex items-center gap-3">
-              <h1 className="text-2xl font-bold tracking-tight">Deliberation Phase Summary</h1>
+              <h1 className="text-2xl font-bold tracking-tight">{summary.fundingRoundName}&apos;s Deliberation Phase Summary</h1>
               <Badge 
                 variant={phaseStatus.badge}
                 className={cn(

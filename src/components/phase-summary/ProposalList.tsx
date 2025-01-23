@@ -34,39 +34,22 @@ export const ProposalList: FC<Props> = ({
     return 0;
   });
 
-  const leftColumnProposals = sortedProposals.slice(0, Math.ceil(sortedProposals.length / 2));
-  const rightColumnProposals = sortedProposals.slice(Math.ceil(sortedProposals.length / 2));
-
   return (
     <Card>
-      <CardHeader className="py-4">
+      <CardHeader className="py-3">
         <CardTitle className="text-sm font-medium">{title}</CardTitle>
       </CardHeader>
-      <CardContent>
-        <ScrollArea className="h-[400px] w-full">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-x-4 pr-4">
-            {/* Left Column */}
-            <div className="space-y-4">
-              {leftColumnProposals.map((proposal, index) => (
-                <ProposalCard
-                  key={proposal.id}
-                  proposal={proposal}
-                  rank={index + 1}
-                  showCommunityVotes={showCommunityVotes}
-                />
-              ))}
-            </div>
-            {/* Right Column */}
-            <div className="space-y-4">
-              {rightColumnProposals.map((proposal, index) => (
-                <ProposalCard
-                  key={proposal.id}
-                  proposal={proposal}
-                  rank={Math.ceil(sortedProposals.length / 2) + index + 1}
-                  showCommunityVotes={showCommunityVotes}
-                />
-              ))}
-            </div>
+      <CardContent className="p-3">
+        <ScrollArea className="h-[calc(100vh-250px)] min-h-[300px] w-full">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 pr-3">
+            {sortedProposals.map((proposal, index) => (
+              <ProposalCard
+                key={proposal.id}
+                proposal={proposal}
+                rank={index + 1}
+                showCommunityVotes={showCommunityVotes}
+              />
+            ))}
           </div>
         </ScrollArea>
       </CardContent>
