@@ -102,12 +102,57 @@ export function SubmissionProposalList({ fundingRoundId, fundingRoundName }: Pro
                     {expanded[proposal.id] ? (
                       <>
                         <p className="text-muted-foreground mb-4">{proposal.abstract}</p>
-                        <Link
-                          href={`/proposals/${proposal.id}`}
-                          className="text-primary hover:underline"
-                        >
-                          View full proposal details ↗
-                        </Link>
+                        <div className="space-y-4">
+                          <div>
+                            <h3 className="text-xl font-semibold mb-2">Motivation</h3>
+                            <p className="text-muted-foreground">{proposal.motivation}</p>
+                          </div>
+                          <div>
+                            <h3 className="text-xl font-semibold mb-2">Rationale</h3>
+                            <p className="text-muted-foreground">{proposal.rationale}</p>
+                          </div>
+                          <div>
+                            <h3 className="text-xl font-semibold mb-2">Delivery Requirements</h3>
+                            <p className="text-muted-foreground">{proposal.deliveryRequirements}</p>
+                          </div>
+                          <div>
+                            <h3 className="text-xl font-semibold mb-2">Security & Performance</h3>
+                            <p className="text-muted-foreground">{proposal.securityAndPerformance}</p>
+                          </div>
+                          <div>
+                            <h3 className="text-xl font-semibold mb-2">Budget Request</h3>
+                            <p className="text-muted-foreground">
+                              {proposal.budgetRequest.toLocaleString()} MINA
+                            </p>
+                          </div>
+                          <div>
+                            <h3 className="text-xl font-semibold mb-2">Contact Information</h3>
+                            <div className="space-y-2">
+                              {/* Show Discord info if author is a Discord user */}
+                              {proposal.submitterMetadata?.authSource?.type === 'discord' ? (
+                                <p className="text-muted-foreground">
+                                  Discord: {proposal.submitterMetadata.authSource.username}
+                                </p>
+                              ) : (
+                                /* Check for linked Discord account */
+                                proposal.submitterMetadata?.linkedAccounts?.some(account => 
+                                  account.authSource.type === 'discord'
+                                ) ? (
+                                  <p className="text-muted-foreground">
+                                    Discord: {proposal.submitterMetadata.linkedAccounts.find(account => 
+                                      account.authSource.type === 'discord'
+                                    )?.authSource.username} (linked account)
+                                  </p>
+                                ) : (
+                                  <p className="text-muted-foreground text-sm italic">
+                                    No Discord account linked
+                                  </p>
+                                )
+                              )}
+                              <p className="text-muted-foreground">Email: {proposal.email}</p>
+                            </div>
+                          </div>
+                        </div>
                       </>
                     ) : (
                       <p className="text-muted-foreground line-clamp-3">{proposal.abstract}</p>

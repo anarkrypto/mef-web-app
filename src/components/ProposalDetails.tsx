@@ -269,17 +269,17 @@ const fetchProposal = useCallback(async () => {
               </div>
 
               <div>
-                <h3 className="text-xl font-semibold mb-2">Delivery requirements</h3>
+                <h3 className="text-xl font-semibold mb-2">Delivery Requirements</h3>
                 <p className="text-muted-foreground">{proposal.deliveryRequirements}</p>
               </div>
 
               <div>
-                <h3 className="text-xl font-semibold mb-2">Security and Performance considerations</h3>
+                <h3 className="text-xl font-semibold mb-2">Security and Performance Considerations</h3>
                 <p className="text-muted-foreground">{proposal.securityAndPerformance}</p>
               </div>
 
               <div>
-                <h3 className="text-xl font-semibold mb-2">Budget request</h3>
+                <h3 className="text-xl font-semibold mb-2">Budget Request</h3>
                 <p className="text-muted-foreground">{proposal.budgetRequest.toString()} MINA</p>
               </div>
 
