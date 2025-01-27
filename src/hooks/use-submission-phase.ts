@@ -1,27 +1,17 @@
 import { useState, useEffect } from 'react'
 import { useToast } from "@/hooks/use-toast"
-import type { ProposalStatus } from '@prisma/client';
 import type { Dispatch, SetStateAction } from 'react';
-
-interface SubmissionProposal {
-  id: number;
-  proposalName: string;
-  abstract: string;
-  budgetRequest: number;
-  submitter: string;
-  createdAt: Date;
-  status: ProposalStatus;
-}
+import { SumbmittedProposalsJSON } from '@/app/api/funding-rounds/[id]/submitted-proposals/route';
 
 interface UseSubmissionPhaseResult {
-  proposals: SubmissionProposal[];
+  proposals: SumbmittedProposalsJSON[];
   loading: boolean;
   error: string | null;
-  setProposals: Dispatch<SetStateAction<SubmissionProposal[]>>;
+  setProposals: Dispatch<SetStateAction<SumbmittedProposalsJSON[]>>;
 }
 
 export function useSubmissionPhase(fundingRoundId: string): UseSubmissionPhaseResult {
-  const [proposals, setProposals] = useState<SubmissionProposal[]>([]);
+  const [proposals, setProposals] = useState<SumbmittedProposalsJSON[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
@@ -39,7 +29,7 @@ export function useSubmissionPhase(fundingRoundId: string): UseSubmissionPhaseRe
 
         const data = await response.json();
         
-        const transformedData = data.map((proposal: SubmissionProposal) => ({
+        const transformedData = data.map((proposal: SumbmittedProposalsJSON) => ({
           ...proposal,
         }));
         

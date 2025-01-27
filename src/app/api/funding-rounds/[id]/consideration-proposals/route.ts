@@ -7,6 +7,7 @@ import logger from "@/logging";
 import { OCVVotesService } from "@/services/OCVVotesService";
 import { ProposalStatusMoveService } from "@/services/ProposalStatusMoveService";
 import type { OCVVoteData, OCVVote } from '@/types/consideration';
+import { UserService } from "@/services";
 
 // Add this helper function to safely parse OCV vote data
 function parseOCVVoteData(data: JsonValue | null | undefined): OCVVoteData {
@@ -49,6 +50,7 @@ export async function GET(
     }
 
     const fundingRoundId = (await params).id;
+    const userService = new UserService(prisma);
 
     // Get the funding round with topic and reviewer groups
     const fundingRound = await prisma.fundingRound.findUnique({
@@ -92,6 +94,7 @@ export async function GET(
       include: {
         user: {
           select: {
+            id: true,
             metadata: true
           }
         },
@@ -158,8 +161,17 @@ export async function GET(
     );
 
     // Transform the data to match the expected format
-    const formattedProposals = proposals.map(p => {
+    const formattedProposals = await Promise.all(proposals.map(async p => {
       const voteCounts = proposalVoteCounts.find(vc => vc.proposalId === p.id)?.voteStats;
+      const linkedAccounts = await userService.getLinkedAccounts(p.user.id);
+      const linkedAccountsMetadata = linkedAccounts.map(account => ({
+        id: account.id,
+        authSource: (account.metadata as UserMetadata)?.authSource || {
+          type: '',
+          id: '',
+          username: ''
+        }
+      }));
       
       return {
         id: p.id,
@@ -167,6 +179,11 @@ export async function GET(
         submitter: ((p.user.metadata as unknown) as UserMetadata).username,
         abstract: p.abstract,
         status: p.considerationVotes[0]?.decision?.toLowerCase() || 'pending',
+        motivation: p.motivation,
+        rationale: p.rationale,
+        deliveryRequirements: p.deliveryRequirements,
+        securityAndPerformance: p.securityAndPerformance,
+        budgetRequest: p.budgetRequest,
         userVote: p.considerationVotes[0] ? {
           decision: p.considerationVotes[0].decision,
           feedback: p.considerationVotes[0].feedback
@@ -185,9 +202,18 @@ export async function GET(
           },
           reviewerEligible: false
         },
-        currentPhase: p.status
+        currentPhase: p.status,
+        email: p.email || '',
+        submitterMetadata: {
+          authSource: {
+            type: ((p.user.metadata as unknown) as UserMetadata)?.authSource?.type || '',
+            id: ((p.user.metadata as unknown) as UserMetadata)?.authSource?.id || '',
+            username: ((p.user.metadata as unknown) as UserMetadata)?.authSource?.username || ''
+          },
+          linkedAccounts: linkedAccountsMetadata
+        }
       };
-    });
+    }));
 
     // Sort proposals: 
     // 1. Consideration phase pending first

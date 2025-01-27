@@ -22,6 +22,22 @@ export interface DeliberationProposal extends ConsiderationProposal {
   reviewerComments: DeliberationComment[];
   userDeliberation?: DeliberationVote;
   hasVoted: boolean;
+  email: string;
+  submitterMetadata: {
+    authSource: {
+      type: string;
+      id: string;
+      username: string;
+    };
+    linkedAccounts?: Array<{
+      id: string;
+      authSource: {
+        type: string;
+        id: string;
+        username: string;
+      };
+    }>;
+  };
 }
 
 export interface ProposalComment {

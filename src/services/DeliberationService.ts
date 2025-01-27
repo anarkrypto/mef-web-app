@@ -2,6 +2,7 @@ import { PrismaClient, Prisma, ProposalStatus } from "@prisma/client";
 import { AppError } from "@/lib/errors";
 import { UserMetadata } from "./UserService";
 import { Decimal } from "@prisma/client/runtime/library";
+import { UserService } from "@/services";
 
 // Define types for the votes
 interface ReviewerDeliberationVote {
@@ -31,8 +32,15 @@ interface ProposalWithVotes {
   status: ProposalStatus;
   proposalName: string;
   abstract: string;
+  motivation: string;
+  rationale: string;
+  deliveryRequirements: string;
+  securityAndPerformance: string;
+  budgetRequest: Decimal;
+  email: string;
   createdAt: Date;
   user: {
+    id: string;
     metadata: UserMetadata;
   };
   deliberationReviewerVotes: ReviewerDeliberationVote[];
@@ -73,7 +81,11 @@ export interface DeliberationPhaseSummary {
 }
 
 export class DeliberationService {
-  constructor(private prisma: PrismaClient) {}
+  private userService: UserService;
+
+  constructor(private prisma: PrismaClient) {
+    this.userService = new UserService(prisma);
+  }
 
   async getDeliberationProposals(fundingRoundId: string, userId: string) {
     if (!fundingRoundId) {
@@ -133,6 +145,7 @@ export class DeliberationService {
         },
         user: {
           select: {
+            id: true,
             metadata: true,
           },
         },
@@ -157,7 +170,7 @@ export class DeliberationService {
     }) as unknown as ProposalWithVotes[];
 
     // Transform the proposals
-    const transformedProposals = proposals.map(proposal => {
+    const transformedProposals = await Promise.all(proposals.map(async proposal => {
       // Get reviewer comments
       const reviewerComments = proposal.deliberationReviewerVotes.map(vote => ({
         id: vote.id,
@@ -192,10 +205,25 @@ export class DeliberationService {
       );
       const userDeliberation = userReviewerVote || userCommunityVote;
 
+      const linkedAccounts = await this.userService.getLinkedAccounts(proposal.user.id);
+      const linkedAccountsMetadata = linkedAccounts.map(account => ({
+        id: account.id,
+        authSource: (account.metadata as UserMetadata)?.authSource || {
+          type: '',
+          id: '',
+          username: ''
+        }
+      }));
+
       return {
         id: proposal.id,
         proposalName: proposal.proposalName,
         abstract: proposal.abstract,
+        motivation: proposal.motivation,
+        rationale: proposal.rationale,
+        deliveryRequirements: proposal.deliveryRequirements,
+        securityAndPerformance: proposal.securityAndPerformance,
+        budgetRequest: proposal.budgetRequest,
         submitter: (proposal.user?.metadata as UserMetadata)?.username || 'Unknown',
         isReviewerEligible: fundingRound.topic.reviewerGroups.some(
           group => group.reviewerGroup.members.length > 0
@@ -209,8 +237,17 @@ export class DeliberationService {
         } : undefined,
         hasVoted: Boolean(userDeliberation),
         createdAt: proposal.createdAt,
+        email: proposal.email || '',
+        submitterMetadata: {
+          authSource: {
+            type: (proposal.user?.metadata as UserMetadata)?.authSource?.type || '',
+            id: (proposal.user?.metadata as UserMetadata)?.authSource?.id || '',
+            username: (proposal.user?.metadata as UserMetadata)?.authSource?.username || ''
+          },
+          linkedAccounts: linkedAccountsMetadata
+        }
       };
-    });
+    }));
 
     return {
       proposals: transformedProposals,

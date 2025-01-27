@@ -1,4 +1,5 @@
 import { ProposalStatus } from '@prisma/client';
+import { Decimal } from '@prisma/client/runtime/library';
 
 export interface ConsiderationVoteStats {
   approved: number;
@@ -29,12 +30,33 @@ export interface ConsiderationProposal {
   proposalName: string;
   submitter: string;
   abstract: string;
+  motivation: string;
+  rationale: string;
+  deliveryRequirements: string;
+  securityAndPerformance: string;
+  budgetRequest: Decimal;
   status: 'pending' | 'approved' | 'rejected';
   userVote?: ConsiderationUserVote;
   isReviewerEligible?: boolean;
   voteStats: ConsiderationVoteStats;
   createdAt: Date;
   currentPhase: ProposalStatus;
+  email: string;
+  submitterMetadata: {
+    authSource: {
+      type: string;
+      id: string;
+      username: string;
+    };
+    linkedAccounts?: Array<{
+      id: string;
+      authSource: {
+        type: string;
+        id: string;
+        username: string;
+      };
+    }>;
+  };
 }
 
 export interface OCVVote {
