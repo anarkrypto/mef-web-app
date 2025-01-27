@@ -18,13 +18,8 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip"
 import { Button } from "@/components/ui/button"
-import type { ProposalComment } from "@/types/deliberation"
+import type { CategorizedComments, ProposalComment } from "@/types/deliberation"
 
-interface CategorizedComments {
-  reviewerConsideration: ProposalComment[];
-  reviewerDeliberation: ProposalComment[];
-  communityDeliberation: ProposalComment[];
-}
 
 interface ProposalCommentsProps {
   comments: CategorizedComments;
@@ -40,9 +35,9 @@ export function ProposalComments({ comments }: ProposalCommentsProps) {
   const sortedComments = useMemo(() => {
     // Combine all comments into a single array
     const allComments = [
-      ...(comments.reviewerConsideration || []),
-      ...(comments.reviewerDeliberation || []),
-      ...(comments.communityDeliberation || []),
+      ...(comments.reviewerConsideration || []).map(c => ({ ...c, category: 'reviewerConsideration' as const })),
+      ...(comments.reviewerDeliberation || []).map(c => ({ ...c, category: 'reviewerDeliberation' as const })),
+      ...(comments.communityDeliberation || []).map(c => ({ ...c, category: 'communityDeliberation' as const })),
     ];
 
     if (sortType === 'date') {
@@ -146,7 +141,7 @@ function truncateUsername(username: string, maxLength: number = 20): { truncated
   };
 }
 
-function CommentCard({ comment }: { comment: ProposalComment }) {
+function CommentCard({ comment }: { comment: ProposalComment & { category: 'reviewerConsideration' | 'reviewerDeliberation' | 'communityDeliberation' } }) {
   const { truncated: displayUsername, isShortened } = comment.reviewer ? 
     truncateUsername(comment.reviewer.username) : 
     { truncated: '', isShortened: false };
@@ -218,17 +213,17 @@ function CommentCard({ comment }: { comment: ProposalComment }) {
         <div className="flex flex-col items-end gap-2">
           {comment.recommendation !== undefined && (
             <Badge 
-              variant={comment.recommendation ? 'default' : 'destructive'}
+              variant={comment.recommendation ? 'success' : 'destructive'}
               className="transition-all duration-200 hover:opacity-90"
             >
               {comment.recommendation 
                 ? <span className="flex items-center gap-1">
                     <BadgeCheck className="h-3.5 w-3.5" />
-                    Recommended
+                    Approved
                   </span>
                 : <span className="flex items-center gap-1">
                     <ShieldCheck className="h-3.5 w-3.5" />
-                    Not Recommended
+                    Rejected
                   </span>
               }
             </Badge>
@@ -237,12 +232,12 @@ function CommentCard({ comment }: { comment: ProposalComment }) {
             variant="outline"
             className={cn(
               "transition-all duration-200",
-              comment.isReviewerComment && comment.recommendation !== undefined
+              comment.category === 'reviewerConsideration'
                 ? "bg-blue-50 text-blue-700 dark:bg-blue-900/10 dark:text-blue-400"
                 : "bg-gray-50 text-gray-700 dark:bg-gray-900/10 dark:text-gray-400"
             )}
           >
-            {comment.isReviewerComment && comment.recommendation !== undefined
+            {comment.category === 'reviewerConsideration' 
               ? "Consideration"
               : "Deliberation"
             }

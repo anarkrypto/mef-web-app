@@ -19,7 +19,7 @@ import {
 import { useFundingRounds } from "@/hooks/use-funding-rounds"
 import type { UserMetadata } from '@/services/UserService'
 import { ProposalComments } from "@/components/ProposalComments"
-import type { ProposalComment, CategorizedComments } from "@/types/deliberation"
+import type { CategorizedComments } from "@/types/deliberation"
 
 interface LinkedAccount {
   id: string;
