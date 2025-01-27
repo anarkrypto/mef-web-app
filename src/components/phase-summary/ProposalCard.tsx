@@ -2,7 +2,7 @@ import { type FC } from 'react';
 import Link from 'next/link';
 import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-import { ThumbsUpIcon, ThumbsDownIcon, HashIcon, CoinsIcon, CalendarIcon } from 'lucide-react';
+import { ThumbsUpIcon, ThumbsDownIcon, HashIcon, CoinsIcon, CalendarIcon, UsersIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import { type ProposalVoteBase, type ReviewerVoteStats, type CommunityVoteStats, type SubmissionProposalVote } from '@/types/phase-summary';
@@ -27,7 +27,7 @@ const numberToEmoji: Record<string, string> = {
 };
 
 const getEmojiRank = (position: number): string => {
-  return position.toString().split('').map(digit => numberToEmoji[digit]).join('');
+  return position.toString();
 };
 
 const getProposalStatus = (proposal: ProposalVote) => {
@@ -75,91 +75,103 @@ export const ProposalCard: FC<Props> = ({
   const isSubmissionPhase = 'submissionDate' in proposal;
   
   return (
-    <Tooltip>
-      <TooltipTrigger asChild>
-        <Link 
-          href={`/proposals/${proposal.id}`}
-          className="block"
-        >
-          <div 
+    <Link 
+      href={`/proposals/${proposal.id}`}
+      className="block"
+    >
+      <div 
+        className={cn(
+          "group flex flex-col gap-2 p-3 rounded-lg border transition-all h-[120px]",
+          "hover:shadow-md",
+          status.bgColor,
+          status.borderColor
+        )}
+      >
+        {/* Header Row */}
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2 min-w-0 flex-1">
+            <span className="text-base flex-shrink-0" aria-label={`Rank ${rank}`}>
+              {getEmojiRank(rank)}
+            </span>
+            <div className="min-w-0 flex-1">
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <h3 className="font-medium text-sm group-hover:text-primary transition-colors truncate">
+                    {proposal.proposalName}
+                  </h3>
+                </TooltipTrigger>
+                <TooltipContent side="top" className="max-w-[300px]">
+                  <p className="whitespace-normal">{proposal.proposalName}</p>
+                </TooltipContent>
+              </Tooltip>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <div className="text-xs text-muted-foreground truncate">
+                    {proposal.proposer}
+                  </div>
+                </TooltipTrigger>
+                <TooltipContent side="top">
+                  <p>{proposal.proposer}</p>
+                </TooltipContent>
+              </Tooltip>
+            </div>
+          </div>
+          <Badge 
+            variant="outline" 
             className={cn(
-              "group flex flex-col gap-2 p-4 rounded-lg border transition-all",
-              "hover:shadow-md",
-              status.bgColor,
+              "text-xs font-normal whitespace-nowrap flex-shrink-0",
+              status.textColor,
               status.borderColor
             )}
           >
-            <div className="flex items-start justify-between">
-              <div className="space-y-1">
-                <div className="flex items-center gap-2">
-                  <span className="text-lg font-medium" aria-label={`Rank ${rank}`}>
-                    {getEmojiRank(rank)}
-                  </span>
-                  <h3 className="font-medium group-hover:text-primary transition-colors">
-                    {proposal.proposalName}
-                  </h3>
-                  <Badge 
-                    variant="outline" 
-                    className={cn(
-                      "text-xs font-normal",
-                      status.textColor,
-                      status.borderColor
-                    )}
-                  >
-                    {status.label}
-                  </Badge>
-                </div>
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <span>{proposal.proposer}</span>
-                </div>
+            {status.label}
+          </Badge>
+        </div>
+
+        {/* Middle Content */}
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex items-center gap-4">
+            {isSubmissionPhase ? (
+              <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                <CalendarIcon className="h-3 w-3" />
+                <span>{format(proposal.submissionDate, 'MMM dd, yyyy')}</span>
               </div>
-              <div className="flex flex-col gap-2 text-sm">
-                {isSubmissionPhase ? (
-                  <div className="flex items-center gap-1 text-muted-foreground">
-                    <CalendarIcon className="h-4 w-4" />
-                    <span>{format(proposal.submissionDate, 'MMM dd, yyyy')}</span>
-                  </div>
-                ) : (
-                  <>
-                    <div className="flex items-center gap-3">
-                      <div className="flex items-center gap-1 text-emerald-600">
-                        <ThumbsUpIcon className="h-4 w-4" />
-                        <span>{proposal.reviewerVotes.yesVotes}</span>
-                      </div>
-                      <div className="flex items-center gap-1 text-rose-600">
-                        <ThumbsDownIcon className="h-4 w-4" />
-                        <span>{proposal.reviewerVotes.noVotes}</span>
-                      </div>
+            ) : (
+              <>
+                <div className="flex items-center gap-1 text-emerald-600">
+                  <ThumbsUpIcon className="h-3 w-3" />
+                  <span className="text-xs font-medium">{proposal.reviewerVotes.yesVotes}</span>
+                </div>
+                <div className="flex items-center gap-1 text-rose-600">
+                  <ThumbsDownIcon className="h-3 w-3" />
+                  <span className="text-xs font-medium">{proposal.reviewerVotes.noVotes}</span>
+                </div>
+                {showCommunityVotes && proposal.communityVotes && (
+                  <div className="flex items-center gap-1">
+                    <div className="flex items-center gap-1 text-primary">
+                      <UsersIcon className="h-3 w-3" />
+                      <span className="text-xs font-medium">{proposal.communityVotes.positive}</span>
                     </div>
-                    {showCommunityVotes && proposal.communityVotes && (
-                      <div className="flex items-center gap-1 text-primary">
-                        <span className="text-xs">Community:</span>
-                        <span className="font-medium">{proposal.communityVotes.positive}</span>
-                        <span className="text-xs text-muted-foreground">
-                          ({proposal.communityVotes.positiveStakeWeight} stake)
-                        </span>
-                      </div>
-                    )}
-                  </>
+                    <span className="text-xs text-muted-foreground">
+                      ({proposal.communityVotes.positiveStakeWeight})
+                    </span>
+                  </div>
                 )}
-              </div>
+              </>
+            )}
+          </div>
+          <div className="flex items-center gap-3 text-xs text-muted-foreground">
+            <div className="flex items-center gap-1">
+              <HashIcon className="h-3 w-3" />
+              <span>{proposal.id}</span>
             </div>
-            <div className="flex items-center justify-between text-xs text-muted-foreground">
-              <div className="flex items-center gap-1">
-                <HashIcon className="h-3 w-3" />
-                <span>{proposal.id}</span>
-              </div>
-              <div className="flex items-center gap-1">
-                <CoinsIcon className="h-3 w-3" />
-                <span>{proposal.budgetRequest?.toNumber() ?? 0} MINA</span>
-              </div>
+            <div className="flex items-center gap-1">
+              <CoinsIcon className="h-3 w-3" />
+              <span>{proposal.budgetRequest?.toNumber() ?? 0} MINA</span>
             </div>
           </div>
-        </Link>
-      </TooltipTrigger>
-      <TooltipContent>
-        <p>Click to view proposal details</p>
-      </TooltipContent>
-    </Tooltip>
+        </div>
+      </div>
+    </Link>
   );
 }; 

@@ -36,6 +36,7 @@ interface VoteQueryResult {
 }
 
 interface ConsiderationPhaseSummaryResult {
+  fundingRoundName: string;
   phaseTimeInfo: {
     startDate: Date;
     endDate: Date;
@@ -458,6 +459,7 @@ export class ConsiderationVotingService {
     }, { small: 0, medium: 0, large: 0 });
 
     return {
+      fundingRoundName: fundingRound.name,
       phaseTimeInfo: {
         startDate: fundingRound.considerationPhase.startDate,
         endDate: fundingRound.considerationPhase.endDate

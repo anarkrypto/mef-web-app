@@ -67,6 +67,7 @@ const getSubmissionPhaseSummary = async (fundingRoundId: string): Promise<Submis
   };
 
   return {
+    fundingRoundName: fundingRound.name,
     phaseTimeInfo: {
       startDate: fundingRound.submissionPhase.startDate,
       endDate: fundingRound.submissionPhase.endDate,
@@ -94,7 +95,6 @@ const SubmissionPhaseSummaryPage = async ({ params }: Props) => {
     <div className="container max-w-7xl mx-auto py-6">
       <SubmissionPhaseSummary
         summary={summary}
-        fundingRoundId={id}
       />
     </div>
   );

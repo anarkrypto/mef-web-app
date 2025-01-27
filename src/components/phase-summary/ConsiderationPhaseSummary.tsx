@@ -16,7 +16,7 @@ interface Props {
 
 export const ConsiderationPhaseSummary: FC<Props> = ({
   summary,
-  fundingRoundId
+  fundingRoundId,
 }) => {
   const phaseStatus = getPhaseStatus(summary.phaseTimeInfo);
   const progress = getPhaseProgress(summary.phaseTimeInfo);
@@ -37,7 +37,7 @@ export const ConsiderationPhaseSummary: FC<Props> = ({
   return (
     <TooltipProvider>
       <BasePhaseSummary
-        title="Consideration Phase Summary"
+        title={`${summary.fundingRoundName}'s Consideration Phase Summary`}
         description="Overview of the consideration phase progress and community votes"
         phaseStatus={phaseStatus}
         leftColumn={

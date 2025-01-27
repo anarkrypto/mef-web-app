@@ -48,7 +48,8 @@ interface ProposalWithVotes {
   };
 }
 
-interface DeliberationPhaseSummary {
+export interface DeliberationPhaseSummary {
+  fundingRoundName: string;
   startDate: Date;
   endDate: Date;
   totalProposals: number;
@@ -385,6 +386,7 @@ export class DeliberationService {
     proposalVotes.sort((a, b) => b.yesVotes - a.yesVotes);
 
     return {
+      fundingRoundName: fundingRound.name,
       startDate: deliberationPhase.startDate,
       endDate: deliberationPhase.endDate,
       totalProposals: proposals.length,

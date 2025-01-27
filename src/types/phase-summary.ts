@@ -48,6 +48,7 @@ export interface BudgetBreakdown {
 }
 
 export interface BasePhaseSummary {
+  fundingRoundName: string;
   phaseTimeInfo: PhaseTimeInfo;
   totalProposals: number;
   budgetBreakdown: BudgetBreakdown;

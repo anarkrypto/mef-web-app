@@ -21,7 +21,6 @@ const DeliberationPhaseSummaryPage = async ({ params }: Props) => {
       <div className="container max-w-7xl mx-auto py-6">
         <DeliberationPhaseSummary
           summary={summary}
-          fundingRoundId={id}
         />
       </div>
     );
