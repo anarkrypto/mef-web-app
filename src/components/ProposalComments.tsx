@@ -213,7 +213,7 @@ function CommentCard({ comment }: { comment: ProposalComment & { category: 'revi
         <div className="flex flex-col items-end gap-2">
           {comment.recommendation !== undefined && (
             <Badge 
-              variant={comment.recommendation ? 'success' : 'destructive'}
+              variant={comment.recommendation ? null : 'destructive'}
               className="transition-all duration-200 hover:opacity-90"
             >
               {comment.recommendation 
