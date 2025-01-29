@@ -1,35 +1,15 @@
-import { NextResponse } from "next/server";
-import prisma from "@/lib/prisma";
-import { getOrCreateUserFromRequest } from "@/lib/auth";
-import logger from "@/logging";
+import { NextRequest } from 'next/server'
+import { ApiResponse } from '@/lib/api-response'
+import { prisma } from '@/lib/prisma'
+import { FundingRoundService } from '@/services/FundingRoundService'
 
-export async function GET(req: Request) {
+export async function GET(req: NextRequest) {
   try {
-    const user = await getOrCreateUserFromRequest(req);
-    if (!user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    // Get all funding rounds with their phases
-    const rounds = await prisma.fundingRound.findMany({
-      where: {
-        status: "ACTIVE",
-      },
-      include: {
-        submissionPhase: true,
-        considerationPhase: true,
-        deliberationPhase: true,
-        votingPhase: true,
-        topic: true,
-      },
-    });
-
-    return NextResponse.json(rounds);
+    const fundingRoundService = new FundingRoundService(prisma)
+    const activeFundingRounds = await fundingRoundService.getActiveFundingRounds()
+    
+    return ApiResponse.success(activeFundingRounds)
   } catch (error) {
-    logger.error("Failed to fetch active funding rounds:", error);
-    return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500 }
-    );
+    return ApiResponse.error(error)
   }
 }
