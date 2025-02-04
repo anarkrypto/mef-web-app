@@ -2,7 +2,7 @@
 
 import { Button } from "@/components/ui/button"
 import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Users, MessageSquare, Coins, FileCheck, Vote, Activity, MessageCircle } from 'lucide-react'
+import { Users, MessageSquare, Coins, FileCheck, Vote, Activity, MessageCircle, Bot } from 'lucide-react'
 import Link from "next/link"
 
 export function AdminDashboardComponent() {
@@ -54,6 +54,12 @@ export function AdminDashboardComponent() {
       description: "View and manage user feedback submissions",
       icon: <MessageCircle className="h-5 w-5" />,
       href: "/admin/feedback"
+    },
+    {
+      title: "GPT Survey Processing",
+      description: "Process community feedback with GPT Survey",
+      icon: <Bot className="h-5 w-5" />,
+      href: "/admin/gpt-survey"
     }
   ]
 
