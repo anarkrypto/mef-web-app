@@ -1,3 +1,5 @@
+export const dynamic = 'force-dynamic'
+
 import { GptSurveyProcessingView } from "@/components/admin/gpt-survey/GptSurveyProcessingView";
 import { prisma } from "@/lib/prisma";
 import { FundingRound } from "@prisma/client";
