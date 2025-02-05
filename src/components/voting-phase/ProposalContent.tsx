@@ -139,9 +139,7 @@ export const ProposalContent: React.FC<{
                   <MessageCircle className="w-3 h-3" />
                 )}
                 <span>
-                  {proposal.author.authType === "wallet"
-                    ? formatWalletAddress(proposal.author.username)
-                    : proposal.author.username}
+                  {formatWalletAddress(proposal.author.username)}
                 </span>
               </TooltipTrigger>
               <TooltipContent>Proposal Author</TooltipContent>
