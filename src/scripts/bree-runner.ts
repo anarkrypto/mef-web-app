@@ -2,7 +2,6 @@ import Bree from 'bree';
 import Graceful from '@ladjs/graceful';
 import logger from '@/logging';
 import path from 'path';
-import { fileURLToPath } from 'url';
 
 const bree = new Bree({
   root: path.join(process.cwd(), 'dist', 'tasks'),
