@@ -52,7 +52,7 @@ const adminOptions: AdminOption[] = [
     title: "Worker Heartbeats",
     description: "Monitor background job statuses",
     icon: "activity",
-    href: "/admin/workers",
+    href: "/admin/worker-heartbeats",
     color: "bg-red-500/10 text-red-500",
   },
   {
