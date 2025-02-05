@@ -27,13 +27,15 @@ export interface RankedProposalAPIResponse {
 
 export interface GetRankedEligibleProposalsAPIResponse {
   proposals: RankedProposalAPIResponse[];
-  fundingRound: _FundingRound;
-}
-
-export interface _FundingRound {
-  id: string;
-  name: string;
-  mefId: number,
+  fundingRound: {
+    id: string;
+    name: string;
+    mefId: number;
+    votingPhase: {
+      startDate: Date;
+      endDate: Date;
+    } | null;
+  };
 }
 
 export class RankedVotingService {
@@ -81,6 +83,12 @@ export class RankedVotingService {
       select: {
         name: true,
         mefId: true,
+        votingPhase: {
+          select: {
+            startDate: true,
+            endDate: true
+          }
+        },
         proposals: {
           where: { status: 'DELIBERATION' },
           select: {
@@ -160,9 +168,9 @@ export class RankedVotingService {
       fundingRound: {
         id: fundingRoundId,
         mefId: result.mefId,
-        name: result.name
+        name: result.name,
+        votingPhase: result.votingPhase
       }
     };
   }
-
 } 

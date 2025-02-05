@@ -16,11 +16,28 @@ import { WalletConnectorDialog } from "@/components/web3/WalletConnectorDialog"
 import { ManualVoteDialog, ManualVoteDialogVoteType } from "@/components/web3/dialogs/OCVManualInstructions"
 import { GetRankedEligibleProposalsAPIResponse } from "@/services/RankedVotingService"
 import { ProposalWithUniqueId } from "./types"
+import { formatDistanceToNow } from "date-fns"
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger
+} from "@/components/ui/tooltip"
 
 
 interface RankedVoteListProps {
   fundingRoundMEFId: number
   proposals?: GetRankedEligibleProposalsAPIResponse | null
+  existingVote?: {
+    account: string
+    proposals: number[]
+    hash: string
+    memo: string
+    height: number
+    status: string
+    timestamp: number
+    nonce: number
+  }
   onSubmit: (selectedProposals: GetRankedEligibleProposalsAPIResponse) => void
   onSaveToMemo: (selectedProposals: GetRankedEligibleProposalsAPIResponse) => void
   onConnectWallet: () => void
@@ -44,13 +61,17 @@ const DropTarget = ({
   className,
 }: {
   children: React.ReactNode
-  onDrop: (item: DragItem) => void
+  onDrop?: (item: DragItem) => void
   className: string
 }) => {
   const ref = useRef<HTMLDivElement>(null)
   const [{ isOver }, drop] = useDrop<DragItem, void, { isOver: boolean }>({
     accept: ItemTypes.PROPOSAL,
-    drop: onDrop,
+    drop: (item) => {
+      if (onDrop) {
+        onDrop(item);
+      }
+    },
     collect: monitor => ({
       isOver: monitor.isOver(),
     }),
@@ -61,7 +82,7 @@ const DropTarget = ({
   return (
     <div 
       ref={ref}
-      className={`${className} ${isOver ? 'ring-2 ring-purple-400' : ''}`}
+      className={`${className} ${isOver && onDrop ? 'ring-2 ring-purple-400' : ''}`}
     >
       {children}
     </div>
@@ -74,12 +95,14 @@ const DraggableProposal = ({
   isRanked,
   moveProposal,
   onDoubleClick,
+  disabled = false
 }: { 
   proposal: ProposalWithUniqueId
   index: number
   isRanked: boolean
   moveProposal: (dragIndex: number, hoverIndex: number) => void
   onDoubleClick: () => void
+  disabled?: boolean
 }) => {
   const ref = useRef<HTMLDivElement>(null)
 
@@ -94,12 +117,13 @@ const DraggableProposal = ({
     collect: (monitor) => ({
       isDragging: monitor.isDragging(),
     }),
+    canDrag: !disabled
   })
 
   const [, drop] = useDrop({
     accept: ItemTypes.PROPOSAL,
     hover: (item: DragItem, monitor) => {
-      if (!ref.current) return
+      if (!ref.current || disabled) return
       if (!isRanked) return // Only allow reordering in ranked list
       
       const dragIndex = item.index
@@ -135,15 +159,17 @@ const DraggableProposal = ({
   return (
     <div
       ref={ref}
-      onDoubleClick={onDoubleClick}
+      onDoubleClick={disabled ? undefined : onDoubleClick}
       style={{ opacity: isDragging ? 0.5 : 1 }}
       className={`
         group select-none flex flex-col gap-2 p-3 bg-white border rounded-lg
-        cursor-grab active:cursor-grabbing shadow-sm
+        ${disabled ? 'cursor-not-allowed opacity-80' : 'cursor-grab active:cursor-grabbing'}
+        shadow-sm
         hover:shadow-md hover:bg-${isRanked ? 'purple' : 'blue'}-50 
         hover:border-${isRanked ? 'purple' : 'blue'}-300
         transition-all duration-200
         ${isDragging ? 'ring-2 ring-purple-400' : ''}
+        ${disabled ? 'ring-2 ring-purple-200' : ''}
       `}
     >
       <ProposalContent
@@ -159,6 +185,7 @@ const DndContent = ({
   fundingRoundMEFId,
   availableProposals,
   rankedProposals,
+  existingVote,
   onMoveProposal,
   onDoubleClick,
   onDropToRanked,
@@ -169,6 +196,16 @@ const DndContent = ({
   fundingRoundMEFId: number,
   availableProposals: ProposalWithUniqueId[]
   rankedProposals: ProposalWithUniqueId[]
+  existingVote?: {
+    account: string;
+    proposals: number[];
+    hash: string;
+    memo: string;
+    height: number;
+    status: string;
+    timestamp: number;
+    nonce: number;
+  };
   onMoveProposal: (dragIndex: number, hoverIndex: number) => void
   onDoubleClick: (proposal: ProposalWithUniqueId, source: "available" | "ranked") => void
   onDropToRanked: (item: DragItem) => void
@@ -196,6 +233,11 @@ const DndContent = ({
   // Create a string of ranked proposal IDs
   const rankedVoteId: string = [fundingRoundMEFId, ...rankedProposals.map(p => p.id)].join(' ');
 
+  const isVoteDisabled = Boolean(existingVote);
+  const voteButtonTooltip = existingVote 
+    ? `You have already voted ${formatDistanceToNow(existingVote.timestamp)} ago` 
+    : undefined;
+
   return (
     <div className="grid md:grid-cols-2 gap-6">
       {/* LEFT COLUMN - AVAILABLE PROPOSALS */}
@@ -204,7 +246,7 @@ const DndContent = ({
           Available Candidates ({availableProposals.length})
         </h2>
         <DropTarget
-          onDrop={onDropToAvailable}
+          onDrop={existingVote ? undefined : onDropToAvailable}
           className="space-y-2 min-h-[400px] p-4 border-2 border-dashed border-blue-200 rounded-lg
                      transition-colors duration-300 hover:border-blue-300"
         >
@@ -216,6 +258,7 @@ const DndContent = ({
               isRanked={false}
               moveProposal={onMoveProposal}
               onDoubleClick={() => onDoubleClick(proposal, "available")}
+              disabled={Boolean(existingVote)}
             />
           ))}
         </DropTarget>
@@ -227,7 +270,7 @@ const DndContent = ({
           Your Ranked Choices ({rankedProposals.length})
         </h2>
         <DropTarget
-          onDrop={onDropToRanked}
+          onDrop={existingVote ? undefined : onDropToRanked}
           className="space-y-2 min-h-[400px] p-4 border-2 border-dashed border-purple-200 rounded-lg
                      transition-colors duration-300 hover:border-purple-300 mb-6"
         >
@@ -239,23 +282,40 @@ const DndContent = ({
               isRanked={true}
               moveProposal={onMoveProposal}
               onDoubleClick={() => onDoubleClick(proposal, "ranked")}
+              disabled={Boolean(existingVote)}
             />
           ))}
         </DropTarget>
 
         <div className="space-y-3">
-          <Button
-            className="w-full bg-purple-600 hover:bg-purple-700
-                       transition-all duration-300 transform hover:scale-105"
-            onClick={handleVoteClick}
-          >
-            <Wallet className="w-4 h-4 mr-2" />
-            {state.wallet ? 'Vote with Wallet' : 'Connect Wallet to Submit Vote'}
-          </Button>
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <div>
+                  <Button
+                    className="w-full bg-purple-600 hover:bg-purple-700
+                              transition-all duration-300 transform hover:scale-105"
+                    onClick={handleVoteClick}
+                    disabled={isVoteDisabled}
+                  >
+                    <Wallet className="w-4 h-4 mr-2" />
+                    {state.wallet ? 'Vote with Wallet' : 'Connect Wallet to Submit Vote'}
+                  </Button>
+                </div>
+              </TooltipTrigger>
+              {voteButtonTooltip && (
+                <TooltipContent>
+                  <p>{voteButtonTooltip}</p>
+                </TooltipContent>
+              )}
+            </Tooltip>
+          </TooltipProvider>
+
           <Button
             variant="outline"
             className="w-full"
             onClick={handleSaveToMemo}
+            disabled={isVoteDisabled}
           >
             <Save className="w-4 h-4 mr-2" />
             Vote Via Memo Without A Wallet
@@ -279,7 +339,11 @@ const DndContent = ({
           onOpenChange={setShowManualDialog}
           voteId={rankedVoteId}
           voteType={ManualVoteDialogVoteType.MEF}
-          existingVote={null}
+          existingVote={existingVote ? {
+            address: existingVote.account,
+            timestamp: existingVote.timestamp,
+            hash: existingVote.hash
+          } : null}
         />
       </Card>
     </div>
@@ -291,6 +355,7 @@ const MAX_RANKED_CHOICES = 10
 export default function RankedVoteList({
   fundingRoundMEFId,
   proposals,
+  existingVote,
   onSubmit,
   onSaveToMemo,
   onConnectWallet,
@@ -305,16 +370,44 @@ export default function RankedVoteList({
   // Add effect to update proposals when they change
   React.useEffect(() => {
     if (proposals) {
-      setAvailableProposals(
-        proposals.proposals.map((p) => ({
-          ...p,
-          uniqueId: `available-${p.id}-${Math.random().toString(36).substr(2, 9)}`,
-        }))
-      );
-      // Reset ranked proposals when switching funding rounds
-      setRankedProposals([]);
+      // If there's an existing vote, initialize ranked proposals with the voted ones
+      if (existingVote) {
+        // Convert proposal IDs to strings for comparison
+        const votedProposalIds = existingVote.proposals.map(id => id.toString());
+        
+        const votedProposals = proposals.proposals
+          .filter(p => votedProposalIds.includes(p.id.toString()))
+          .sort((a, b) => {
+            const aIndex = votedProposalIds.indexOf(a.id.toString());
+            const bIndex = votedProposalIds.indexOf(b.id.toString());
+            return aIndex - bIndex;
+          })
+          .map(p => ({
+            ...p,
+            uniqueId: `ranked-${p.id}-${Math.random().toString(36).substr(2, 9)}`,
+          }));
+
+        const availableProposals = proposals.proposals
+          .filter(p => !votedProposalIds.includes(p.id.toString()))
+          .map(p => ({
+            ...p,
+            uniqueId: `available-${p.id}-${Math.random().toString(36).substr(2, 9)}`,
+          }));
+
+        setRankedProposals(votedProposals);
+        setAvailableProposals(availableProposals);
+      } else {
+        setAvailableProposals(
+          proposals.proposals.map((p) => ({
+            ...p,
+            uniqueId: `available-${p.id}-${Math.random().toString(36).substr(2, 9)}`,
+          }))
+        );
+        // Reset ranked proposals when switching funding rounds
+        setRankedProposals([]);
+      }
     }
-  }, [proposals]);
+  }, [proposals, existingVote]);
 
   const moveRankedProposal = useCallback((dragIndex: number, hoverIndex: number) => {
     setRankedProposals((prevProposals) => {
@@ -385,10 +478,17 @@ export default function RankedVoteList({
     <DndProvider backend={isTouchDevice() ? TouchBackend : HTML5Backend}>
       <div className="container mx-auto px-4 py-8 max-w-7xl">
         <h1 className="text-3xl font-bold text-gray-900 mb-4">{title}</h1>
-        <p className="text-gray-600 mb-8">
-          Drag and drop proposals to move them into the Ranked list, or double-click an item to move it.
-          Under <strong>&apos;Your Ranked Choices&apos;</strong>, items should be reordered according to preference, where 1 is the highest preference project to be funded and the last position is the least preference project to be funded.
-        </p>
+        <div className="space-y-4 text-gray-600 mb-8">
+          <p>
+            Drag and drop proposals to move them into the Ranked list, or double-click an item to move it.
+            Under <strong>&apos;Your Ranked Choices&apos;</strong>, items should be reordered according to preference, where 1 is the highest preference project to be funded and the last position is the least preference project to be funded.
+          </p>
+          <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg">
+            <p className="text-amber-800">
+              <strong>Important:</strong> Once you submit your vote, it cannot be changed. After submitting, it may take up to 10 minutes for your vote to be processed and appear under &quot;Your Ranked Choices&quot;.
+            </p>
+          </div>
+        </div>
 
         <div className="mb-6">
           <div className="flex justify-between items-center mb-2">
@@ -412,6 +512,7 @@ export default function RankedVoteList({
           fundingRoundMEFId={fundingRoundMEFId}
           availableProposals={availableProposals}
           rankedProposals={rankedProposals}
+          existingVote={existingVote}
           onMoveProposal={moveRankedProposal}
           onDoubleClick={handleDoubleClick}
           onDropToRanked={handleDropToRanked}

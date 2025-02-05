@@ -25,6 +25,27 @@ export interface OCVVoteResponse {
   votes: OCVVote[];
 }
 
+export interface OCVRankedVoteResponse {
+  round_id: number;
+  total_votes: number;
+  winners: number[];
+  stats: {
+    [key: string]: {
+      count: number;
+      percentage: number;
+    };
+  };
+  votes: {
+    account: string;
+    proposals: number[];
+    hash: string;
+    memo: string;
+    height: number;
+    status: string;
+    timestamp: number;
+    nonce: number;
+  }[];
+}
 
 export class OCVApiService {
 
@@ -67,6 +88,35 @@ export class OCVApiService {
       return data;
     } catch (error) {
       logger.error(`[OCVApiService] Failed to fetch OCV votes for proposal ${proposalId}:`, error);
+      throw error;
+    }
+  }
+
+  async getRankedVotes(
+    roundId: number,
+    startTime: number,
+    endTime: number
+  ): Promise<OCVRankedVoteResponse> {
+    const url = `${this.baseUrl}/api/mef_ranked_vote/${roundId}/${startTime}/${endTime}`;
+
+    try {
+      const response = await fetch(url, { 
+        headers: {
+          'Accept': 'application/json'
+        },
+        signal: AbortSignal.timeout(10000)
+      });
+
+      if (!response.ok) {
+        throw new Error(`[OCVApiService] OCV API error: ${response.statusText}`);
+      }
+
+      const data = await response.json();
+      logger.debug(`[OCVApiService] OCV ranked vote data for round ${roundId}:`, data);
+      
+      return data;
+    } catch (error) {
+      logger.error(`[OCVApiService] Failed to fetch ranked votes for round ${roundId}:`, error);
       throw error;
     }
   }
