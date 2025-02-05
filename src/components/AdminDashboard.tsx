@@ -1,98 +1,119 @@
 'use client'
 
-import { Button } from "@/components/ui/button"
-import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Users, MessageSquare, Coins, FileCheck, Vote, Activity, MessageCircle, Bot } from 'lucide-react'
-import Link from "next/link"
+import { Icons } from "@/components/ui/icons";
+import { Card } from "@/components/ui/card";
+import Link from "next/link";
+
+interface AdminOption {
+  title: string;
+  description: string;
+  icon: keyof typeof Icons;
+  href: string;
+  color?: string;
+}
+
+const adminOptions: AdminOption[] = [
+  {
+    title: "Manage Reviewers",
+    description: "Manage Reviewers and Users",
+    icon: "users",
+    href: "/admin/reviewers",
+    color: "bg-blue-500/10 text-blue-500",
+  },
+  {
+    title: "Manage Discussion Topics",
+    description: "Manage Discussion Topics and Committees",
+    icon: "messageSquare",
+    href: "/admin/topics",
+    color: "bg-purple-500/10 text-purple-500",
+  },
+  {
+    title: "Manage Funding Rounds",
+    description: "Manage Funding Rounds and Phases",
+    icon: "link",
+    href: "/admin/funding-rounds",
+    color: "bg-green-500/10 text-green-500",
+  },
+  {
+    title: "Manage Proposal Status",
+    description: "Set/Override Proposal Status",
+    icon: "fileText",
+    href: "/admin/proposals",
+    color: "bg-orange-500/10 text-orange-500",
+  },
+  {
+    title: "Count Votes",
+    description: "Count Votes for a Funding Round",
+    icon: "barChart",
+    href: "/admin/votes",
+    color: "bg-yellow-500/10 text-yellow-500",
+  },
+  {
+    title: "Worker Heartbeats",
+    description: "Monitor background job statuses",
+    icon: "activity",
+    href: "/admin/workers",
+    color: "bg-red-500/10 text-red-500",
+  },
+  {
+    title: "Consideration OCV Votes",
+    description: "Monitor OCV consideration votes",
+    icon: "barChart2",
+    href: "/admin/ocv-votes",
+    color: "bg-indigo-500/10 text-indigo-500",
+  },
+  {
+    title: "User Feedback",
+    description: "View and manage user feedback submissions",
+    icon: "messageCircle",
+    href: "/admin/feedback",
+    color: "bg-pink-500/10 text-pink-500",
+  },
+  {
+    title: "GPT Survey Processing",
+    description: "Process community feedback with GPT Survey",
+    icon: "messageSquare",
+    href: "/admin/gpt-survey",
+    color: "bg-teal-500/10 text-teal-500",
+  }
+];
 
 export function AdminDashboardComponent() {
-  const adminOptions = [
-    {
-      title: "Manage Reviewers",
-      description: "Manage Reviewers and Users",
-      icon: <Users className="h-5 w-5" />,
-      href: "/admin/reviewers"
-    },
-    {
-      title: "Manage Discussion Topics",
-      description: "Manage Discussion Topics and Committees.",
-      icon: <MessageSquare className="h-5 w-5" />,
-      href: "/admin/discussions"
-    },
-    {
-      title: "Manage Funding Rounds",
-      description: "Manage Funding Rounds and Phases.",
-      icon: <Coins className="h-5 w-5" />,
-      href: "/admin/funding-rounds"
-    },
-    {
-      title: "Manage Proposal Status",
-      description: "Set/Override Proposal Status",
-      icon: <FileCheck className="h-5 w-5" />,
-      href: "/admin/proposals"
-    },
-    {
-      title: "Count Votes",
-      description: "Count Votes for a Funding Round..",
-      icon: <Vote className="h-5 w-5" />,
-      href: "/admin/votes"
-    },
-    {
-      title: "Worker Heartbeats",
-      description: "Monitor background job statuses",
-      icon: <Activity className="h-5 w-5" />,
-      href: "/admin/worker-heartbeats"
-    },
-    {
-      title: "Consideration OCV Votes",
-      description: "Monitor OCV consideration votes",
-      icon: <Vote className="h-5 w-5" />,
-      href: "/admin/ocv-votes"
-    },
-    {
-      title: "User Feedback",
-      description: "View and manage user feedback submissions",
-      icon: <MessageCircle className="h-5 w-5" />,
-      href: "/admin/feedback"
-    },
-    {
-      title: "GPT Survey Processing",
-      description: "Process community feedback with GPT Survey",
-      icon: <Bot className="h-5 w-5" />,
-      href: "/admin/gpt-survey"
-    }
-  ]
-
   return (
-    <div className="container mx-auto p-6 max-w-4xl">
-      <div className="space-y-6">
-        <div>
-          <h1 className="text-3xl font-bold mb-2">Admin Dashboard</h1>
-          <p className="text-muted-foreground">
-            Welcome to the Admin Dashboard. Please select a category to manage
-          </p>
-        </div>
+    <div className="container max-w-7xl mx-auto p-6 space-y-8">
+      <div className="space-y-2">
+        <h1 className="text-3xl font-bold tracking-tight">Admin Dashboard</h1>
+        <p className="text-muted-foreground">
+          Welcome to the Admin Dashboard. Please select a category to manage.
+        </p>
+      </div>
 
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {adminOptions.map((option, index) => (
-            <Link key={index} href={option.href} className="block">
-              <Card className="transition-colors hover:bg-muted/50">
-                <CardHeader>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {adminOptions.map((option) => {
+          const Icon = Icons[option.icon];
+          return (
+            <Link key={option.href} href={option.href}>
+              <Card className="h-full p-6 hover:shadow-md transition-all hover:scale-[1.02] cursor-pointer">
+                <div className="flex flex-col h-full space-y-4">
                   <div className="flex items-center gap-4">
-                    <div className="p-2 bg-primary/10 rounded-lg">
-                      {option.icon}
+                    <div className={`p-2 rounded-lg ${option.color}`}>
+                      <Icon className="h-5 w-5" />
                     </div>
                     <div className="space-y-1">
-                      <CardTitle className="text-xl">{option.title}</CardTitle>
-                      <CardDescription>{option.description}</CardDescription>
+                      <h2 className="text-xl font-semibold tracking-tight">
+                        {option.title}
+                      </h2>
+                      <p className="text-sm text-muted-foreground">
+                        {option.description}
+                      </p>
                     </div>
                   </div>
-                </CardHeader>
+                </div>
               </Card>
             </Link>
-          ))}
-        </div>
+          );
+        })}
       </div>
     </div>
-  )
+  );
 }
