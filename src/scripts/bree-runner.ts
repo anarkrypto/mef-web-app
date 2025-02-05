@@ -2,6 +2,10 @@ import Bree from 'bree';
 import Graceful from '@ladjs/graceful';
 import logger from '@/logging';
 import path from 'path';
+import { fileURLToPath } from 'url';
+
+// Get the current file path in ESM
+const __filename = fileURLToPath(import.meta.url);
 
 const bree = new Bree({
   root: path.join(process.cwd(), 'dist', 'tasks'),
@@ -30,8 +34,8 @@ const bree = new Bree({
   }
 });
 
-// Only create the graceful shutdown handler if we're running the script directly
-if (require.main === module) {
+// Check if this file is being run directly (not imported)
+if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const graceful = new Graceful({ brees: [bree] });
   graceful.listen();
 
