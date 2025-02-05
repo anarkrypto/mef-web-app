@@ -10,13 +10,13 @@ const bree = new Bree({
       name: 'ocv-vote-counting',
       path: path.join(process.cwd(), 'dist', 'tasks', 'ocv-vote-counting.js'),
       interval: '10m', // run every 10 minutes
-      timeout: 0, // start immediately when this script is run
+      timeout: false, // prevent starting on initialization
       closeWorkerAfterMs: 9 * 60 * 1000 // Kill after 9 minutes if stuck
     },
     {
       name: 'gpt-survey-processing',
       path: path.join(process.cwd(), 'dist', 'tasks', 'gpt-survey-processing.js'),
-      // Remove interval since it will be run on-demand
+      timeout: false, // prevent starting on initialization
       closeWorkerAfterMs: 9 * 60 * 1000 // Kill after 9 minutes if stuck
     }
   ],
@@ -30,16 +30,17 @@ const bree = new Bree({
   }
 });
 
-const graceful = new Graceful({ brees: [bree] });
-graceful.listen();
-
-// Export bree instance to be used by the API route
-export default bree;
-
-// Only start the OCV vote counting job if this file is being run directly
+// Only create the graceful shutdown handler if we're running the script directly
 if (require.main === module) {
+  const graceful = new Graceful({ brees: [bree] });
+  graceful.listen();
+
+  // Start the OCV vote counting job
   (async () => {
     await bree.start('ocv-vote-counting');
     logger.info('Bree OCV vote counting started successfully');
   })();
 }
+
+// Export bree instance to be used by the API route
+export default bree;
