@@ -45,10 +45,24 @@ interface SerializedFundingRound {
   updatedAt: string;
 }
 
+interface ProcessedProposal {
+  id: number;
+  hasSummary: boolean;
+}
+
+interface WorkerMetadata {
+  roundId: string;
+  forceSummary: boolean;
+  startedAt: string;
+  processed_proposals?: ProcessedProposal[];
+  error?: string;
+  killedAt?: string;
+}
+
 interface LastExecution {
   status: string;
   timestamp: string;
-  metadata: any;
+  metadata: WorkerMetadata;
 }
 
 interface Props {
@@ -267,7 +281,7 @@ export function GptSurveyProcessingView({ fundingRounds }: Props) {
         <InfoIcon className="h-4 w-4" />
         <AlertDescription className="ml-2">
           This tool processes community feedback for proposals in a funding round using the GPT Survey integration.
-          Proposals will be created if they don't exist, and summaries will be generated for proposals with feedback.
+          Proposals will be created if they don&apos;t exist, and summaries will be generated for proposals with feedback.
         </AlertDescription>
       </Alert>
 
@@ -279,7 +293,7 @@ export function GptSurveyProcessingView({ fundingRounds }: Props) {
             {lastExecution.metadata?.processed_proposals && (
               <div className="mt-1 text-sm text-muted-foreground">
                 Processed {lastExecution.metadata.processed_proposals.length} proposals
-                ({lastExecution.metadata.processed_proposals.filter((p: any) => p.hasSummary).length} with summaries)
+                ({lastExecution.metadata.processed_proposals.filter((p: ProcessedProposal) => p.hasSummary).length} with summaries)
               </div>
             )}
           </AlertDescription>
