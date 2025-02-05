@@ -1,4 +1,4 @@
-import { parentPort } from 'worker_threads';
+import { parentPort, workerData } from 'worker_threads';
 import prisma from '@/lib/prisma';
 import { GptSurveyClient } from '@/lib/gpt-survey/client';
 import { GptSurveyService } from '@/services/GptSurveyService';
@@ -122,13 +122,18 @@ async function processGptSurvey() {
 
     const metadata = currentJob.metadata as unknown as WorkerMetadata;
 
-    if (!process.env.PGT_GSS_API_URL || !process.env.PGT_GSS_API_TOKEN) {
+    const { PGT_GSS_API_URL, PGT_GSS_API_TOKEN } = workerData as { 
+      PGT_GSS_API_URL: string; 
+      PGT_GSS_API_TOKEN: string; 
+    };
+
+    if (!PGT_GSS_API_URL || !PGT_GSS_API_TOKEN) {
       throw new Error('Missing required environment variables for GPT Survey client');
     }
 
     const client = new GptSurveyClient({
-      baseUrl: process.env.PGT_GSS_API_URL,
-      authSecret: process.env.PGT_GSS_API_TOKEN
+      baseUrl: PGT_GSS_API_URL,
+      authSecret: PGT_GSS_API_TOKEN
     });
     
     const service = new GptSurveyService();

@@ -18,7 +18,13 @@ const bree = new Bree({
       name: 'gpt-survey-processing',
       path: path.join(process.cwd(), 'dist', 'tasks', 'gpt-survey-processing.js'),
       timeout: false, // prevent starting on initialization
-      closeWorkerAfterMs: 9 * 60 * 1000 // Kill after 9 minutes if stuck
+      closeWorkerAfterMs: 9 * 60 * 1000, // Kill after 9 minutes if stuck
+      worker: {
+        workerData: {
+          PGT_GSS_API_URL: process.env.PGT_GSS_API_URL,
+          PGT_GSS_API_TOKEN: process.env.PGT_GSS_API_TOKEN
+        }
+      }
     }
   ],
   errorHandler: (error, workerMetadata) => {
