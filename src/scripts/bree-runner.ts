@@ -2,6 +2,7 @@ import Bree from 'bree';
 import Graceful from '@ladjs/graceful';
 import logger from '@/logging';
 import path from 'path';
+import { fileURLToPath as getFileUrl } from 'url';
 
 const bree = new Bree({
   root: path.join(process.cwd(), 'dist', 'tasks'),
@@ -37,7 +38,7 @@ const bree = new Bree({
 });
 
 // Check if this file is being run directly (not imported)
-if (process.argv[1] === fileURLToPath(import.meta.url)) {
+if (process.argv[1] === getFileUrl(import.meta.url)) {
   const graceful = new Graceful({ brees: [bree] });
   graceful.listen();
 
