@@ -36,8 +36,10 @@ graceful.listen();
 // Export bree instance to be used by the API route
 export default bree;
 
-// Only start the OCV vote counting job automatically
-(async () => {
-  await bree.start('ocv-vote-counting');
-  logger.info('Bree OCV vote counting started successfully');
-})();
+// Only start the OCV vote counting job if this file is being run directly
+if (require.main === module) {
+  (async () => {
+    await bree.start('ocv-vote-counting');
+    logger.info('Bree OCV vote counting started successfully');
+  })();
+}
