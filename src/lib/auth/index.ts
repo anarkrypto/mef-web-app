@@ -4,6 +4,8 @@ import type { User } from "@prisma/client";
 import prisma from "@/lib/prisma";
 import logger from "@/logging";
 import { UserService } from "@/services/UserService";
+import { NextRequest } from "next/server";
+import { AppError } from "../errors";
 
 export async function getOrCreateUserFromRequest(req: Request): Promise<User | null> {
   try {
@@ -112,3 +114,4 @@ export async function checkVotingEligibility(
     return { isEligible: false, reason: "Error checking eligibility" };
   }
 }
+

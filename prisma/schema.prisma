@@ -44,7 +44,7 @@ model User {
   deliberationReviewerVotes  ReviewerDeliberationVote[]
   ocvConsiderationVote       OCVConsiderationVote?       @relation(fields: [oCVConsiderationVoteId], references: [id])
   oCVConsiderationVoteId     Int?
-  feedback UserFeedback[]
+  feedback                   UserFeedback[]
 
   @@index([id])
   @@index([linkId])
@@ -70,10 +70,11 @@ model Proposal {
   user         User          @relation(fields: [userId], references: [id], onDelete: Restrict)
   fundingRound FundingRound? @relation(fields: [fundingRoundId], references: [id])
 
-  considerationVotes         ConsiderationVote[]
-  deliberationCommunityVotes CommunityDeliberationVote[]
-  deliberationReviewerVotes  ReviewerDeliberationVote[]
-  OCVConsiderationVote       OCVConsiderationVote?
+  considerationVotes          ConsiderationVote[]
+  deliberationCommunityVotes  CommunityDeliberationVote[]
+  deliberationReviewerVotes   ReviewerDeliberationVote[]
+  OCVConsiderationVote        OCVConsiderationVote?
+  GptSurveySummarizerProposal GptSurveySummarizerProposal?
 
   // Indexes
   @@index([userId])
@@ -152,7 +153,7 @@ model TopicReviewerGroup {
 
 model FundingRound {
   id          String             @id @default(uuid()) @db.Uuid
-  mefId       Int               @default(autoincrement()) @unique
+  mefId       Int                @unique @default(autoincrement())
   createdById String             @db.Uuid
   topicId     String             @db.Uuid
   name        String             @db.VarChar(100)
@@ -267,8 +268,9 @@ model CommunityDeliberationVote {
   feedback   String   @db.Text
   createdAt  DateTime @default(now()) @db.Timestamptz(6)
 
-  proposal Proposal @relation(fields: [proposalId], references: [id], onDelete: Cascade)
-  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  proposal                    Proposal                     @relation(fields: [proposalId], references: [id], onDelete: Cascade)
+  user                        User                         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  GptSurveySummarizerFeedback GptSurveySummarizerFeedback?
 
   @@unique([proposalId, userId])
   @@index([userId])
@@ -306,7 +308,7 @@ model WorkerHeartbeat {
   name          String       @db.VarChar(100) // For identifying job type
   lastHeartbeat DateTime     @updatedAt
   status        WorkerStatus @default(RUNNING)
-  metadata      Json?        // Optional JSON column for storing job-specific data
+  metadata      Json? // Optional JSON column for storing job-specific data
   createdAt     DateTime     @default(now())
 
   @@index([name, status])
@@ -316,8 +318,8 @@ model UserFeedback {
   id        String   @id @default(uuid()) @db.Uuid
   userId    String   @db.Uuid
   feedback  String   @db.Text
-  image     Bytes?   @db.ByteA  // Optional binary data for screenshot, PostgreSQL BYTEA type
-  metadata  Json     // Flexible JSON storage for additional user data
+  image     Bytes?   @db.ByteA // Optional binary data for screenshot, PostgreSQL BYTEA type
+  metadata  Json // Flexible JSON storage for additional user data
   createdAt DateTime @default(now()) @db.Timestamptz(6)
   updatedAt DateTime @updatedAt @db.Timestamptz(6)
 
@@ -327,4 +329,31 @@ model UserFeedback {
   // Indexes
   @@index([userId])
   @@index([createdAt])
+}
+
+model GptSurveySummarizerProposal {
+  id         String                        @id @default(cuid())
+  proposal   Proposal                      @relation(fields: [proposalId], references: [id])
+  proposalId Int                           @unique
+  createdAt  DateTime                      @default(now()) @db.Timestamptz(6)
+  updatedAt  DateTime                      @updatedAt @db.Timestamptz(6)
+  isSuccess  Boolean
+  request    Json
+  response   Json
+  feedbacks  GptSurveySummarizerFeedback[]
+  summary    String?
+  summary_updated_at DateTime? @db.Timestamptz(6)
+}
+
+model GptSurveySummarizerFeedback {
+  id                          String                      @id @default(cuid())
+  communityDeliberationVote   CommunityDeliberationVote   @relation(fields: [communityDeliberationVoteId], references: [id])
+  communityDeliberationVoteId String                      @unique @db.Uuid
+  createdAt                   DateTime                    @default(now()) @db.Timestamptz(6)
+  updatedAt                   DateTime                    @updatedAt @db.Timestamptz(6)
+  isSuccess                   Boolean
+  request                     Json
+  response                    Json
+  proposal                    GptSurveySummarizerProposal @relation(fields: [proposalId], references: [id])
+  proposalId                  String
 }

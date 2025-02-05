@@ -163,7 +163,7 @@ export function ProcessVisualization({ currentPhase, fundingRound }: Props) {
               <div className="absolute left-1/2 transform -translate-x-1/2 text-sm text-gray-500 text-center mt-8">
                 PROPOSAL GOES INTO
                 <br />
-                VOTING WITH REVIEWERS'
+                VOTING WITH REVIEWERS&apos;
                 <br />
                 RECOMMENDATION
               </div>

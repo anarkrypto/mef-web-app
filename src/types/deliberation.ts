@@ -38,6 +38,10 @@ export interface DeliberationProposal extends ConsiderationProposal {
       };
     }>;
   };
+  gptSurveySummary?: {
+    summary: string;
+    summaryUpdatedAt: Date;
+  };
 }
 
 export interface ProposalComment {
@@ -55,4 +59,8 @@ export interface CategorizedComments {
   reviewerConsideration: ProposalComment[];
   reviewerDeliberation: ProposalComment[];
   communityDeliberation: ProposalComment[];
+  gptSurveySummary?: {
+    summary: string;
+    summaryUpdatedAt: Date;
+  };
 } 

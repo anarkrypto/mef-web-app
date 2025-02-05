@@ -74,6 +74,7 @@ export function ProposalDetails({ proposalId }: Props) {
     reviewerConsideration: [],
     reviewerDeliberation: [],
     communityDeliberation: [],
+    gptSurveySummary: undefined
   })
   const [loadingComments, setLoadingComments] = useState(true)
   const [selectFundingRoundOpen, setSelectFundingRoundOpen] = useState(false)
@@ -113,7 +114,7 @@ const fetchProposal = useCallback(async () => {
     try {
       const response = await fetch(`/api/proposals/${proposalId}/comments`)
       if (!response.ok) throw new Error('Failed to fetch comments')
-      const  data  = await response.json()
+      const data  = await response.json()
       
       // Ensure we have a valid comments structure
       if (data && typeof data === 'object') {
@@ -121,6 +122,10 @@ const fetchProposal = useCallback(async () => {
           reviewerConsideration: Array.isArray(data.reviewerConsideration) ? data.reviewerConsideration : [],
           reviewerDeliberation: Array.isArray(data.reviewerDeliberation) ? data.reviewerDeliberation : [],
           communityDeliberation: Array.isArray(data.communityDeliberation) ? data.communityDeliberation : [],
+          gptSurveySummary: data.gptSurveySummary ? {
+            summary: data.gptSurveySummary.summary,
+            summaryUpdatedAt: new Date(data.gptSurveySummary.summaryUpdatedAt)
+          } : undefined,
         });
       } else {
         setComments({
