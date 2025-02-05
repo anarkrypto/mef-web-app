@@ -4,9 +4,6 @@ import logger from '@/logging';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
-// Get the current file path in ESM
-const __filename = fileURLToPath(import.meta.url);
-
 const bree = new Bree({
   root: path.join(process.cwd(), 'dist', 'tasks'),
   jobs: [
