@@ -137,7 +137,7 @@ export class GptSurveyService {
     });
   }
 
-  async getProposalSummaryStatus(proposalId: number) {
+  async getProposalSummary(proposalId: number) {
     return this.db.gptSurveySummarizerProposal.findUnique({
       where: { proposalId },
       select: {

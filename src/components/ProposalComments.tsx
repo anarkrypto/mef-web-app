@@ -9,7 +9,8 @@ import {
   Clock,
   ShieldCheck,
   ArrowUpDown,
-  Users
+  Users,
+  MessageSquare
 } from 'lucide-react'
 import {
   Tooltip,
@@ -18,8 +19,14 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip"
 import { Button } from "@/components/ui/button"
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion"
+import ReactMarkdown from 'react-markdown'
 import type { CategorizedComments, ProposalComment } from "@/types/deliberation"
-
 
 interface ProposalCommentsProps {
   comments: CategorizedComments;
@@ -113,7 +120,28 @@ export function ProposalComments({ comments }: ProposalCommentsProps) {
           </Button>
         </div>
       </div>
-
+        
+        {comments.gptSurveySummary && (
+        <Accordion type="single" collapsible defaultValue="">
+          <AccordionItem value="summary">
+            <AccordionTrigger className="flex items-center gap-2">
+              <MessageSquare className="h-4 w-4" />
+              <span className="font-semibold">Community Deliberation Summary</span>
+            </AccordionTrigger>
+            <AccordionContent>
+              <div className="space-y-4 p-4 bg-muted/50 rounded-lg">
+                <div className="text-xs text-muted-foreground flex items-center gap-1.5">
+                  <Clock className="h-3.5 w-3.5" />
+                  Last updated: {new Date(comments.gptSurveySummary.summaryUpdatedAt).toLocaleString()}
+                </div>
+                <div className="prose prose-sm dark:prose-invert max-w-none">
+                  <ReactMarkdown>{comments.gptSurveySummary.summary}</ReactMarkdown>
+                </div>
+              </div>
+            </AccordionContent>
+          </AccordionItem>
+        </Accordion>
+      )}
       <div className="space-y-4">
         {sortedComments.map((comment) => (
           <CommentCard key={comment.id} comment={comment} />
