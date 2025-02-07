@@ -4,12 +4,18 @@ import { useEffect, useState } from 'react'
 import { useWallet } from '@/contexts/WalletContext'
 import { useToast } from '@/hooks/use-toast'
 import RankedVoteList from '@/components/voting-phase/RankedVoteList'
+import { VotingResultsDistribution } from '@/components/voting-phase/VotingResultsDistribution'
 import { RankedVoteTransactionDialog } from '@/components/web3/dialogs/RankedVoteTransactionDialog'
 import { WalletConnectorDialog } from '@/components/web3/WalletConnectorDialog'
-import { Card, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
+import { ChevronDownIcon, ChevronUpIcon, ChartBarIcon } from 'lucide-react'
+import { InfoCircledIcon } from "@radix-ui/react-icons"
 import { GetRankedEligibleProposalsAPIResponse } from '@/services/RankedVotingService'
 import type { OCVRankedVoteResponse } from '@/services/OCVApiService'
 import { LocalStorageCache } from '@/lib/local-storage-cache'
+import { cn } from '@/lib/utils'
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 
 const VOTE_DATA_CACHE_PREFIX = 'ocv_vote_data';
 
@@ -22,6 +28,10 @@ interface SelectedProposalId {
   id: number 
 }
 
+interface FundingRoundDetails {
+  totalBudget: number;
+}
+
 export function VotingPhase({ 
   fundingRoundId, 
   fundingRoundName,
@@ -30,10 +40,45 @@ export function VotingPhase({
   const { toast } = useToast();
   const [proposals, setProposals] = useState<GetRankedEligibleProposalsAPIResponse>();
   const [voteData, setVoteData] = useState<OCVRankedVoteResponse>();
+  const [fundingRound, setFundingRound] = useState<FundingRoundDetails>();
   const [isLoading, setIsLoading] = useState(true);
   const [showWalletDialog, setShowWalletDialog] = useState(false);
   const [showTransactionDialog, setShowTransactionDialog] = useState(false);
   const [selectedProposals, setSelectedProposals] = useState<SelectedProposalId[]>();
+  const [showFundingDistribution, setShowFundingDistribution] = useState(false);
+
+  // Fetch funding round details
+  useEffect(() => {
+    let ignore = false;
+
+    const fetchFundingRound = async () => {
+      try {
+        const response = await fetch(`/api/funding-rounds/${fundingRoundId}`);
+        if (!response.ok) {
+          throw new Error('Failed to fetch funding round details');
+        }
+        const data = await response.json();
+        
+        if (!ignore) {
+          setFundingRound(data);
+        }
+      } catch (error) {
+        if (!ignore) {
+          toast({
+            title: "Error",
+            description: "Failed to load funding round details",
+            variant: "destructive",
+          });
+        }
+      }
+    };
+
+    fetchFundingRound();
+
+    return () => {
+      ignore = true;
+    };
+  }, [fundingRoundId, toast]);
 
   // Fetch proposals
   useEffect(() => {
@@ -182,6 +227,22 @@ export function VotingPhase({
     }
   };
 
+  // Check if voting phase is active
+  const isVotingActive = () => {
+    if (!proposals?.fundingRound.votingPhase) return false
+    const now = new Date()
+    const startDate = new Date(proposals.fundingRound.votingPhase.startDate)
+    const endDate = new Date(proposals.fundingRound.votingPhase.endDate)
+    return now >= startDate && now <= endDate
+  }
+
+  const hasVotingEnded = () => {
+    if (!proposals?.fundingRound.votingPhase) return false
+    const now = new Date()
+    const endDate = new Date(proposals.fundingRound.votingPhase.endDate)
+    return now > endDate
+  }
+
   if (isLoading) {
     return (
       <div className="container mx-auto p-6 max-w-7xl">
@@ -193,6 +254,45 @@ export function VotingPhase({
             </CardDescription>
           </CardHeader>
         </Card>
+      </div>
+    );
+  }
+
+  const renderFundingDistribution = () => {
+    if (!proposals || !voteData || !fundingRound) return null;
+
+    return (
+      <VotingResultsDistribution
+        fundingRoundName={fundingRoundName}
+        totalBudget={fundingRound.totalBudget}
+        isVotingActive={isVotingActive()}
+        proposals={proposals.proposals.map(p => ({
+          id: p.id,
+          proposalName: p.proposalName,
+          budgetRequest: Number(p.budgetRequest),
+          author: {
+            username: p.author.username,
+            authType: p.author.authType
+          }
+        }))}
+        winnerIds={voteData.winners}
+      />
+    );
+  };
+
+  // If voting has ended, only show the funding distribution
+  if (hasVotingEnded()) {
+    return (
+      <div className="container mx-auto px-4 py-8 max-w-7xl space-y-6">
+        <Card>
+          <CardHeader>
+            <CardTitle>Voting Phase Completed</CardTitle>
+            <CardDescription>
+              The voting phase for {fundingRoundName} has ended. Below are the final results and funding distribution.
+            </CardDescription>
+          </CardHeader>
+        </Card>
+        {renderFundingDistribution()}
       </div>
     );
   }
@@ -210,6 +310,73 @@ export function VotingPhase({
         title={`Rank your vote - ${fundingRoundName}`}
         fundingRoundMEFId={proposals?.fundingRound.mefId || 0}
       />
+
+      <div className="container mx-auto px-4 py-8 max-w-7xl">
+        <div className="rounded-lg border bg-card text-card-foreground shadow-sm hover:shadow-md transition-shadow">
+          <div 
+            className="flex flex-col space-y-1.5 p-4 cursor-pointer group"
+            onClick={() => setShowFundingDistribution(!showFundingDistribution)}
+          >
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10">
+                  <ChartBarIcon className="h-4 w-4 text-primary" />
+                </div>
+                <div>
+                  <h3 className="font-semibold text-lg leading-none tracking-tight">
+                    Live Funding Distribution
+                  </h3>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    Based on current OCV votes • Updates in real-time
+                  </p>
+                </div>
+              </div>
+              <Button 
+                variant="ghost" 
+                size="icon"
+                className="group-hover:bg-primary/10 transition-colors"
+              >
+                {showFundingDistribution ? (
+                  <ChevronUpIcon className="h-5 w-5" />
+                ) : (
+                  <ChevronDownIcon className="h-5 w-5" />
+                )}
+              </Button>
+            </div>
+            {!showFundingDistribution && (
+              <div className="mt-2 flex items-center gap-2 text-sm text-muted-foreground">
+                <InfoCircledIcon className="h-4 w-4" />
+                <span>Click to see how the funding would be distributed based on current votes</span>
+              </div>
+            )}
+          </div>
+
+          <div className={cn(
+            "overflow-hidden transition-all duration-300 ease-in-out",
+            showFundingDistribution ? "max-h-[2000px] opacity-100" : "max-h-0 opacity-0"
+          )}>
+            <div className="px-4 pb-4">
+              <Alert className="mb-4 bg-blue-50 border-blue-200">
+                <InfoCircledIcon className="h-4 w-4 text-blue-700" />
+                <AlertTitle className="text-blue-900">Ongoing Voting Phase</AlertTitle>
+                <AlertDescription className="text-blue-800">
+                  This distribution is based on current OCV votes and may change as more votes are counted. 
+                  The final distribution will be determined when the voting phase ends 
+                  on {proposals?.fundingRound.votingPhase?.endDate ? 
+                    new Date(proposals.fundingRound.votingPhase.endDate).toLocaleDateString('en-US', {
+                      month: 'long',
+                      day: 'numeric',
+                      year: 'numeric',
+                      hour: '2-digit',
+                      minute: '2-digit'
+                    }) : 'the scheduled end date'}.
+                </AlertDescription>
+              </Alert>
+              {renderFundingDistribution()}
+            </div>
+          </div>
+        </div>
+      </div>
 
       <WalletConnectorDialog
         open={showWalletDialog}

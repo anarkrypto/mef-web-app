@@ -73,7 +73,7 @@ export async function GET(request: NextRequest) {
         timestamp: lastJob.lastHeartbeat,
         metadata: lastJob.metadata
       } : null,
-      isRunning: !!runningJob
+      isRunning: runningJob ? true : false
     });
   } catch (error) {
     logger.error("Error fetching GPT Survey status:", error);
