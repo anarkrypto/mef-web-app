@@ -1,7 +1,13 @@
 import { type FC } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { type ProposalVoteBase, type ReviewerVoteStats, type CommunityVoteStats, type SubmissionProposalVote } from '@/types/phase-summary';
+import { 
+  type ProposalVoteBase, 
+  type ReviewerVoteStats, 
+  type CommunityVoteStats, 
+  type SubmissionProposalVote,
+  type VotingProposalVote 
+} from '@/types/phase-summary';
 import { ProposalCard } from './ProposalCard';
 
 type ProposalVote = 
@@ -9,7 +15,8 @@ type ProposalVote =
       reviewerVotes: ReviewerVoteStats;
       communityVotes?: CommunityVoteStats;
     })
-  | SubmissionProposalVote;
+  | SubmissionProposalVote
+  | VotingProposalVote;
 
 interface Props {
   title: string;
