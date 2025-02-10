@@ -94,17 +94,33 @@ export class OCVApiService {
 
   async getRankedVotes(
     roundId: number,
-    startTime: number,
-    endTime: number
+    startTime?: number,
+    endTime?: number
   ): Promise<OCVRankedVoteResponse> {
+    if (startTime === undefined || endTime === undefined) {
+      const fundingRound = await prisma.fundingRound.findUnique({
+        where: { mefId: roundId },
+        include: { votingPhase: true },
+      });
+
+      if (!fundingRound || !fundingRound.votingPhase) {
+        throw new Error(
+          `[OCVApiService] Funding round or voting phase not found for roundId: ${roundId}`
+        );
+      }
+
+      startTime = Math.floor(fundingRound.votingPhase.startDate.getTime());
+      endTime = Math.floor(fundingRound.votingPhase.endDate.getTime());
+    }
+
     const url = `${this.baseUrl}/api/mef_ranked_vote/${roundId}/${startTime}/${endTime}`;
 
     try {
-      const response = await fetch(url, { 
+      const response = await fetch(url, {
         headers: {
-          'Accept': 'application/json'
+          'Accept': 'application/json',
         },
-        signal: AbortSignal.timeout(10000)
+        signal: AbortSignal.timeout(10000),
       });
 
       if (!response.ok) {
@@ -112,11 +128,17 @@ export class OCVApiService {
       }
 
       const data = await response.json();
-      logger.debug(`[OCVApiService] OCV ranked vote data for round ${roundId}:`, data);
-      
+      logger.debug(
+        `[OCVApiService] OCV ranked vote data for round ${roundId}:`,
+        data
+      );
+
       return data;
     } catch (error) {
-      logger.error(`[OCVApiService] Failed to fetch ranked votes for round ${roundId}:`, error);
+      logger.error(
+        `[OCVApiService] Failed to fetch ranked votes for round ${roundId}:`,
+        error
+      );
       throw error;
     }
   }

@@ -1,5 +1,5 @@
 import { type FC } from 'react';
-import { format } from 'date-fns';
+import { format, differenceInSeconds } from 'date-fns';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { CalendarIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -16,6 +16,12 @@ export const PhaseTimeCard: FC<Props> = ({
   phaseStatus,
   className
 }) => {
+  // Calculate time progress
+  const now = new Date();
+  const totalDuration = differenceInSeconds(timeInfo.endDate, timeInfo.startDate);
+  const elapsed = differenceInSeconds(now, timeInfo.startDate);
+  const timeProgress = Math.min(Math.max((elapsed / totalDuration) * 100, 0), 100);
+
   return (
     <Card className={cn("h-[200px]", className)}>
       <CardHeader className="flex flex-row items-center justify-between py-2">
@@ -54,10 +60,13 @@ export const PhaseTimeCard: FC<Props> = ({
             <div 
               className={cn(
                 "h-full bg-gradient-to-r transition-all duration-500",
-                phaseStatus.progressColor
+                phaseStatus.status === 'ended' ? phaseStatus.progressColor :
+                timeProgress <= 33 ? "from-emerald-500 to-emerald-600" :
+                timeProgress <= 66 ? "from-amber-500 to-amber-600" :
+                "from-rose-500 to-rose-600"
               )}
               style={{ 
-                width: phaseStatus.status === 'ended' ? '100%' : '0%' 
+                width: phaseStatus.status === 'ended' ? '100%' : `${timeProgress}%` 
               }}
             />
           </div>

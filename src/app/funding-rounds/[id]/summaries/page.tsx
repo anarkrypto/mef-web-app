@@ -5,7 +5,7 @@ import { format } from 'date-fns';
 import { prisma } from '@/lib/prisma';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { CalendarIcon, FileTextIcon, UsersIcon, VoteIcon } from 'lucide-react';
+import { CalendarIcon, FileTextIcon, UsersIcon, VoteIcon, CoinsIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { getPhaseStatus } from '@/lib/phase-utils';
 import { type PhaseStatus } from '@/types/phase-summary';
@@ -132,6 +132,7 @@ const PhaseSummaryDashboard = async ({ params }: Props) => {
       submissionPhase: true,
       considerationPhase: true,
       deliberationPhase: true,
+      votingPhase: true,
     },
   });
 
@@ -148,6 +149,7 @@ const PhaseSummaryDashboard = async ({ params }: Props) => {
   const submissionPhaseInfo = getPhaseInfoWithFallback(fundingRound.submissionPhase, defaultDates);
   const considerationPhaseInfo = getPhaseInfoWithFallback(fundingRound.considerationPhase, defaultDates);
   const deliberationPhaseInfo = getPhaseInfoWithFallback(fundingRound.deliberationPhase, defaultDates);
+  const votingPhaseInfo = getPhaseInfoWithFallback(fundingRound.votingPhase, defaultDates);
 
   const phases: PhaseInfo[] = [
     {
@@ -170,6 +172,13 @@ const PhaseSummaryDashboard = async ({ params }: Props) => {
       icon: <VoteIcon className="h-5 w-5 text-emerald-500" />,
       ...deliberationPhaseInfo,
       href: `/funding-rounds/${id}/deliberation/summary`
+    },
+    {
+      title: 'Voting Phase',
+      description: 'Final voting results and funding distribution',
+      icon: <CoinsIcon className="h-5 w-5 text-amber-500" />,
+      ...votingPhaseInfo,
+      href: `/funding-rounds/${id}/voting/summary`
     }
   ];
 

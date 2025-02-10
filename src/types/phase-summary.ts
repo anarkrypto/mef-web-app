@@ -76,6 +76,19 @@ export interface SubmissionPhaseSummary extends BasePhaseSummary {
   draftProposals: number;
 }
 
+export interface VotingProposalVote extends ProposalVoteBase {
+  isFunded: boolean;
+  missingAmount?: number;
+}
+
+export interface VotingPhaseSummary extends BasePhaseSummary {
+  proposalVotes: VotingProposalVote[];
+  fundedProposals: number;
+  notFundedProposals: number;
+  totalBudget: number;
+  remainingBudget: number;
+}
+
 export type PhaseStatus = 'not-started' | 'ongoing' | 'ended';
 
 export interface PhaseStatusInfo {

@@ -18,6 +18,12 @@ export interface DeliberationVote {
   isReviewerVote: boolean;
 }
 
+export interface GptSurveySummary {
+  proposalId: number;
+  summary: string;
+  summaryUpdatedAt: Date;
+}
+
 export interface DeliberationProposal extends ConsiderationProposal {
   reviewerComments: DeliberationComment[];
   userDeliberation?: DeliberationVote;
@@ -38,10 +44,7 @@ export interface DeliberationProposal extends ConsiderationProposal {
       };
     }>;
   };
-  gptSurveySummary?: {
-    summary: string;
-    summaryUpdatedAt: Date;
-  };
+  gptSurveySummary?: GptSurveySummary;
 }
 
 export interface ProposalComment {

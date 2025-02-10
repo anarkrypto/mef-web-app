@@ -12,6 +12,14 @@ import Link from 'next/link'
 import type { DeliberationProposal, DeliberationComment, DeliberationVote } from '@/types/deliberation'
 import { ReviewerComments } from "@/components/ReviewerComments"
 import { useAuth } from "@/contexts/AuthContext"
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
+import { MessageSquare, ExternalLink, Clock } from 'lucide-react';
+import ReactMarkdown from 'react-markdown';
 
 interface Props {
   fundingRoundId: string;
@@ -260,7 +268,7 @@ export function DeliberationPhase({ fundingRoundId, fundingRoundName }: Props) {
                   {expanded[proposal.id] ? (
                     <>
                       <p className="text-muted-foreground mb-4">{proposal.abstract}</p>
-                      <div className="space-y-4">
+                      <div className="space-y-4"> 
                         <div>
                           <h3 className="text-xl font-semibold mb-2">Motivation</h3>
                           <p className="text-muted-foreground">{proposal.motivation}</p>
@@ -323,7 +331,27 @@ export function DeliberationPhase({ fundingRoundId, fundingRoundName }: Props) {
                     <p className="text-muted-foreground">{proposal.userDeliberation.feedback}</p>
                   </div>
                 )}
-
+                {proposal.gptSurveySummary && (
+                          <Accordion type="single" collapsible>
+                            <AccordionItem value="summary">
+                              <AccordionTrigger className="flex items-center gap-2">
+                                <MessageSquare className="h-4 w-4" />
+                                <span className="font-semibold">Community Deliberation Summary</span>
+                              </AccordionTrigger>
+                              <AccordionContent>
+                                <div className="space-y-4 p-4 bg-muted/50 rounded-lg">
+                                  <div className="text-xs text-muted-foreground flex items-center gap-1.5">
+                                    <Clock className="h-3.5 w-3.5" />
+                                    Last updated: {new Date(proposal.gptSurveySummary.summaryUpdatedAt).toLocaleString()}
+                                  </div>
+                                  <div className="prose prose-sm dark:prose-invert max-w-none">
+                                    <ReactMarkdown>{proposal.gptSurveySummary.summary}</ReactMarkdown>
+                                  </div>
+                                </div>
+                              </AccordionContent>
+                            </AccordionItem>
+                          </Accordion>
+                        )}
                 {expanded[proposal.id] && proposal.reviewerComments.length > 0 && (
                   <ReviewerComments 
                     comments={proposal.reviewerComments}
@@ -332,23 +360,36 @@ export function DeliberationPhase({ fundingRoundId, fundingRoundName }: Props) {
               </CardContent>
 
               <CardFooter className="flex justify-between items-center">
-                <Button 
-                  variant="ghost" 
-                  className="gap-2"
-                  onClick={() => toggleExpanded(proposal.id)}
-                >
-                  {expanded[proposal.id] ? (
-                    <>
-                      See less
-                      <ChevronDown className="h-4 w-4" />
-                    </>
-                  ) : (
-                    <>
-                      See more
-                      <ChevronRight className="h-4 w-4" />
-                    </>
-                  )}
-                </Button>
+                <div className="flex items-center gap-4">
+                  <Button 
+                    variant="ghost" 
+                    className="gap-2"
+                    onClick={() => toggleExpanded(proposal.id)}
+                  >
+                    {expanded[proposal.id] ? (
+                      <>
+                        See less
+                        <ChevronDown className="h-4 w-4" />
+                      </>
+                    ) : (
+                      <>
+                        See more
+                        <ChevronRight className="h-4 w-4" />
+                      </>
+                    )}
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="gap-2"
+                    asChild
+                  >
+                    <Link href={`/proposals/${proposal.id}`} target="_blank" rel="noopener noreferrer">
+                      View Proposal Page
+                      <ExternalLink className="h-4 w-4" />
+                    </Link>
+                  </Button>
+                </div>
 
                 <div className="flex items-center gap-4">
                   {renderActionButtons(proposal)}

@@ -1,18 +1,27 @@
 import { type FC } from 'react';
 import Link from 'next/link';
 import { Badge } from '@/components/ui/badge';
+import { Progress } from '@/components/ui/progress';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { ThumbsUpIcon, ThumbsDownIcon, HashIcon, CoinsIcon, CalendarIcon, UsersIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
-import { type ProposalVoteBase, type ReviewerVoteStats, type CommunityVoteStats, type SubmissionProposalVote } from '@/types/phase-summary';
+import { 
+  type ProposalVoteBase, 
+  type ReviewerVoteStats, 
+  type CommunityVoteStats, 
+  type SubmissionProposalVote,
+  type VotingProposalVote 
+} from '@/types/phase-summary';
+import { formatMINA } from '@/lib/format';
 
 type ProposalVote = 
   | (ProposalVoteBase & {
       reviewerVotes: ReviewerVoteStats;
       communityVotes?: CommunityVoteStats;
     })
-  | SubmissionProposalVote;
+  | SubmissionProposalVote
+  | VotingProposalVote;
 
 interface Props {
   proposal: ProposalVote;
@@ -32,7 +41,22 @@ const getEmojiRank = (position: number): string => {
 
 const getProposalStatus = (proposal: ProposalVote) => {
   const isSubmissionPhase = 'submissionDate' in proposal;
+  const isVotingPhase = 'isFunded' in proposal;
   const isDraft = proposal.status === 'DRAFT';
+  
+  if (isVotingPhase) {
+    return (proposal as VotingProposalVote).isFunded ? {
+      label: 'Funded',
+      bgColor: 'bg-emerald-50/50 hover:bg-emerald-50/80',
+      borderColor: 'border-emerald-200/50',
+      textColor: 'text-emerald-600'
+    } : {
+      label: 'Not Funded',
+      bgColor: 'bg-rose-50/50 hover:bg-rose-50/80',
+      borderColor: 'border-rose-200/50',
+      textColor: 'text-rose-600'
+    };
+  }
   
   if (isSubmissionPhase) {
     return {
@@ -73,6 +97,7 @@ export const ProposalCard: FC<Props> = ({
 }) => {
   const status = getProposalStatus(proposal);
   const isSubmissionPhase = 'submissionDate' in proposal;
+  const isVotingPhase = 'isFunded' in proposal;
   
   return (
     <Link 
@@ -136,6 +161,25 @@ export const ProposalCard: FC<Props> = ({
                 <CalendarIcon className="h-3 w-3" />
                 <span>{format(proposal.submissionDate, 'MMM dd, yyyy')}</span>
               </div>
+            ) : isVotingPhase ? (
+              <div className="flex-1 space-y-2">
+                {(proposal as VotingProposalVote).missingAmount && (
+                  <>
+                    <div className="flex justify-between text-xs">
+                      <span className="text-rose-600">
+                        Missing: {Math.floor((proposal as VotingProposalVote).missingAmount!)} MINA
+                      </span>
+                    </div>
+                    <Progress
+                      value={(1 - (proposal as VotingProposalVote).missingAmount! / proposal.budgetRequest.toNumber()) * 100}
+                      className={cn(
+                        "h-1.5 bg-rose-100",
+                        "[&>div]:bg-emerald-500"
+                      )}
+                    />
+                  </>
+                )}
+              </div>
             ) : (
               <>
                 <div className="flex items-center gap-1 text-emerald-600">
@@ -167,7 +211,7 @@ export const ProposalCard: FC<Props> = ({
             </div>
             <div className="flex items-center gap-1">
               <CoinsIcon className="h-3 w-3" />
-              <span>{proposal.budgetRequest?.toNumber() ?? 0} MINA</span>
+              <span>{proposal.budgetRequest.toNumber()} MINA</span>
             </div>
           </div>
         </div>

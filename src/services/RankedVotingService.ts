@@ -9,6 +9,7 @@ export interface RankedProposalAPIResponse {
   status: ProposalStatus;
   budgetRequest: number;
   abstract: string;
+  mefId: number;
   author: {
     username: string;
     authType: "discord" | "wallet";
@@ -128,7 +129,7 @@ export class RankedVotingService {
       throw new Error('Funding round not found');
     }
 
-    const proposals = result.proposals.map(p => {
+    const proposals = result.proposals.map((p, index) => {
       const metadata = p.user.metadata as UserMetadata;
       const authType = p.user.linkId ? ("discord" as const) : ("wallet" as const);
       const approvedVotes = p.deliberationReviewerVotes.filter(v => v.recommendation).length;
@@ -146,6 +147,7 @@ export class RankedVotingService {
         reviewerVoteCount: p.deliberationReviewerVotes.length,
         status: p.status,
         budgetRequest: p.budgetRequest.toNumber(),
+        mefId: result.mefId + index + 1,
         author: {
           username: metadata.username,
           authType,

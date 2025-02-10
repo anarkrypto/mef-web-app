@@ -5,7 +5,6 @@ import { GptSurveyService } from '@/services/GptSurveyService';
 import { GptSurveyRunner } from '@/lib/gpt-survey/runner';
 import logger from '@/logging';
 import { WorkerStatus } from '@prisma/client';
-import { randomUUID } from 'crypto';
 import { Prisma } from '@prisma/client';
 
 let isRunning = true;

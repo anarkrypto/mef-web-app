@@ -61,7 +61,7 @@ const getPhaseStatus = (startDate: Date, endDate: Date) => {
 
 const getProposalStatus = (yesVotes: number, noVotes: number) => {
   return yesVotes > noVotes ? {
-    label: 'Recommended by Reviewers',
+    label: 'Recommended',
     bgColor: 'bg-emerald-50/50 hover:bg-emerald-50/80',
     borderColor: 'border-emerald-200/50',
     icon: CheckCircleIcon,
