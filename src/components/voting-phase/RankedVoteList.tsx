@@ -274,17 +274,30 @@ const DndContent = ({
           className="space-y-2 min-h-[400px] p-4 border-2 border-dashed border-purple-200 rounded-lg
                      transition-colors duration-300 hover:border-purple-300 mb-6"
         >
-          {rankedProposals.map((proposal, index) => (
-            <DraggableProposal
-              key={proposal.uniqueId}
-              proposal={proposal}
-              index={index}
-              isRanked={true}
-              moveProposal={onMoveProposal}
-              onDoubleClick={() => onDoubleClick(proposal, "ranked")}
-              disabled={Boolean(existingVote)}
-            />
-          ))}
+          {rankedProposals.length > 0 ? (
+            rankedProposals.map((proposal, index) => (
+              <DraggableProposal
+                key={proposal.uniqueId}
+                proposal={proposal}
+                index={index}
+                isRanked={true}
+                moveProposal={onMoveProposal}
+                onDoubleClick={() => onDoubleClick(proposal, "ranked")}
+                disabled={Boolean(existingVote)}
+              />
+            ))
+          ) : (
+            <div className="flex flex-col items-center justify-center h-full space-y-4 text-center text-sm text-gray-600">
+              <p className="flex items-center gap-2">
+                <span className="text-blue-600">🔹</span>
+                If you have already voted, once you connect your wallet, you will see your selected proposals displayed here.
+              </p>
+              <p className="flex items-center gap-2 text-red-500">
+                <span>⚠️</span>
+                Important: If you voted via memo, we won&apos;t be able to show you the list of voted proposals since we cannot identify your wallet address.
+              </p>
+            </div>
+          )}
         </DropTarget>
 
         <div className="space-y-3">
