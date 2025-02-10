@@ -363,7 +363,7 @@ const DndContent = ({
   );
 }
 
-const MAX_RANKED_CHOICES = 10
+const MAX_RANKED_CHOICES = 8;
 
 export default function RankedVoteList({
   fundingRoundMEFId,
