@@ -385,7 +385,7 @@ export function DeliberationPhase({ fundingRoundId, fundingRoundName }: Props) {
                     asChild
                   >
                     <Link href={`/proposals/${proposal.id}`} target="_blank" rel="noopener noreferrer">
-                      View Full Proposal
+                      View Proposal Page
                       <ExternalLink className="h-4 w-4" />
                     </Link>
                   </Button>
