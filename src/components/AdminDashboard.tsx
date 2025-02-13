@@ -24,7 +24,7 @@ const adminOptions: AdminOption[] = [
     title: "Manage Discussion Topics",
     description: "Manage Discussion Topics and Committees",
     icon: "messageSquare",
-    href: "/admin/topics",
+    href: "/admin/discussions",
     color: "bg-purple-500/10 text-purple-500",
   },
   {
