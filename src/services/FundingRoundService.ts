@@ -1,27 +1,13 @@
 import {
+	FundingRoundPhase,
+	FundingRoundPhases,
+	FundingRoundStatus,
+	FundingRoundWithPhases,
+} from '@/types/funding-round'
+import {
 	PrismaClient,
 	FundingRound as PrismaFundingRound,
-	FundingRoundStatus,
 } from '@prisma/client'
-
-interface FundingRoundWithPhases extends PrismaFundingRound {
-	submissionPhase: {
-		startDate: Date
-		endDate: Date
-	}
-	considerationPhase: {
-		startDate: Date
-		endDate: Date
-	}
-	deliberationPhase: {
-		startDate: Date
-		endDate: Date
-	}
-	votingPhase: {
-		startDate: Date
-		endDate: Date
-	}
-}
 
 export class FundingRoundService {
 	private prisma: PrismaClient
@@ -30,16 +16,66 @@ export class FundingRoundService {
 		this.prisma = prisma
 	}
 
-	async getAllFundingRounds() {
-		return await this.prisma.fundingRound.findMany({
+	async getPublicFundingRounds(): Promise<FundingRoundWithPhases[]> {
+		const rounds = await this.prisma.fundingRound.findMany({
+			where: {
+				status: {
+					in: ['ACTIVE', 'COMPLETED'],
+				},
+			},
 			include: {
-				proposals: true,
+				_count: {
+					select: { proposals: true },
+				},
 				submissionPhase: true,
 				considerationPhase: true,
 				deliberationPhase: true,
 				votingPhase: true,
+				topic: true,
 			},
-			orderBy: { startDate: 'asc' },
+			orderBy: [
+				{ status: 'desc' }, // ACTIVE rounds first
+				{ startDate: 'desc' }, // then by start date
+			],
+		})
+
+		return rounds.map(({ _count, ...round }) => {
+			const phases: FundingRoundPhases = {
+				submission: {
+					id: round.submissionPhase!.id,
+					startDate: round.submissionPhase!.startDate.toISOString(),
+					endDate: round.submissionPhase!.endDate.toISOString(),
+				},
+				consideration: {
+					id: round.considerationPhase!.id,
+					startDate: round.considerationPhase!.startDate.toISOString(),
+					endDate: round.considerationPhase!.endDate.toISOString(),
+				},
+				deliberation: {
+					id: round.deliberationPhase!.id,
+					startDate: round.deliberationPhase!.startDate.toISOString(),
+					endDate: round.deliberationPhase!.endDate.toISOString(),
+				},
+				voting: {
+					id: round.votingPhase!.id,
+					startDate: round.votingPhase!.startDate.toISOString(),
+					endDate: round.votingPhase!.endDate.toISOString(),
+				},
+			}
+
+			const startDate = round.startDate.toDateString()
+			const endDate = round.endDate.toDateString()
+
+			return {
+				...round,
+				totalBudget: round.totalBudget.toString(),
+				proposalsCount: _count.proposals,
+				status: round.status as FundingRoundStatus,
+				startDate,
+				endDate,
+				phase: this.getCurrentPhase(startDate, endDate, phases),
+				phases,
+			}
 		})
 	}
 
@@ -75,46 +111,52 @@ export class FundingRoundService {
 		})
 	}
 
-	getCurrentPhase(fundingRound: FundingRoundWithPhases) {
+	getCurrentPhase(
+		startDate: string,
+		endDate: string,
+		phases: FundingRoundPhases,
+	): FundingRoundPhase {
+		// TODO: Check if we can improve this one by relying on the database directly
+
 		const now = new Date()
 
-		if (now < new Date(fundingRound.startDate)) {
-			return 'upcoming'
+		if (now < new Date(startDate) || now >= new Date(phases.submission.startDate)) {
+			return 'UPCOMING'
 		}
 
 		if (
-			now >= new Date(fundingRound.submissionPhase.startDate) &&
-			now <= new Date(fundingRound.submissionPhase.endDate)
+			now >= new Date(phases.submission.startDate) &&
+			now <= new Date(phases.submission.endDate)
 		) {
-			return 'submission'
+			return 'SUBMISSION'
 		}
 
 		if (
-			now >= new Date(fundingRound.considerationPhase.startDate) &&
-			now <= new Date(fundingRound.considerationPhase.endDate)
+			now >= new Date(phases.consideration.startDate) &&
+			now <= new Date(phases.consideration.endDate)
 		) {
-			return 'consideration'
+			return 'CONSIDERATION'
 		}
 
 		if (
-			now >= new Date(fundingRound.deliberationPhase.startDate) &&
-			now <= new Date(fundingRound.deliberationPhase.endDate)
+			now >= new Date(phases.deliberation.startDate) &&
+			now <= new Date(phases.deliberation.endDate)
 		) {
-			return 'deliberation'
+			return 'DELIBERATION'
 		}
 
 		if (
-			now >= new Date(fundingRound.votingPhase.startDate) &&
-			now <= new Date(fundingRound.votingPhase.endDate)
+			now >= new Date(phases.voting.startDate) &&
+			now <= new Date(phases.voting.endDate)
 		) {
-			return 'voting'
+			return 'VOTING'
 		}
 
-		if (now > new Date(fundingRound.endDate)) {
-			return 'completed'
+		if (now > new Date(endDate)) {
+			return 'COMPLETED'
 		}
 
-		return 'unknown'
+		throw new Error('Invalid current phase')
 	}
 
 	getTimeRemaining(date: Date): string {
