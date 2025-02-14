@@ -4,28 +4,28 @@ import { ApiResponse } from '@/lib/api-response'
 import { AppError } from '@/lib/errors'
 
 export async function GET(request: NextRequest) {
-  try {
-    const searchParams = request.nextUrl.searchParams
-    const roundId = searchParams.get('roundId')
-    const startTime = searchParams.get('startTime')
-    const endTime = searchParams.get('endTime')
+	try {
+		const searchParams = request.nextUrl.searchParams
+		const roundId = searchParams.get('roundId')
+		const startTime = searchParams.get('startTime')
+		const endTime = searchParams.get('endTime')
 
-    if (!roundId || !startTime || !endTime) {
-      throw new AppError('Missing required parameters', 400)
-    }
+		if (!roundId || !startTime || !endTime) {
+			throw new AppError('Missing required parameters', 400)
+		}
 
-    const ocvService = new OCVApiService()
-    const voteData = await ocvService.getRankedVotes(
-      parseInt(roundId),
-      parseInt(startTime),
-      parseInt(endTime)
-    );
+		const ocvService = new OCVApiService()
+		const voteData = await ocvService.getRankedVotes(
+			parseInt(roundId),
+			parseInt(startTime),
+			parseInt(endTime),
+		)
 
-    return ApiResponse.success(voteData)
-  } catch (error) {
-    if (error instanceof AppError) {
-      return ApiResponse.error(error.message);
-    }
-    return ApiResponse.error('Failed to fetch ranked vote data')
-  }
-} 
+		return ApiResponse.success(voteData)
+	} catch (error) {
+		if (error instanceof AppError) {
+			return ApiResponse.error(error.message)
+		}
+		return ApiResponse.error('Failed to fetch ranked vote data')
+	}
+}

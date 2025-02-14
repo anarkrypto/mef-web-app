@@ -1,7 +1,7 @@
-'use client';
+'use client'
 
-import { AdminDashboardComponent } from "@/components/AdminDashboard";
+import { AdminDashboardComponent } from '@/components/AdminDashboard'
 
 export default function AdminDashboard() {
-  return <AdminDashboardComponent />;
-} 
+	return <AdminDashboardComponent />
+}

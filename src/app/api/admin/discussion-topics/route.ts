@@ -1,59 +1,59 @@
-import { NextResponse } from "next/server";
-import { AdminService } from "@/services/AdminService";
-import prisma from "@/lib/prisma";
-import { getOrCreateUserFromRequest } from "@/lib/auth";
-import logger from "@/logging";
+import { NextResponse } from 'next/server'
+import { AdminService } from '@/services/AdminService'
+import prisma from '@/lib/prisma'
+import { getOrCreateUserFromRequest } from '@/lib/auth'
+import logger from '@/logging'
 
-const adminService = new AdminService(prisma);
+const adminService = new AdminService(prisma)
 
 export async function GET(req: Request) {
-  try {
-    const user = await getOrCreateUserFromRequest(req);
-    if (!user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+	try {
+		const user = await getOrCreateUserFromRequest(req)
+		if (!user) {
+			return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+		}
 
-    const isAdmin = await adminService.checkAdminStatus(user.id, user.linkId);
-    if (!isAdmin) {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-    }
+		const isAdmin = await adminService.checkAdminStatus(user.id, user.linkId)
+		if (!isAdmin) {
+			return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+		}
 
-    const topics = await adminService.getTopics();
-    return NextResponse.json(topics);
-  } catch (error) {
-    logger.error("Failed to fetch topics:", error);
-    return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500 }
-    );
-  }
+		const topics = await adminService.getTopics()
+		return NextResponse.json(topics)
+	} catch (error) {
+		logger.error('Failed to fetch topics:', error)
+		return NextResponse.json(
+			{ error: 'Internal server error' },
+			{ status: 500 },
+		)
+	}
 }
 
 export async function POST(req: Request) {
-  try {
-    const user = await getOrCreateUserFromRequest(req);
-    if (!user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+	try {
+		const user = await getOrCreateUserFromRequest(req)
+		if (!user) {
+			return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+		}
 
-    const isAdmin = await adminService.checkAdminStatus(user.id, user.linkId);
-    if (!isAdmin) {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-    }
+		const isAdmin = await adminService.checkAdminStatus(user.id, user.linkId)
+		if (!isAdmin) {
+			return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+		}
 
-    const { name, description, reviewerGroupIds } = await req.json();
-    const topic = await adminService.createTopic(
-      name,
-      description,
-      user.id,
-      reviewerGroupIds
-    );
-    return NextResponse.json(topic);
-  } catch (error) {
-    logger.error("Failed to create topic:", error);
-    return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500 }
-    );
-  }
+		const { name, description, reviewerGroupIds } = await req.json()
+		const topic = await adminService.createTopic(
+			name,
+			description,
+			user.id,
+			reviewerGroupIds,
+		)
+		return NextResponse.json(topic)
+	} catch (error) {
+		logger.error('Failed to create topic:', error)
+		return NextResponse.json(
+			{ error: 'Internal server error' },
+			{ status: 500 },
+		)
+	}
 }
