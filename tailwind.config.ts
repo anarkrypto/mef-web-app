@@ -35,6 +35,10 @@ const config: Config = {
 				accent: {
 					DEFAULT: 'hsl(var(--accent))',
 					foreground: 'hsl(var(--accent-foreground))',
+					mint: {
+						DEFAULT: 'hsl(var(--accent-mint))',
+						foreground: 'hsl(var(--accent-mint-foreground))',
+					},
 				},
 				destructive: {
 					DEFAULT: 'hsl(var(--destructive))',
