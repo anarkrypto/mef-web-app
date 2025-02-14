@@ -9,6 +9,7 @@ import { WalletProvider } from '@/contexts/WalletContext'
 import { Suspense } from 'react'
 import { FeedbackDialog } from '@/components/feedback/FeedbackDialog'
 import { IBM_Plex_Sans as FontSans } from 'next/font/google'
+import { QueryClientProvider } from '@/contexts/QueryClientProvider'
 
 export const metadata: Metadata = {
 	title: 'Home | MEF',
@@ -30,25 +31,27 @@ export default function RootLayout({
 	return (
 		<html lang="en" suppressHydrationWarning>
 			<body className={`${fontSans.className} antialiased`}>
-				<ThemeProvider
-					attribute="class"
-					defaultTheme="light"
-					enableSystem={false}
-					disableTransitionOnChange
-				>
-					<FeedbackProvider>
-						<Suspense fallback={<div>Loading...</div>}>
-							<AuthProvider>
-								<WalletProvider>
-									<Header />
-									<main>{children}</main>
-									<Toaster />
-									<FeedbackDialog />
-								</WalletProvider>
-							</AuthProvider>
-						</Suspense>
-					</FeedbackProvider>
-				</ThemeProvider>
+				<QueryClientProvider>
+					<ThemeProvider
+						attribute="class"
+						defaultTheme="light"
+						enableSystem={false}
+						disableTransitionOnChange
+					>
+						<FeedbackProvider>
+							<Suspense fallback={<div>Loading...</div>}>
+								<AuthProvider>
+									<WalletProvider>
+										<Header />
+										<main>{children}</main>
+										<Toaster />
+										<FeedbackDialog />
+									</WalletProvider>
+								</AuthProvider>
+							</Suspense>
+						</FeedbackProvider>
+					</ThemeProvider>
+				</QueryClientProvider>
 			</body>
 		</html>
 	)
