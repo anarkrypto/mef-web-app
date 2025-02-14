@@ -26,7 +26,7 @@ import {
 	TooltipProvider,
 	TooltipTrigger,
 } from '@/components/ui/tooltip'
-import { useFundingRounds } from '@/hooks/use-funding-rounds'
+import { useAvailableFundingRounds } from '@/hooks/use-available-funding-rounds'
 
 interface ProposalWithUser {
 	id: number
@@ -89,7 +89,7 @@ export function ProposalsList() {
 	)
 	const [viewFundingRoundOpen, setViewFundingRoundOpen] = useState(false)
 	const [selectFundingRoundOpen, setSelectFundingRoundOpen] = useState(false)
-	const { loading: checkingRounds, hasAvailableRounds } = useFundingRounds()
+	const { loading: checkingRounds, hasAvailableRounds } = useAvailableFundingRounds()
 
 	const { handleAction, loading: deleteLoading } = useActionFeedback({
 		successMessage: 'Proposal deleted successfully',

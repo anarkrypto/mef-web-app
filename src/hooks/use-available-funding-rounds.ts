@@ -18,7 +18,7 @@ interface FundingRound {
 	}
 }
 
-export function useFundingRounds() {
+export function useAvailableFundingRounds() {
 	const [loading, setLoading] = useState(true)
 	const [availableRounds, setAvailableRounds] = useState<FundingRound[]>([])
 	const { toast } = useToast()
