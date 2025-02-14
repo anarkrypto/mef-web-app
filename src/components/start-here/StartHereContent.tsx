@@ -15,6 +15,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { ArrowRightIcon, Loader2Icon } from 'lucide-react'
 import type { FundingRound } from '@prisma/client'
 import { cn } from '@/lib/utils'
+import { FAQ } from './FAQ'
+import { faqData } from '@/data/faq'
 
 interface FundingRoundWithPhases extends FundingRound {
   submissionPhase: {
@@ -231,6 +233,20 @@ export function StartHereContent() {
           </div>
         </>
       )}
+
+      {/* FAQ Section */}
+      <div className="mt-16">
+        <div className="text-center space-y-4 mb-12">
+          <h2 className="text-4xl font-bold tracking-tight">Frequently asked questions</h2>
+          <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
+            Quick answers to common questions about the proposal process.
+          </p>
+        </div>
+        <FAQ 
+          sections={faqData} 
+          selectedFundingRound={selectedRoundData}
+        />
+      </div>
     </div>
   )
 } 
