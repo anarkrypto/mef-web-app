@@ -31,14 +31,14 @@ export default function RootLayout({
 	return (
 		<html lang="en" suppressHydrationWarning>
 			<body className={`${fontSans.className} antialiased`}>
-				<QueryClientProvider>
-					<ThemeProvider
-						attribute="class"
-						defaultTheme="light"
-						enableSystem={false}
-						disableTransitionOnChange
-					>
-						<FeedbackProvider>
+				<ThemeProvider
+					attribute="class"
+					defaultTheme="light"
+					enableSystem={false}
+					disableTransitionOnChange
+				>
+					<FeedbackProvider>
+						<QueryClientProvider>
 							<Suspense fallback={<div>Loading...</div>}>
 								<AuthProvider>
 									<WalletProvider>
@@ -49,9 +49,9 @@ export default function RootLayout({
 									</WalletProvider>
 								</AuthProvider>
 							</Suspense>
-						</FeedbackProvider>
-					</ThemeProvider>
-				</QueryClientProvider>
+						</QueryClientProvider>
+					</FeedbackProvider>
+				</ThemeProvider>
 			</body>
 		</html>
 	)
