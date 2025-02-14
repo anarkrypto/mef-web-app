@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import prisma from '@/lib/prisma'
 import { getOrCreateUserFromRequest } from '@/lib/auth'
 import logger from '@/logging'
+import { FundingRoundService } from '@/services'
 
 export async function GET(req: Request) {
 	try {
@@ -10,21 +11,9 @@ export async function GET(req: Request) {
 			return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 		}
 
-		// Get all funding rounds with their phases
-		const rounds = await prisma.fundingRound.findMany({
-			include: {
-				proposals: true,
-				submissionPhase: true,
-				considerationPhase: true,
-				deliberationPhase: true,
-				votingPhase: true,
-				topic: true,
-			},
-			orderBy: [
-				{ status: 'desc' }, // ACTIVE rounds first
-				{ startDate: 'desc' }, // Then by start date
-			],
-		})
+		const fundingRoundService = new FundingRoundService(prisma)
+
+		const rounds = await fundingRoundService.getPublicFundingRounds()
 
 		return NextResponse.json(rounds)
 	} catch (error) {
