@@ -9,8 +9,11 @@ export function FundingRoundsSkeleton() {
 			</div>
 
 			<div className="flex flex-col gap-6">
-				{new Array(2).fill('').map(round => (
-					<div className="flex h-40 w-full animate-pulse gap-6 rounded-md bg-muted" />
+				{new Array(2).fill('').map((_, index) => (
+					<div
+						key={index}
+						className="flex h-40 w-full animate-pulse gap-6 rounded-md bg-muted"
+					/>
 				))}
 			</div>
 		</div>
