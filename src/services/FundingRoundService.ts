@@ -4,10 +4,21 @@ import {
 	FundingRoundStatus,
 	FundingRoundWithPhases,
 } from '@/types/funding-round'
-import {
-	PrismaClient,
-	FundingRound as PrismaFundingRound,
-} from '@prisma/client'
+import { Prisma, PrismaClient } from '@prisma/client'
+import { z } from 'zod'
+
+export const fundingRoundSortSchema = z.object({
+	sortBy: z.enum(['totalBudget', 'startDate', 'status']),
+	sortOrder: z.enum(['asc', 'desc']),
+})
+
+export type SortOption = z.infer<typeof fundingRoundSortSchema>
+
+const DEFAULT_ORDER_BY: Prisma.FundingRoundOrderByWithRelationInput[] = [
+	{ status: 'desc' },
+	{ startDate: 'desc' },
+	{ totalBudget: 'desc' },
+]
 
 export class FundingRoundService {
 	private prisma: PrismaClient
@@ -16,7 +27,32 @@ export class FundingRoundService {
 		this.prisma = prisma
 	}
 
-	async getPublicFundingRounds(): Promise<FundingRoundWithPhases[]> {
+	async getPublicFundingRounds(
+		sortOption?: SortOption,
+	): Promise<FundingRoundWithPhases[]> {
+		const buildOrderBy = (
+			userSortOption?: SortOption,
+		): Prisma.FundingRoundOrderByWithRelationInput[] => {
+			if (!userSortOption) {
+				return DEFAULT_ORDER_BY
+			}
+
+			// If there is a user sort, put it first, then follow with the default array.
+			const filteredDefault = DEFAULT_ORDER_BY.filter(orderItem => {
+				const key = Object.keys(orderItem)[0]
+				return key !== userSortOption.sortBy
+			})
+
+			return [
+				{ [userSortOption.sortBy]: userSortOption.sortOrder },
+				...filteredDefault,
+			]
+		}
+
+		if (sortOption) {
+			fundingRoundSortSchema.parse(sortOption)
+		}
+
 		const rounds = await this.prisma.fundingRound.findMany({
 			where: {
 				status: {
@@ -33,10 +69,7 @@ export class FundingRoundService {
 				votingPhase: true,
 				topic: true,
 			},
-			orderBy: [
-				{ status: 'desc' }, // ACTIVE rounds first
-				{ startDate: 'desc' }, // then by start date
-			],
+			orderBy: buildOrderBy(sortOption),
 		})
 
 		return rounds.map(({ _count, ...round }) => {
@@ -120,7 +153,10 @@ export class FundingRoundService {
 
 		const now = new Date()
 
-		if (now < new Date(startDate) || now >= new Date(phases.submission.startDate)) {
+		if (
+			now < new Date(startDate) ||
+			now >= new Date(phases.submission.startDate)
+		) {
 			return 'UPCOMING'
 		}
 
