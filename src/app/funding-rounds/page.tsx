@@ -16,7 +16,8 @@ import Link from 'next/link'
 import { cn } from '@/lib/utils'
 import { useFundingRounds } from '@/hooks/use-funding-rounds'
 import { FundingRoundsSkeleton } from './loading'
-import { SortOption } from '@/services'
+import { fundingRoundSortSchema, SortOption } from '@/services'
+import { useQueryState } from 'nuqs'
 
 const sortByOptions: {
 	value: SortOption['sortBy']
@@ -29,12 +30,24 @@ const sortByOptions: {
 
 export default function FundingRounds() {
 	const [searchQuery, setSearchQuery] = useState('')
-	const [sortBy, setSortBy] = useState<SortOption['sortBy']>('status')
+
+	const [sortBy, setSortBy] = useQueryState<SortOption['sortBy']>('sortBy', {
+		defaultValue: 'status',
+		parse: value => fundingRoundSortSchema.shape.sortBy.parse(value),
+	})
+
+	const [sortOrder, setSortOrder] = useQueryState<SortOption['sortOrder']>(
+		'sortOrder',
+		{
+			defaultValue: 'desc',
+			parse: value => fundingRoundSortSchema.shape.sortOrder.parse(value),
+		},
+	)
 
 	const { isLoading, data: rounds = [] } = useFundingRounds({
 		sortOption: {
 			sortBy,
-			sortOrder: 'desc',
+			sortOrder,
 		},
 	})
 
