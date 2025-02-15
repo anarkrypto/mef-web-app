@@ -10,6 +10,7 @@ import { Suspense } from 'react'
 import { FeedbackDialog } from '@/components/feedback/FeedbackDialog'
 import { IBM_Plex_Sans as FontSans } from 'next/font/google'
 import { QueryClientProvider } from '@/contexts/QueryClientProvider'
+import { NuqsAdapter } from 'nuqs/adapters/next/app'
 
 export const metadata: Metadata = {
 	title: 'Home | MEF',
@@ -37,20 +38,22 @@ export default function RootLayout({
 					enableSystem={false}
 					disableTransitionOnChange
 				>
-					<FeedbackProvider>
-						<QueryClientProvider>
-							<Suspense fallback={<div>Loading...</div>}>
-								<AuthProvider>
-									<WalletProvider>
-										<Header />
-										<main>{children}</main>
-										<Toaster />
-										<FeedbackDialog />
-									</WalletProvider>
-								</AuthProvider>
-							</Suspense>
-						</QueryClientProvider>
-					</FeedbackProvider>
+					<NuqsAdapter>
+						<FeedbackProvider>
+							<QueryClientProvider>
+								<Suspense fallback={<div>Loading...</div>}>
+									<AuthProvider>
+										<WalletProvider>
+											<Header />
+											<main>{children}</main>
+											<Toaster />
+											<FeedbackDialog />
+										</WalletProvider>
+									</AuthProvider>
+								</Suspense>
+							</QueryClientProvider>
+						</FeedbackProvider>
+					</NuqsAdapter>
 				</ThemeProvider>
 			</body>
 		</html>
