@@ -22,6 +22,11 @@ export default function Header() {
 
 	const navigation = [
 		{ name: 'Home', href: '/', emoji: '🏠' },
+		{
+			name: 'Funding Rounds',
+			href: '/funding-rounds',
+			emoji: '💰',
+		},
 		{ name: 'Start Here', href: '/start-here', emoji: '🚀' },
 		{ name: 'My Proposals', href: '/proposals', emoji: '📝' },
 	]
