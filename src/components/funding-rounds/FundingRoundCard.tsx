@@ -10,6 +10,7 @@ import { cn } from '@/lib/utils'
 import React from 'react'
 import { FundingRound, FundingRoundStatus } from '@/types/funding-round'
 import { Button } from '../ui/button'
+import Link from 'next/link'
 
 const formatMinaNumber = (n: number | string) =>
 	new Intl.NumberFormat('en-US').format(Number(n))
@@ -30,6 +31,7 @@ const getStatusColor = (status: FundingRoundStatus) => {
 }
 
 export const FundingRoundCard = ({
+	id,
 	name,
 	status,
 	proposalsCount,
@@ -75,7 +77,7 @@ export const FundingRoundCard = ({
 		<Card
 			{...props}
 			className={cn(
-				'cursor-pointer rounded-l-none border-l-4 transition-shadow hover:shadow-md',
+				'rounded-l-none border-l-4',
 				status === 'ACTIVE' &&
 					'border-primary/30 bg-gradient-to-tr from-primary/5 to-card',
 				props.className,
@@ -138,10 +140,16 @@ export const FundingRoundCard = ({
 				</div>
 			</CardContent>
 			<CardFooter className="justify-end">
-				<Button size="lg" variant="secondary" className="">
-					View Details
-					<ArrowRightIcon className="h-4 w-4" />
-				</Button>
+				{phase !== 'UPCOMING' && (
+					<Link
+						href={`/funding-rounds/${id}/${phase === 'COMPLETED' ? 'summaries' : phase.toLowerCase()}`}
+					>
+						<Button size="lg" variant="secondary">
+							{phase === 'COMPLETED' ? 'View Summary' : 'View Details'}
+							<ArrowRightIcon className="h-4 w-4" />
+						</Button>
+					</Link>
+				)}
 			</CardFooter>
 		</Card>
 	)

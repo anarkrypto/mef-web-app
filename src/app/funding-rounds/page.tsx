@@ -209,13 +209,7 @@ function FundingRoundsList({ rounds }: { rounds: FundingRoundWithPhases[] }) {
 	return (
 		<section className="flex flex-col gap-6">
 			{rounds.map(round => (
-				<Link
-					href={`/rounds/${round.id}`}
-					key={round.id}
-					className={cn('h-full')}
-				>
-					<FundingRoundCard {...round} className="h-full" />
-				</Link>
+				<FundingRoundCard {...round} className="h-full" />
 			))}
 
 			{/* Empty State */}
