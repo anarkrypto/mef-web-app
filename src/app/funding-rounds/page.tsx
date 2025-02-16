@@ -16,12 +16,14 @@ import Link from 'next/link'
 import { cn } from '@/lib/utils'
 import { useFundingRounds } from '@/hooks/use-funding-rounds'
 import { FundingRoundsSkeleton } from './loading'
-import { fundingRoundSortSchema, SortOption } from '@/services'
+import {
+	getPublicFundingRoundsOptionsSchema,
+	GetPublicFundingRoundOptions,
+} from '@/services'
 import { useQueryState } from 'nuqs'
-import { Button } from '@/components/ui/button'
 
 const sortByOptions: {
-	value: SortOption['sortBy']
+	value: NonNullable<GetPublicFundingRoundOptions['sortBy']>
 	label: string
 }[] = [
 	{ value: 'startDate', label: 'Date' },
@@ -32,24 +34,28 @@ const sortByOptions: {
 export default function FundingRounds() {
 	const [searchQuery, setSearchQuery] = useState('')
 
-	const [sortBy, setSortBy] = useQueryState<SortOption['sortBy']>('sortBy', {
+	const [sortBy, setSortBy] = useQueryState<
+		GetPublicFundingRoundOptions['sortBy']
+	>('sortBy', {
 		defaultValue: 'status',
-		parse: value => fundingRoundSortSchema.shape.sortBy.parse(value),
+		parse: value =>
+			getPublicFundingRoundsOptionsSchema.shape.sortBy.parse(value),
 	})
 
-	const [sortOrder, setSortOrder] = useQueryState<SortOption['sortOrder']>(
-		'sortOrder',
-		{
-			defaultValue: 'desc',
-			parse: value => fundingRoundSortSchema.shape.sortOrder.parse(value),
-		},
-	)
+	const [sortOrder, setSortOrder] = useQueryState<
+		GetPublicFundingRoundOptions['sortOrder']
+	>('sortOrder', {
+		defaultValue: 'desc',
+		parse: value =>
+			getPublicFundingRoundsOptionsSchema.shape.sortOrder.parse(value),
+	})
+
+	const [filterName, setFilterName] = useQueryState('filterName')
 
 	const { isLoading, data: rounds = [] } = useFundingRounds({
-		sortOption: {
-			sortBy,
-			sortOrder,
-		},
+		filterName: filterName,
+		sortBy: sortBy,
+		sortOrder: sortOrder,
 	})
 
 	if (isLoading) {
@@ -66,11 +72,6 @@ export default function FundingRounds() {
 					</p>
 				</div>
 				<div className="flex justify-between gap-4">
-					{/* <div className="relative block md:hidden">
-						<Button variant="outline" size="icon">
-							<Search />
-						</Button>
-					</div> */}
 					<div className="relative md:block">
 						<Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 transform text-gray-400" />
 						<Input
@@ -78,12 +79,21 @@ export default function FundingRounds() {
 							value={searchQuery}
 							onChange={e => setSearchQuery(e.target.value)}
 							className="w-[170px] pl-9 md:w-[300px]"
+							onKeyDown={e => {
+								if (e.key === 'Enter') {
+									setFilterName(searchQuery)
+								}
+							}}
 						/>
 					</div>
 					<div className="flex gap-2">
 						<Select
-							value={sortBy}
-							onValueChange={value => setSortBy(value as SortOption['sortBy'])}
+							value={sortBy || undefined}
+							onValueChange={value =>
+								setSortBy(
+									value as NonNullable<GetPublicFundingRoundOptions['sortBy']>,
+								)
+							}
 						>
 							<SelectTrigger className="w-[90px]">
 								<SelectValue placeholder="Sort by" />
@@ -97,9 +107,13 @@ export default function FundingRounds() {
 							</SelectContent>
 						</Select>
 						<Select
-							value={sortOrder}
+							value={sortOrder || undefined}
 							onValueChange={value =>
-								setSortOrder(value as SortOption['sortOrder'])
+								setSortOrder(
+									value as NonNullable<
+										GetPublicFundingRoundOptions['sortOrder']
+									>,
+								)
 							}
 						>
 							<SelectTrigger className="w-[50px]">

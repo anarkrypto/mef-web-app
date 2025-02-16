@@ -4,27 +4,19 @@ import { getOrCreateUserFromRequest } from '@/lib/auth'
 import logger from '@/logging'
 import {
 	FundingRoundService,
-	fundingRoundSortSchema,
-	SortOption,
+	getPublicFundingRoundsOptionsSchema,
 } from '@/services'
 
 export async function GET(req: NextRequest) {
 	try {
-		const sortBy = req.nextUrl.searchParams.get(
-			'sortBy',
-		) as SortOption['sortBy']
-		const sortOrder = req.nextUrl.searchParams.get(
-			'sortOrder',
-		) as SortOption['sortOrder']
-
-		if (sortBy || sortOrder) {
-			const { error } = fundingRoundSortSchema.safeParse({
-				sortBy,
-				sortOrder: sortOrder || 'desc',
+		const { data: { filterName, sortBy, sortOrder } = {}, error } =
+			getPublicFundingRoundsOptionsSchema.safeParse({
+				filterName: req.nextUrl.searchParams.get('nameFilter'),
+				sortBy: req.nextUrl.searchParams.get('sortBy'),
+				sortOrder: req.nextUrl.searchParams.get('sortOrder'),
 			})
-			if (error) {
-				return NextResponse.json({ error: error.message }, { status: 400 })
-			}
+		if (error) {
+			return NextResponse.json({ error: error.message }, { status: 400 })
 		}
 
 		const user = await getOrCreateUserFromRequest(req)
@@ -35,6 +27,7 @@ export async function GET(req: NextRequest) {
 		const fundingRoundService = new FundingRoundService(prisma)
 
 		const rounds = await fundingRoundService.getPublicFundingRounds({
+			filterName,
 			sortBy,
 			sortOrder,
 		})

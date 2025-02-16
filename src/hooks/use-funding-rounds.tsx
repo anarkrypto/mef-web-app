@@ -1,16 +1,18 @@
 import logger from '@/logging'
-import { SortOption } from '@/services'
+import { GetPublicFundingRoundOptions } from '@/services'
 import { FundingRoundWithPhases } from '@/types/funding-round'
 import { useQuery } from '@tanstack/react-query'
 
 export function useFundingRounds({
-	sortOption,
-}: { sortOption?: SortOption } = {}) {
+	filterName,
+	sortBy,
+	sortOrder,
+}: GetPublicFundingRoundOptions) {
 	const searchParams = new URLSearchParams()
-	if (sortOption) {
-		searchParams.set('sortBy', sortOption.sortBy)
-		searchParams.set('sortOrder', sortOption.sortOrder)
-	}
+
+	if (filterName) searchParams.set('filterName', filterName)
+	if (sortBy) searchParams.set('sortBy', sortBy)
+	if (sortOrder) searchParams.set('sortOrder', sortOrder)
 
 	const url = `/api/funding-rounds?${searchParams.toString()}`
 

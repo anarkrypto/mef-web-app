@@ -7,12 +7,15 @@ import {
 import { Prisma, PrismaClient } from '@prisma/client'
 import { z } from 'zod'
 
-export const fundingRoundSortSchema = z.object({
-	sortBy: z.enum(['totalBudget', 'startDate', 'status']),
-	sortOrder: z.enum(['asc', 'desc']),
+export const getPublicFundingRoundsOptionsSchema = z.object({
+	filterName: z.string().optional(),
+	sortBy: z.enum(['totalBudget', 'startDate', 'status']).optional(),
+	sortOrder: z.enum(['asc', 'desc']).optional(),
 })
 
-export type SortOption = z.infer<typeof fundingRoundSortSchema>
+export type GetPublicFundingRoundOptions = z.infer<
+	typeof getPublicFundingRoundsOptionsSchema
+>
 
 const DEFAULT_ORDER_BY: Prisma.FundingRoundOrderByWithRelationInput[] = [
 	{ status: 'desc' },
@@ -28,29 +31,32 @@ export class FundingRoundService {
 	}
 
 	async getPublicFundingRounds(
-		sortOption?: SortOption,
+		options: GetPublicFundingRoundOptions,
 	): Promise<FundingRoundWithPhases[]> {
 		const buildOrderBy = (
-			userSortOption?: SortOption,
+			userGetPublicFundingRoundOptions?: GetPublicFundingRoundOptions,
 		): Prisma.FundingRoundOrderByWithRelationInput[] => {
-			if (!userSortOption) {
+			if (!userGetPublicFundingRoundOptions?.sortBy) {
 				return DEFAULT_ORDER_BY
 			}
 
 			// If there is a user sort, put it first, then follow with the default array.
 			const filteredDefault = DEFAULT_ORDER_BY.filter(orderItem => {
 				const key = Object.keys(orderItem)[0]
-				return key !== userSortOption.sortBy
+				return key !== userGetPublicFundingRoundOptions.sortBy
 			})
 
 			return [
-				{ [userSortOption.sortBy]: userSortOption.sortOrder },
+				{
+					[userGetPublicFundingRoundOptions.sortBy]:
+						userGetPublicFundingRoundOptions.sortOrder,
+				},
 				...filteredDefault,
 			]
 		}
 
-		if (sortOption) {
-			fundingRoundSortSchema.parse(sortOption)
+		if (options) {
+			getPublicFundingRoundsOptionsSchema.parse(options)
 		}
 
 		const rounds = await this.prisma.fundingRound.findMany({
@@ -58,6 +64,14 @@ export class FundingRoundService {
 				status: {
 					in: ['ACTIVE', 'COMPLETED'],
 				},
+				...(options.filterName
+					? {
+							name: {
+								contains: options.filterName,
+								mode: 'insensitive',
+							},
+						}
+					: {}),
 			},
 			include: {
 				_count: {
@@ -69,7 +83,7 @@ export class FundingRoundService {
 				votingPhase: true,
 				topic: true,
 			},
-			orderBy: buildOrderBy(sortOption),
+			orderBy: buildOrderBy(options.sortBy ? options : undefined),
 		})
 
 		return rounds.map(({ _count, ...round }) => {
