@@ -11,7 +11,7 @@ export async function GET(req: NextRequest) {
 	try {
 		const { data: { filterName, sortBy, sortOrder } = {}, error } =
 			getPublicFundingRoundsOptionsSchema.safeParse({
-				filterName: req.nextUrl.searchParams.get('nameFilter'),
+				filterName: req.nextUrl.searchParams.get('filterName'),
 				sortBy: req.nextUrl.searchParams.get('sortBy'),
 				sortOrder: req.nextUrl.searchParams.get('sortOrder'),
 			})
