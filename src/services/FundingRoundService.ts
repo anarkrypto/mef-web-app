@@ -8,9 +8,9 @@ import { Prisma, PrismaClient } from '@prisma/client'
 import { z } from 'zod'
 
 export const getPublicFundingRoundsOptionsSchema = z.object({
-	filterName: z.string().optional(),
-	sortBy: z.enum(['totalBudget', 'startDate', 'status']).optional(),
-	sortOrder: z.enum(['asc', 'desc']).optional(),
+	filterName: z.string().optional().nullable(),
+	sortBy: z.enum(['totalBudget', 'startDate', 'status']).optional().nullable(),
+	sortOrder: z.enum(['asc', 'desc']).optional().nullable(),
 })
 
 export type GetPublicFundingRoundOptions = z.infer<
@@ -58,6 +58,7 @@ export class FundingRoundService {
 		if (options) {
 			getPublicFundingRoundsOptionsSchema.parse(options)
 		}
+		console.log({ filterName: options.filterName })
 
 		const rounds = await this.prisma.fundingRound.findMany({
 			where: {
