@@ -87,39 +87,15 @@ export class FundingRoundService {
 		})
 
 		return rounds.map(({ _count, ...round }) => {
-			const phases: FundingRoundPhases = {
-				submission: {
-					id: round.submissionPhase!.id,
-					startDate: round.submissionPhase!.startDate.toISOString(),
-					endDate: round.submissionPhase!.endDate.toISOString(),
-				},
-				consideration: {
-					id: round.considerationPhase!.id,
-					startDate: round.considerationPhase!.startDate.toISOString(),
-					endDate: round.considerationPhase!.endDate.toISOString(),
-				},
-				deliberation: {
-					id: round.deliberationPhase!.id,
-					startDate: round.deliberationPhase!.startDate.toISOString(),
-					endDate: round.deliberationPhase!.endDate.toISOString(),
-				},
-				voting: {
-					id: round.votingPhase!.id,
-					startDate: round.votingPhase!.startDate.toISOString(),
-					endDate: round.votingPhase!.endDate.toISOString(),
-				},
-			}
-
-			const startDate = round.startDate.toDateString()
-			const endDate = round.endDate.toDateString()
+			const phases = this.buildPhases(round)
 
 			return {
 				...round,
 				totalBudget: round.totalBudget.toString(),
 				proposalsCount: _count.proposals,
 				status: round.status as FundingRoundStatus,
-				startDate,
-				endDate,
+				startDate: round.startDate.toDateString(),
+				endDate: round.endDate.toDateString(),
 				phase: this.getCurrentPhase(phases),
 				phases,
 			}
@@ -145,17 +121,87 @@ export class FundingRoundService {
 		})
 	}
 
-	async getFundingRoundById(id: string) {
-		return await this.prisma.fundingRound.findUnique({
-			where: { id },
+	async getFundingRoundById(
+		id: string,
+	): Promise<FundingRoundWithPhases | null> {
+		const round = await this.prisma.fundingRound.findUnique({
+			where: {
+				id,
+			},
 			include: {
-				proposals: true,
+				_count: {
+					select: { proposals: true },
+				},
 				submissionPhase: true,
 				considerationPhase: true,
 				deliberationPhase: true,
 				votingPhase: true,
+				topic: true,
 			},
 		})
+
+		if (!round) {
+			return null
+		}
+
+		const phases = this.buildPhases(round)
+
+		return {
+			...round,
+			proposalsCount: round._count.proposals,
+			totalBudget: round.totalBudget.toString(),
+			status: round.status as FundingRoundStatus,
+			startDate: round.startDate.toDateString(),
+			endDate: round.endDate.toDateString(),
+			phase: this.getCurrentPhase(phases),
+			phases,
+		}
+	}
+
+	private buildPhases(
+		round: Record<
+			| 'submissionPhase'
+			| 'considerationPhase'
+			| 'deliberationPhase'
+			| 'votingPhase',
+			{
+				id: string
+				startDate: Date
+				endDate: Date
+			} | null
+		>,
+	): FundingRoundPhases {
+		if (
+			!round.submissionPhase ||
+			!round.considerationPhase ||
+			!round.deliberationPhase ||
+			!round.votingPhase
+		) {
+			throw new Error('Missing phase data')
+		}
+
+		return {
+			submission: {
+				id: round.submissionPhase.id,
+				startDate: round.submissionPhase.startDate.toISOString(),
+				endDate: round.submissionPhase.endDate.toISOString(),
+			},
+			consideration: {
+				id: round.considerationPhase.id,
+				startDate: round.considerationPhase.startDate.toISOString(),
+				endDate: round.considerationPhase.endDate.toISOString(),
+			},
+			deliberation: {
+				id: round.deliberationPhase.id,
+				startDate: round.deliberationPhase.startDate.toISOString(),
+				endDate: round.deliberationPhase.endDate.toISOString(),
+			},
+			voting: {
+				id: round.votingPhase.id,
+				startDate: round.votingPhase.startDate.toISOString(),
+				endDate: round.votingPhase.endDate.toISOString(),
+			},
+		}
 	}
 
 	getCurrentPhase(phases: FundingRoundPhases): FundingRoundPhase {
