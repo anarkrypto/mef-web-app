@@ -45,7 +45,7 @@ export default function FundingRounds() {
 		<main className="space-y-8">
 			<FundingRoundsHeader />
 
-			<FundingRoundsControls />
+			<FundingRoundsControls disabled={isLoading} />
 
 			{isLoading ? (
 				<FundingRoudsListSkeleton />
@@ -92,7 +92,7 @@ function FundingRoundsHeader() {
 	)
 }
 
-function FundingRoundsControls() {
+function FundingRoundsControls({ disabled }: { disabled?: boolean }) {
 	const {
 		sortBy,
 		sortOrder,
@@ -152,13 +152,18 @@ function FundingRoundsControls() {
 					onKeyDown={handleSearchKeyDown}
 					onChange={e => setSearchQuery(e.target.value)}
 					className="w-full pl-9"
+					disabled={disabled}
 				/>
 			</form>
 
 			{/* Sorting Controls */}
 			<div className="flex gap-2">
 				{/* Sort by */}
-				<Select value={sortBy || undefined} onValueChange={handleSortByChange}>
+				<Select
+					value={sortBy || undefined}
+					onValueChange={handleSortByChange}
+					disabled={disabled}
+				>
 					<SelectTrigger className="w-[90px]" aria-label="Sort by">
 						<SelectValue placeholder="Sort by" />
 					</SelectTrigger>
@@ -177,6 +182,7 @@ function FundingRoundsControls() {
 				<Select
 					value={sortOrder || undefined}
 					onValueChange={handleSortOrderChange}
+					disabled={disabled}
 				>
 					<SelectTrigger className="w-[50px]" aria-label="Sort order">
 						<SelectValue placeholder="Order" />
