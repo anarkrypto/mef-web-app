@@ -58,7 +58,6 @@ export class FundingRoundService {
 		if (options) {
 			getPublicFundingRoundsOptionsSchema.parse(options)
 		}
-		console.log({ filterName: options.filterName })
 
 		const rounds = await this.prisma.fundingRound.findMany({
 			where: {
@@ -121,7 +120,7 @@ export class FundingRoundService {
 				status: round.status as FundingRoundStatus,
 				startDate,
 				endDate,
-				phase: this.getCurrentPhase(startDate, endDate, phases),
+				phase: this.getCurrentPhase(phases),
 				phases,
 			}
 		})
@@ -159,19 +158,12 @@ export class FundingRoundService {
 		})
 	}
 
-	getCurrentPhase(
-		startDate: string,
-		endDate: string,
-		phases: FundingRoundPhases,
-	): FundingRoundPhase {
+	getCurrentPhase(phases: FundingRoundPhases): FundingRoundPhase {
 		// TODO: Check if we can improve this one by relying on the database directly
 
 		const now = new Date()
 
-		if (
-			now < new Date(startDate) ||
-			now >= new Date(phases.submission.startDate)
-		) {
+		if (now < new Date(phases.submission.startDate)) {
 			return 'UPCOMING'
 		}
 
@@ -203,11 +195,7 @@ export class FundingRoundService {
 			return 'VOTING'
 		}
 
-		if (now > new Date(endDate)) {
-			return 'COMPLETED'
-		}
-
-		throw new Error('Invalid current phase')
+		return 'COMPLETED'
 	}
 
 	getTimeRemaining(date: Date): string {
