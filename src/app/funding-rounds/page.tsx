@@ -15,7 +15,6 @@ import {
 	SelectGroup,
 	SelectItem,
 } from '@/components/ui/select'
-import { FundingRoundsSkeleton } from './loading'
 import { useFundingRounds } from '@/hooks/use-funding-rounds'
 import {
 	getPublicFundingRoundsOptionsSchema,
@@ -42,17 +41,17 @@ export default function FundingRounds() {
 		sortOrder,
 	})
 
-	if (isLoading) {
-		return <FundingRoundsSkeleton />
-	}
-
 	return (
 		<main className="space-y-8">
 			<FundingRoundsHeader />
 
 			<FundingRoundsControls />
 
-			<FundingRoundsList rounds={rounds} />
+			{isLoading ? (
+				<FundingRoudsListSkeleton />
+			) : (
+				<FundingRoundsList rounds={rounds} />
+			)}
 		</main>
 	)
 }
@@ -220,5 +219,18 @@ function FundingRoundsList({ rounds }: { rounds: FundingRoundWithPhases[] }) {
 				</p>
 			)}
 		</section>
+	)
+}
+
+function FundingRoudsListSkeleton() {
+	return (
+		<div className="flex flex-col gap-6">
+			{new Array(2).fill('').map((_, index) => (
+				<div
+					key={index}
+					className="flex h-40 w-full animate-pulse gap-6 rounded-md bg-muted"
+				/>
+			))}
+		</div>
 	)
 }
