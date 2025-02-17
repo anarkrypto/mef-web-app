@@ -65,7 +65,7 @@ export const FundingRoundCard = ({
 			icon: Coins,
 		},
 		{
-			title: 'Until End',
+			title: 'Fund Round End',
 			value: timeUntilEnd,
 			icon: Clock,
 		},
