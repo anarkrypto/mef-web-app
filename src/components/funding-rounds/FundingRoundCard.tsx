@@ -15,7 +15,8 @@ import Link from 'next/link'
 const formatMinaNumber = (n: number | string) =>
 	new Intl.NumberFormat('en-US').format(Number(n))
 
-export type RoundCardProps = FundingRound & {
+export type RoundCardProps = {
+	data: FundingRound
 	linkType?: 'details' | 'summary'
 } & React.ComponentProps<typeof Card>
 
@@ -33,15 +34,16 @@ const getStatusColor = (status: FundingRoundStatus) => {
 }
 
 export const FundingRoundCard = ({
-	id,
-	name,
-	status,
-	proposalsCount,
-	totalBudget,
-	startDate,
-	endDate,
-	phase,
-	description,
+	data: {
+		id,
+		name,
+		status,
+		proposalsCount,
+		totalBudget,
+		endDate,
+		phase,
+		description,
+	},
 	linkType = 'details',
 	...props
 }: RoundCardProps) => {

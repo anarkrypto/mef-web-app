@@ -258,7 +258,7 @@ function FundingRoundsList({
 				<FundingRoundCard
 					key={round.id}
 					linkType={tab}
-					{...round}
+					data={round}
 					className="h-full"
 				/>
 			))}
