@@ -29,14 +29,17 @@ body {
 		--primary-lighter: #ff866a;
 		--primary-lightest: #ffac99;
 
-		--accent: 251 82% 69%;
-		--accent-foreground: 0 0% 100%;
+		--secondary: 251 82% 69%;
+		--secondary-foreground: 0 0% 100%;
+
+		--accent: 240 4.8% 95.9%;
+		--accent-foreground: 240 5.9% 10%;
 
 		--accent-mint: 156.52 56.1% 75.88%;
 		--accent-mint-foreground: 0 0% 18%;
 
-		--secondary: 0 0% 18%;
-		--secondary-foreground: 0 0% 100%;
+		--dark: 0 0% 18%;
+		--dark-foreground: 0 0% 100%;
 
 		--muted: 0 0% 93%;
 		--muted-foreground: 0 0% 31%;
@@ -52,7 +55,24 @@ body {
 		--chart-4: 43 74% 66%;
 		--chart-5: 27 87% 67%;
 		--radius: 0.5rem;
+
+		--brand-primary:
+			'rgba(255, 96, 59, 1)',
+			// Main action color (e.g., buttons, links)
+			--brand-secondary: 'rgba(159, 228, 201, 1)',
+			// Supporting color
+			--brand-accent: 'rgba(134, 111, 240, 1)',
+			// Highlight elements (e.g., badges)
+			--brand-foreground: 'rgba(45, 45, 45, 1)',
+			// Main text color
+			--brand-background: 'rgba(255, 255, 255, 1)',
+			// Page background
+			--brand-muted: 'rgba(217, 217, 217, 1)',
+			// Muted content (e.g., placeholders)
+			--brand-highlight: 'rgba(187, 253, 248, 1)',
+			// Special highlights;;
 	}
+
 	.dark {
 		--background: 240 10% 3.9%;
 		--foreground: 0 0% 98%;

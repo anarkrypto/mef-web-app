@@ -85,7 +85,7 @@ export const FundingRoundCard = ({
 			className={cn(
 				'rounded-l-none border-l-4',
 				status === 'ACTIVE' &&
-					'border-accent/30 bg-gradient-to-tr from-accent/5 to-card',
+					'border-green-400 bg-gradient-to-tr from-green-50/50 to-card',
 				props.className,
 			)}
 		>
@@ -114,7 +114,7 @@ export const FundingRoundCard = ({
 										className={cn(
 											'rounded-full p-1.5 md:p-2',
 											isActive
-												? 'bg-accent/10 text-accent'
+												? 'bg-green-100 text-green-600'
 												: 'bg-muted text-muted-foreground',
 										)}
 									>
@@ -133,7 +133,7 @@ export const FundingRoundCard = ({
 										<div
 											className={cn(
 												'text-sm md:text-base',
-												isActive ? 'text-secondary' : 'text-gray-600',
+												isActive ? 'text-dark' : 'text-gray-600',
 											)}
 										>
 											{title}
@@ -148,7 +148,7 @@ export const FundingRoundCard = ({
 			<CardFooter className="justify-end">
 				{phase !== 'UPCOMING' && (
 					<Link href={buttonLink}>
-						<Button size="lg" className="bg-accent">
+						<Button size="lg" variant="secondary">
 							{buttonLabel}
 							<ArrowRightIcon className="h-4 w-4" />
 						</Button>

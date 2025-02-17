@@ -95,7 +95,7 @@ function useFundingRoundsSearchParams() {
 
 function FundingRoundsHeader() {
 	return (
-		<header className="text-secondary">
+		<header className="text-dark">
 			<h1 className="mb-2 text-2xl font-bold">Funding Rounds</h1>
 			<p>Explore and participate in funding rounds for community proposals.</p>
 		</header>
