@@ -31,6 +31,7 @@ const STARTED_PHASES: StartedPhase[] = [
 	'DELIBERATION',
 	'VOTING',
 	'COMPLETED',
+	'BETWEEN_PHASES',
 ]
 
 type StartedFundingRoundWithPhases = Omit<FundingRoundWithPhases, 'phase'> & {
@@ -70,8 +71,9 @@ export default function FundingRoundDashboard({
 
 					{/* Content Area */}
 					<div className="space-y-4">
-						<FundingRoundHeaderCard phase={data.phase} />
-
+						{data.phase !== 'BETWEEN_PHASES' && (
+							<FundingRoundHeaderCard phase={data.phase} />
+						)}
 						<FundingRoundPhaseComponent data={data} />
 					</div>
 				</div>
@@ -80,7 +82,7 @@ export default function FundingRoundDashboard({
 				<footer className="flex justify-end">
 					<Link
 						href="/start-here"
-						className="flex items-center gap-1 text-accent hover:underline"
+						className="flex items-center gap-1 text-secondary hover:underline"
 					>
 						<CircleHelpIcon className="h-4 w-4" /> Feeling lost? Check Start
 						Here Section
@@ -91,9 +93,13 @@ export default function FundingRoundDashboard({
 	)
 }
 
-function FundingRoundHeaderCard({ phase }: { phase: StartedPhase }) {
+function FundingRoundHeaderCard({
+	phase,
+}: {
+	phase: Exclude<StartedPhase, 'BETWEEN_PHASES'>
+}) {
 	const data: Record<
-		StartedPhase,
+		Exclude<StartedPhase, 'BETWEEN_PHASES'>,
 		{
 			title: string
 			description: string
@@ -143,7 +149,7 @@ function FundingRoundStatusOverviewCard({
 	const endDate =
 		data.phase === 'COMPLETED'
 			? new Date(data.endDate)
-			: new Date((data.phases as any)[data.phase].endDate)
+			: new Date((data.phases as any)[data.phase].endDate || Date.now() + 6000)
 
 	return (
 		<Card className="bg-muted/50">
@@ -200,7 +206,7 @@ function PhaseTimeline({ data }: { data: StartedFundingRoundWithPhases }) {
 							<div
 								className={cn(
 									'absolute -top-4 left-4 h-4 w-0.5',
-									isCompleted ? 'bg-accent' : 'bg-muted-foreground/20',
+									isCompleted ? 'bg-secondary' : 'bg-muted-foreground/20',
 								)}
 							/>
 						)}
@@ -208,8 +214,8 @@ function PhaseTimeline({ data }: { data: StartedFundingRoundWithPhases }) {
 						<div
 							className={cn(
 								'relative rounded-md p-3 font-medium capitalize',
-								isCompleted && 'bg-accent/10 text-accent',
-								isActive && 'bg-accent text-accent-foreground',
+								isCompleted && 'bg-secondary/10 text-secondary',
+								isActive && 'bg-secondary text-secondary-foreground',
 								!isActive && !isCompleted && 'text-muted-foreground',
 							)}
 						>
@@ -227,7 +233,7 @@ function PhaseTimeline({ data }: { data: StartedFundingRoundWithPhases }) {
 
 							{/* Completion indicator */}
 							{isCompleted && (
-								<span className="absolute right-2 top-1/2 -translate-y-1/2 text-accent">
+								<span className="absolute right-2 top-1/2 -translate-y-1/2 text-secondary">
 									✓
 								</span>
 							)}

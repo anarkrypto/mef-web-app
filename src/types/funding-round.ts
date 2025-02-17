@@ -14,6 +14,7 @@ export type FundingRoundPhase =
 	| 'DELIBERATION'
 	| 'VOTING'
 	| 'COMPLETED'
+	| 'BETWEEN_PHASES'
 
 export interface FundingRound {
 	id: string

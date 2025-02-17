@@ -96,7 +96,7 @@ export class FundingRoundService {
 				status: round.status as FundingRoundStatus,
 				startDate: round.startDate.toDateString(),
 				endDate: round.endDate.toDateString(),
-				phase: this.getCurrentPhase(phases),
+				phase: this.getCurrentPhase(round.endDate.toDateString(), phases),
 				phases,
 			}
 		})
@@ -153,7 +153,7 @@ export class FundingRoundService {
 			status: round.status as FundingRoundStatus,
 			startDate: round.startDate.toDateString(),
 			endDate: round.endDate.toDateString(),
-			phase: this.getCurrentPhase(phases),
+			phase: this.getCurrentPhase(round.endDate.toDateString(), phases),
 			phases,
 		}
 	}
@@ -204,7 +204,10 @@ export class FundingRoundService {
 		}
 	}
 
-	getCurrentPhase(phases: FundingRoundPhases): FundingRoundPhase {
+	getCurrentPhase(
+		endDate: string,
+		phases: FundingRoundPhases,
+	): FundingRoundPhase {
 		// TODO: Check if we can improve this one by relying on the database directly
 
 		const now = new Date()
@@ -241,7 +244,11 @@ export class FundingRoundService {
 			return 'VOTING'
 		}
 
-		return 'COMPLETED'
+		if (now >= new Date(endDate)) {
+			return 'COMPLETED'
+		}
+
+		return 'BETWEEN_PHASES'
 	}
 
 	getTimeRemaining(date: Date): string {
