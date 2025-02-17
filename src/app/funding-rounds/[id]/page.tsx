@@ -21,6 +21,7 @@ import { SubmissionProposalList } from '@/components/phases/SubmissionProposalLi
 import { BetweenPhases } from '@/components/phases/BetweenPhases'
 import { useFundingRound } from '@/hooks/use-funding-round'
 import { CircleHelpIcon } from 'lucide-react'
+import { use } from 'react'
 
 type StartedPhase = Exclude<FundingRoundPhase, 'UPCOMING'>
 
@@ -37,13 +38,14 @@ type StartedFundingRoundWithPhases = Omit<FundingRoundWithPhases, 'phase'> & {
 }
 
 type FundingRoundDashboardProps = {
-	params: { id: string }
+	params: Promise<{ id: string }>
 }
 
 export default function FundingRoundDashboard({
 	params,
 }: FundingRoundDashboardProps) {
-	const { data: untypedData, isLoading } = useFundingRound(params.id)
+	const { id } = use(params)
+	const { data: untypedData, isLoading } = useFundingRound(id)
 
 	if (untypedData?.phase === 'UPCOMING') {
 		return <div>Upcoming</div>
