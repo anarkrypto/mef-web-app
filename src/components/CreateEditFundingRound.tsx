@@ -68,12 +68,22 @@ type DatePhase = {
 };
 
 const DATE_PHASES: DatePhase[] = [
-  { key: 'fundingRoundDates', label: "Funding Round Period" },
+  { key: 'fundingRoundDates', label: "Funding Round Period (UTC)" },
   { key: 'submissionDates', label: "Submission Phase (UTC)" },
   { key: 'considerationDates', label: "Consideration Phase (UTC)" },
   { key: 'deliberationDates', label: "Deliberation Phase (UTC)" },
   { key: 'votingDates', label: "Voting Phase (UTC)" }
 ];
+
+// Format dates in UTC without local timezone conversion
+function formatUTC(date: Date): string {
+  const day = date.getUTCDate();
+  const month = date.getUTCMonth() + 1;
+  const year = date.getUTCFullYear();
+  const hours = date.getUTCHours();
+  const minutes = date.getUTCMinutes();
+  return `${year}-${month.toString().padStart(2, '0')}-${day.toString().padStart(2, '0')} ${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')} UTC`;
+}
 
 export function AddEditFundingRoundComponent({ 
   roundId 
@@ -496,7 +506,7 @@ export function AddEditFundingRoundComponent({
                 )}
               >
                 {dates.from ? (
-                  format(dates.from, "PPP HH:mm 'UTC'")
+                  formatUTC(dates.from)
                 ) : (
                   <span>Pick a date</span>
                 )}
@@ -539,7 +549,7 @@ export function AddEditFundingRoundComponent({
                 )}
               >
                 {dates.to ? (
-                  format(dates.to, "PPP HH:mm 'UTC'")
+                  formatUTC(dates.to)
                 ) : (
                   <span>Pick a date</span>
                 )}
