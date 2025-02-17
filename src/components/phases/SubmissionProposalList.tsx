@@ -16,17 +16,13 @@ import { CardFooter } from '@/components/ui/card'
 
 interface Props {
 	fundingRoundId: string
-	fundingRoundName: string
 }
 
 interface ExpandedState {
 	[key: number]: boolean
 }
 
-export function SubmissionProposalList({
-	fundingRoundId,
-	fundingRoundName,
-}: Props) {
+export function SubmissionProposalList({ fundingRoundId }: Props) {
 	const { proposals, loading, error } = useSubmissionPhase(fundingRoundId)
 	const [expanded, setExpanded] = useState<ExpandedState>({})
 
@@ -46,15 +42,19 @@ export function SubmissionProposalList({
 	}
 
 	return (
-		<div className="container mx-auto max-w-7xl p-6">
+		<div className="container mx-auto max-w-7xl px-2 md:px-6">
 			<div className="space-y-8">
 				<div>
-					<h1 className="text-3xl font-bold">
-						📝 Submission Phase: {fundingRoundName}
+					<h2 className="text-2xl font-bold">
+						📝 Submission Phase
 						<span className="ml-2 text-lg font-normal text-muted-foreground">
 							({proposals.length} proposals submitted)
 						</span>
-					</h1>
+					</h2>
+					<p>
+						Submit your proposals for this funding round. Review other
+						submissions and provide feedback.
+					</p>
 				</div>
 
 				{/* Action Buttons */}
@@ -94,7 +94,7 @@ export function SubmissionProposalList({
 											<CardTitle className="text-2xl">
 												{proposal.proposalName}
 											</CardTitle>
-											<CardDescription>
+											<CardDescription className="break-all">
 												👤 Submitted by {proposal.submitter}
 											</CardDescription>
 											<div className="mt-4 space-y-2">

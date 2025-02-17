@@ -34,7 +34,6 @@ import ReactMarkdown from 'react-markdown'
 
 interface Props {
 	fundingRoundId: string
-	fundingRoundName: string
 }
 
 interface DialogState {
@@ -44,7 +43,7 @@ interface DialogState {
 	existingVote?: DeliberationVote
 }
 
-export function DeliberationPhase({ fundingRoundId, fundingRoundName }: Props) {
+export function DeliberationPhase({ fundingRoundId }: Props) {
 	const { user } = useAuth()
 	const {
 		proposals,
@@ -261,15 +260,18 @@ export function DeliberationPhase({ fundingRoundId, fundingRoundName }: Props) {
 	}
 
 	return (
-		<div className="container mx-auto max-w-7xl p-6">
+		<div className="container mx-auto max-w-7xl px-2 md:px-6">
 			<div className="space-y-8">
 				<div>
-					<h1 className="text-3xl font-bold">
-						💭 Deliberation Phase: {fundingRoundName}
+					<h2 className="text-3xl font-bold">
+						💭 Deliberation Phase:
 						<span className="ml-2 text-lg font-normal text-muted-foreground">
 							({pendingCount} pending, {totalCount} total)
 						</span>
-					</h1>
+					</h2>
+					<p>
+						Discuss and refine proposals with the community before final voting.
+					</p>
 				</div>
 
 				<div className="space-y-6">
@@ -287,7 +289,7 @@ export function DeliberationPhase({ fundingRoundId, fundingRoundName }: Props) {
 										<CardTitle className="text-2xl">
 											{proposal.proposalName}
 										</CardTitle>
-										<CardDescription>
+										<CardDescription className="break-all">
 											👤 Submitted by {proposal.submitter}
 										</CardDescription>
 									</div>

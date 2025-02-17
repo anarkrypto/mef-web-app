@@ -78,6 +78,9 @@ export default function FundingRoundDashboard({
 					<h1 className="text-3xl font-bold uppercase">
 						{data.name} | Funding Round
 					</h1>
+					<h1>
+						{data.startDate} - {data.endDate}
+					</h1>
 				</div>
 
 				{/* Status Overview */}
@@ -90,9 +93,6 @@ export default function FundingRoundDashboard({
 
 					{/* Content Area */}
 					<div className="space-y-4">
-						{data.phase !== 'BETWEEN_PHASES' && (
-							<FundingRoundHeaderCard phase={data.phase} />
-						)}
 						<FundingRoundPhaseComponent data={data} />
 					</div>
 				</div>
@@ -109,54 +109,6 @@ export default function FundingRoundDashboard({
 				</footer>
 			</div>
 		</div>
-	)
-}
-
-function FundingRoundHeaderCard({
-	phase,
-}: {
-	phase: Exclude<StartedPhase, 'BETWEEN_PHASES'>
-}) {
-	const data: Record<
-		Exclude<StartedPhase, 'BETWEEN_PHASES'>,
-		{
-			title: string
-			description: string
-		}
-	> = {
-		SUBMISSION: {
-			title: '📝 Submission Phase',
-			description:
-				'Submit your proposals for this funding round. Review other submissions and provide feedback.',
-		},
-		CONSIDERATION: {
-			title: '🤔 Consideration Phase',
-			description:
-				'Review submitted proposals and determine which ones you find valuable enough to receive funding.',
-		},
-		DELIBERATION: {
-			title: '💭 Deliberation Phase',
-			description:
-				'Discuss and refine proposals with the community before final voting.',
-		},
-		VOTING: {
-			title: '🗳️ Voting Phase',
-			description:
-				'Cast your votes to determine which proposals will receive funding.',
-		},
-		COMPLETED: {
-			title: '🏁 Funding Round Completed',
-			description: 'This funding round has been completed.',
-		},
-	}
-
-	return (
-		<Card>
-			<CardHeader>
-				<CardTitle>{data[phase].title}</CardTitle>
-				<CardDescription>{data[phase].description}</CardDescription>
-			</CardHeader>
-		</Card>
 	)
 }
 
@@ -316,31 +268,18 @@ function FundingRoundPhaseComponent({
 	// Regular phase rendering
 	switch (data.phase) {
 		case 'SUBMISSION':
-			return (
-				<SubmissionProposalList
-					fundingRoundId={data.id}
-					fundingRoundName={data.name}
-				/>
-			)
+			return <SubmissionProposalList fundingRoundId={data.id} />
 		case 'CONSIDERATION':
 			return (
 				<ConsiderationProposalList
 					fundingRoundId={data.id}
 					fundingRoundMEFId={data.mefId}
-					fundingRoundName={data.name}
 				/>
 			)
 		case 'DELIBERATION':
-			return (
-				<DeliberationPhase
-					fundingRoundId={data.id}
-					fundingRoundName={data.name}
-				/>
-			)
+			return <DeliberationPhase fundingRoundId={data.id} />
 		case 'VOTING':
-			return (
-				<VotingPhase fundingRoundId={data.id} fundingRoundName={data.name} />
-			)
+			return <VotingPhase fundingRoundId={data.id} />
 		case 'COMPLETED':
 			return <CompletedPhase />
 		default:

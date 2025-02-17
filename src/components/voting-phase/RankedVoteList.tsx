@@ -518,8 +518,8 @@ export default function RankedVoteList({
 
 	return (
 		<DndProvider backend={isTouchDevice() ? TouchBackend : HTML5Backend}>
-			<div className="container mx-auto max-w-7xl px-4 py-8">
-				<h1 className="mb-4 text-3xl font-bold text-gray-900">{title}</h1>
+			<div className="container mx-auto max-w-7xl py-8">
+				<h1 className="mb-4 text-2xl font-bold text-gray-900">{title}</h1>
 				<div className="mb-8 space-y-4 text-gray-600">
 					<p>
 						Drag and drop proposals to move them into the Ranked list, or

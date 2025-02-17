@@ -27,7 +27,6 @@ const VOTE_DATA_CACHE_PREFIX = 'ocv_vote_data'
 
 interface VotingPhaseProps {
 	fundingRoundId: string
-	fundingRoundName: string
 }
 
 interface SelectedProposalId {
@@ -38,10 +37,7 @@ interface FundingRoundDetails {
 	totalBudget: number
 }
 
-export function VotingPhase({
-	fundingRoundId,
-	fundingRoundName,
-}: VotingPhaseProps) {
+export function VotingPhase({ fundingRoundId }: VotingPhaseProps) {
 	const { state } = useWallet()
 	const { toast } = useToast()
 	const [proposals, setProposals] =
@@ -61,6 +57,7 @@ export function VotingPhase({
 
 		const fetchFundingRound = async () => {
 			try {
+				// TODO: check by conflicts
 				const response = await fetch(`/api/funding-rounds/${fundingRoundId}`)
 				if (!response.ok) {
 					throw new Error('Failed to fetch funding round details')
@@ -281,7 +278,7 @@ export function VotingPhase({
 
 	if (isLoading) {
 		return (
-			<div className="container mx-auto max-w-7xl p-6">
+			<div className="container mx-auto max-w-7xl px-2 md:px-6">
 				<Card>
 					<CardHeader>
 						<CardTitle>Loading Proposals...</CardTitle>
@@ -299,7 +296,6 @@ export function VotingPhase({
 
 		return (
 			<VotingResultsDistribution
-				fundingRoundName={fundingRoundName}
 				totalBudget={fundingRound.totalBudget}
 				isVotingActive={isVotingActive()}
 				proposals={proposals.proposals.map(p => ({
@@ -324,8 +320,8 @@ export function VotingPhase({
 					<CardHeader>
 						<CardTitle>Voting Phase Completed</CardTitle>
 						<CardDescription>
-							The voting phase for {fundingRoundName} has ended. Below are the
-							final results and funding distribution.
+							The voting phase for has ended. Below are the final results and
+							funding distribution.
 						</CardDescription>
 					</CardHeader>
 				</Card>
@@ -335,7 +331,14 @@ export function VotingPhase({
 	}
 
 	return (
-		<>
+		<div className="space-y-4 px-2 md:px-6">
+			<div>
+				<h2 className="text-2xl font-bold">🗳️ Voting Phase</h2>
+				<p>
+					Cast your votes to determine which proposals will receive funding.
+				</p>
+			</div>
+
 			<RankedVoteList
 				proposals={proposals}
 				existingVote={voteData?.votes.find(
@@ -345,11 +348,11 @@ export function VotingPhase({
 				onSubmit={handleSubmit}
 				onSaveToMemo={handleSaveToMemo}
 				onConnectWallet={handleConnectWallet}
-				title={`Rank your vote - ${fundingRoundName}`}
+				title={`Rank your vote`}
 				fundingRoundMEFId={proposals?.fundingRound.mefId || 0}
 			/>
 
-			<div className="container mx-auto max-w-7xl px-4 py-8">
+			<div className="container mx-auto max-w-7xl py-8">
 				<div className="rounded-lg border bg-card text-card-foreground shadow-sm transition-shadow hover:shadow-md">
 					<div
 						className="group flex cursor-pointer flex-col space-y-1.5 p-4"
@@ -441,6 +444,6 @@ export function VotingPhase({
 				selectedProposals={selectedProposals ?? []}
 				fundingRoundMEFId={parseInt(fundingRoundId)}
 			/>
-		</>
+		</div>
 	)
 }

@@ -34,7 +34,6 @@ interface ProposalFundingStatus {
 }
 
 interface VotingResultsDistributionProps {
-	fundingRoundName: string
 	totalBudget: number
 	isVotingActive: boolean
 	proposals: Array<{
@@ -50,7 +49,6 @@ interface VotingResultsDistributionProps {
 }
 
 export const VotingResultsDistribution: FC<VotingResultsDistributionProps> = ({
-	fundingRoundName,
 	totalBudget,
 	isVotingActive,
 	proposals,
