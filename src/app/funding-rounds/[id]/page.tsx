@@ -5,7 +5,6 @@ import {
 	CardHeader,
 	CardTitle,
 	CardDescription,
-	CardContent,
 } from '@/components/ui/card'
 import Link from 'next/link'
 import { cn } from '@/lib/utils'
@@ -21,8 +20,16 @@ import { ConsiderationProposalList } from '@/components/ConsiderationProposalLis
 import { SubmissionProposalList } from '@/components/phases/SubmissionProposalList'
 import { BetweenPhases } from '@/components/phases/BetweenPhases'
 import { useFundingRound } from '@/hooks/use-funding-round'
-import { CircleHelpIcon } from 'lucide-react'
+import {
+	ArrowLeftIcon,
+	CircleHelpIcon,
+	ClockIcon,
+	CoinsIcon,
+	FileTextIcon,
+	TimerIcon,
+} from 'lucide-react'
 import { use } from 'react'
+import { Button } from '@/components/ui/button'
 
 type StartedPhase = Exclude<FundingRoundPhase, 'UPCOMING'>
 
@@ -60,13 +67,24 @@ export default function FundingRoundDashboard({
 	}
 
 	return (
-		<div className="container mx-auto max-w-7xl p-6">
+		<div className="container mx-auto max-w-7xl px-2 md:px-6">
 			<div className="space-y-8">
+				<div className="space-y-4">
+					<Link href="/funding-rounds">
+						<Button variant="outline">
+							<ArrowLeftIcon className="h-4 w-4" /> Back to Funding Rounds
+						</Button>
+					</Link>
+					<h1 className="text-3xl font-bold uppercase">
+						{data.name} | Funding Round
+					</h1>
+				</div>
+
 				{/* Status Overview */}
-				<FundingRoundStatusOverviewCard data={data} />
+				<FundingRoundStatusOverviewCards data={data} />
 
 				{/* Main Content */}
-				<div className="grid grid-cols-[200px,1fr] gap-8">
+				<div className="grid grid-cols-1 gap-8 md:grid-cols-[200px,1fr]">
 					{/* Phase Progress */}
 					<PhaseTimeline data={data} />
 
@@ -142,7 +160,7 @@ function FundingRoundHeaderCard({
 	)
 }
 
-function FundingRoundStatusOverviewCard({
+function FundingRoundStatusOverviewCards({
 	data,
 }: {
 	data: StartedFundingRoundWithPhases
@@ -156,96 +174,104 @@ function FundingRoundStatusOverviewCard({
 					].endDate,
 				)
 
+	const cards = [
+		{
+			label: 'Proposals Submitted',
+			value: data.proposalsCount,
+			icon: FileTextIcon,
+		},
+		{
+			label: 'Total $MINA Funding',
+			value: data.totalBudget,
+			icon: CoinsIcon,
+		},
+		{
+			label: 'Until End',
+			value: getTimeRemaining(new Date(data.endDate)),
+			icon: ClockIcon,
+		},
+		{
+			label: 'In Phase',
+			value: getTimeRemaining(endDate),
+			icon: TimerIcon,
+		},
+	]
+
 	return (
-		<Card className="bg-muted/50">
-			<CardContent className="pt-6">
-				<h2 className="mb-4 text-xl font-semibold">📊 Funding Round Status</h2>
-				<div className="grid grid-cols-4 gap-4 text-center">
-					<div>
-						<div className="text-4xl font-bold">📝 {data.proposalsCount}</div>
-						<div className="text-sm text-muted-foreground">
-							Proposals Submitted
+		<div className="grid grid-cols-2 gap-4 md:grid-cols-4">
+			{cards.map(({ label, value, icon: Icon }) => (
+				<div
+					key={label}
+					className="rounded-md border border-border bg-muted p-4"
+				>
+					<div className="flex items-center gap-2">
+						<div className="rounded-full bg-secondary/20 p-2">
+							<Icon className="h-6 w-6 text-secondary" />
 						</div>
-					</div>
-					<div>
-						<div className="text-4xl font-bold">💰 {data.totalBudget}</div>
-						<div className="text-sm text-muted-foreground">
-							Total $MINA Funding
-						</div>
-					</div>
-					<div>
-						<div className="text-4xl font-bold">
-							{getTimeRemainingWithEmoji(new Date(data.endDate)).emoji}{' '}
-							{getTimeRemainingWithEmoji(new Date(data.endDate)).text}
-						</div>
-						<div className="text-sm text-muted-foreground">Until End</div>
-					</div>
-					<div>
-						<div className="text-4xl font-bold">
-							{getTimeRemainingWithEmoji(endDate).emoji}
-							{getTimeRemainingWithEmoji(endDate).text}
-						</div>
-						<div className="text-sm text-muted-foreground">
-							In {data.phase} Phase
+						<div>
+							<p className="text-lg font-bold">{value}</p>
+							<p className="text-sm text-muted-foreground">{label}</p>
 						</div>
 					</div>
 				</div>
-			</CardContent>
-		</Card>
+			))}
+		</div>
 	)
 }
 
 function PhaseTimeline({ data }: { data: StartedFundingRoundWithPhases }) {
 	return (
 		<div className="space-y-4">
-			{STARTED_PHASES.map((phase, index) => {
-				const isActive = data.phase === phase
-				const isCompleted =
-					data.phase === 'COMPLETED' ||
-					index < STARTED_PHASES.indexOf(data.phase)
+			{STARTED_PHASES.filter(phase => phase !== 'BETWEEN_PHASES').map(
+				(phase, index) => {
+					const isActive = data.phase === phase
+					const isCompleted =
+						data.phase === 'COMPLETED' ||
+						index < STARTED_PHASES.indexOf(data.phase)
 
-				return (
-					<div key={phase as string} className="relative">
-						{/* Timeline connector */}
-						{index > 0 && (
+					return (
+						<div key={phase as string} className="relative">
+							{/* Timeline connector */}
+							{index > 0 && (
+								<div
+									className={cn(
+										'absolute -top-4 left-4 h-4 w-0.5',
+										isCompleted ? 'bg-secondary' : 'bg-muted-foreground/20',
+									)}
+								/>
+							)}
+
 							<div
 								className={cn(
-									'absolute -top-4 left-4 h-4 w-0.5',
-									isCompleted ? 'bg-secondary' : 'bg-muted-foreground/20',
+									'relative rounded-md p-3 font-medium capitalize',
+									isCompleted && 'bg-secondary/10 text-secondary',
+									isActive && 'bg-secondary text-secondary-foreground',
+									!isActive && !isCompleted && 'text-muted-foreground',
 								)}
-							/>
-						)}
-
-						<div
-							className={cn(
-								'relative rounded-md p-3 font-medium capitalize',
-								isCompleted && 'bg-secondary/10 text-secondary',
-								isActive && 'bg-secondary text-secondary-foreground',
-								!isActive && !isCompleted && 'text-muted-foreground',
-							)}
-						>
-							{/* Phase icon */}
-							<span className="mr-2">
-								{phase === 'SUBMISSION' && '📝'}
-								{phase === 'CONSIDERATION' && '🤔'}
-								{phase === 'DELIBERATION' && '💭'}
-								{phase === 'VOTING' && '🗳️'}
-								{phase === 'COMPLETED' && '🏁'}
-							</span>
-
-							{/* Phase name */}
-							{phase}
-
-							{/* Completion indicator */}
-							{isCompleted && (
-								<span className="absolute right-2 top-1/2 -translate-y-1/2 text-secondary">
-									✓
+							>
+								{/* Phase icon */}
+								<span className="mr-2">
+									{phase === 'SUBMISSION' && '📝'}
+									{phase === 'CONSIDERATION' && '🤔'}
+									{phase === 'DELIBERATION' && '💭'}
+									{phase === 'VOTING' && '🗳️'}
+									{phase === 'COMPLETED' && '🏁'}
 								</span>
-							)}
+
+								{/* Phase name */}
+								{phase}
+
+								{/* Completion indicator */}
+								{isCompleted && (
+									<span className="absolute right-2 top-1/2 -translate-y-1/2 text-secondary">
+										✓
+									</span>
+								)}
+							</div>
 						</div>
-					</div>
-				)
-			})}
+					)
+				},
+			)}
 		</div>
 	)
 }
@@ -322,51 +348,25 @@ function FundingRoundPhaseComponent({
 	}
 }
 
-const getTimeRemainingWithEmoji = (
-	date: Date,
-): { text: string; emoji: string } => {
-	const now = new Date()
-	const diff = date.getTime() - now.getTime()
+function getTimeRemaining(date: Date): string {
+	const now = Date.now()
+	const diff = date.getTime() - now
 
-	// For time that has passed
+	// Time already passed
 	if (diff < 0) {
-		return {
-			text: 'Ended',
-			emoji: '🏁',
-		}
+		return 'Ended'
 	}
 
+	// Calculate days, hours, minutes
 	const days = Math.floor(diff / (1000 * 60 * 60 * 24))
 	const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60))
 	const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60))
 
-	// More than 7 days
-	if (days > 7) {
-		return {
-			text: `${days}d ${hours}h`,
-			emoji: '📅',
-		}
-	}
-
-	// 1-7 days
 	if (days > 0) {
-		return {
-			text: `${days}d ${hours}h`,
-			emoji: '⏳',
-		}
+		return `${days}d ${hours}h`
 	}
-
-	// Less than 24 hours
 	if (hours > 0) {
-		return {
-			text: `${hours}h ${minutes}m`,
-			emoji: '⌛',
-		}
+		return `${hours}h ${minutes}m`
 	}
-
-	// Less than 1 hour
-	return {
-		text: `${minutes}m`,
-		emoji: '⚡',
-	}
+	return `${minutes}m`
 }
