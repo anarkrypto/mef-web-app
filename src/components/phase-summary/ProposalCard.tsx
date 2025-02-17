@@ -78,12 +78,12 @@ const getProposalStatus = (proposal: ProposalVote) => {
   
   const hasMovedForward = ['DELIBERATION', 'VOTING', 'APPROVED'].includes(proposal.status);
   return hasMovedForward ? {
-    label: 'Moving Forward',
+    label: 'Approved',
     bgColor: 'bg-emerald-50/50 hover:bg-emerald-50/80',
     borderColor: 'border-emerald-200/50',
     textColor: 'text-emerald-600'
   } : {
-    label: 'Not Moving Forward',
+    label: 'Rejected',
     bgColor: 'bg-rose-50/50 hover:bg-rose-50/80',
     borderColor: 'border-rose-200/50',
     textColor: 'text-rose-600'
