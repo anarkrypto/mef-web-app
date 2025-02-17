@@ -113,12 +113,9 @@ function FundingRoundsTabs() {
 		<Tabs
 			defaultValue={tab}
 			onValueChange={handleTabChange}
-			className="w-[400px]"
+			className="w-full max-w-[420px]"
 		>
-			<TabsList
-				className="grid h-11 w-full grid-cols-2"
-				onChange={() => console.log('changed')}
-			>
+			<TabsList className="grid h-11 w-full grid-cols-2">
 				<TabsTrigger value="details" className="text-base">
 					Rounds List
 				</TabsTrigger>
@@ -191,7 +188,7 @@ function FundingRoundsControls({ disabled }: { disabled?: boolean }) {
 					value={searchQuery}
 					onKeyDown={handleSearchKeyDown}
 					onChange={e => setSearchQuery(e.target.value)}
-					className="w-full pl-9"
+					className="w- max-w-[420px] pl-9"
 					disabled={disabled}
 				/>
 			</form>
