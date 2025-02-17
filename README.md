@@ -155,7 +155,7 @@ The platform supports multiple authentication sources:
 3. **User Resolution**:
    ```typescript
    // User ID derivation
-   userId = UUIDv5(authSource.type + authSource.id);
+   userId = UUIDv5(authSource.type + authSource.id)
    ```
 
 ### Account Linking
@@ -171,9 +171,9 @@ Users can link multiple authentication sources:
 2. **Implementation**:
    ```typescript
    interface User {
-     id: string; // Derived from auth source
-     linkId: string; // Shared between linked accounts
-     metadata: Json; // Auth source info
+   	id: string // Derived from auth source
+   	linkId: string // Shared between linked accounts
+   	metadata: Json // Auth source info
    }
    ```
 
@@ -182,6 +182,7 @@ Users can link multiple authentication sources:
 Bree.js is for running background tasks in separate threads:
 
 1. **Worker Structure**:
+
    ```
    src/
      tasks/           # TypeScript worker files
@@ -193,12 +194,14 @@ Bree.js is for running background tasks in separate threads:
    ```
 
 2. **Build Process**:
+
    - Workers are compiled from TypeScript to JavaScript
    - ESM compatibility layer is added for module support
    - Dependencies are bundled with the worker
    - Output is placed in `dist/tasks/`
 
 3. **Available Scripts**:
+
    ```bash
    # Build workers only
    npm run build:workers
@@ -208,6 +211,7 @@ Bree.js is for running background tasks in separate threads:
    ```
 
 4. **Implementation**:
+
    - Workers are initialized in API routes
    - Each worker runs in isolation
    - Communication via worker_threads
@@ -223,6 +227,7 @@ Bree.js is for running background tasks in separate threads:
 Each funding round has two unique identifiers:
 
 1. **UUID Identifier (`id`)**:
+
    - Primary identifier used throughout most of the application
    - UUID v4 format
    - Used in API routes and database relations
@@ -235,14 +240,12 @@ Each funding round has two unique identifiers:
 
 The dual identifier system exists because during the development of the voting phase, it became apparent that using UUIDs in blockchain transaction memos would consume too much space. The `mefId` was introduced as a more space-efficient alternative.
 
-
 **Future Considerations**:
+
 - Both identifiers can be used interchangeably throughout the application
 - Long-term plan may involve transitioning away from UUIDs to exclusively use `mefId`
-- Such transition would require  refactoring of existing codebase
+- Such transition would require refactoring of existing codebase
 - For now, both systems coexist to maintain backward compatibility while achieving the goal of compressed memos
-
-
 
 ## API Routes
 

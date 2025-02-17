@@ -1,414 +1,492 @@
 'use client'
 
 import { useState, useCallback, useMemo } from 'react'
-import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
+import {
+	Card,
+	CardHeader,
+	CardTitle,
+	CardDescription,
+	CardContent,
+	CardFooter,
+} from '@/components/ui/card'
+import { Button } from '@/components/ui/button'
+import { Badge } from '@/components/ui/badge'
 import { ChevronRight, ChevronDown } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useDeliberationPhase, useDeliberationVote } from '@/hooks'
-import { DeliberationDialog } from "@/components/dialogs/DeliberationDialog"
+import { DeliberationDialog } from '@/components/dialogs/DeliberationDialog'
 import Link from 'next/link'
-import type { DeliberationProposal, DeliberationComment, DeliberationVote } from '@/types/deliberation'
-import { ReviewerComments } from "@/components/ReviewerComments"
-import { useAuth } from "@/contexts/AuthContext"
+import type {
+	DeliberationProposal,
+	DeliberationComment,
+	DeliberationVote,
+} from '@/types/deliberation'
+import { ReviewerComments } from '@/components/ReviewerComments'
+import { useAuth } from '@/contexts/AuthContext'
 import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from "@/components/ui/accordion";
-import { MessageSquare, ExternalLink, Clock } from 'lucide-react';
-import ReactMarkdown from 'react-markdown';
+	Accordion,
+	AccordionContent,
+	AccordionItem,
+	AccordionTrigger,
+} from '@/components/ui/accordion'
+import { MessageSquare, ExternalLink, Clock } from 'lucide-react'
+import ReactMarkdown from 'react-markdown'
 
 interface Props {
-  fundingRoundId: string;
-  fundingRoundName: string;
+	fundingRoundId: string
+	fundingRoundName: string
 }
 
 interface DialogState {
-  open: boolean;
-  proposalId?: number;
-  mode?: 'recommend' | 'not-recommend' | 'community';
-  existingVote?: DeliberationVote;
+	open: boolean
+	proposalId?: number
+	mode?: 'recommend' | 'not-recommend' | 'community'
+	existingVote?: DeliberationVote
 }
 
 export function DeliberationPhase({ fundingRoundId, fundingRoundName }: Props) {
-  const { user } = useAuth()
-  const { proposals, loading, setProposals, pendingCount, totalCount, setPendingCount, setTotalCount } = useDeliberationPhase(fundingRoundId)
-  const [expanded, setExpanded] = useState<Record<number, boolean>>({})
-  const [dialogProps, setDialogProps] = useState<DialogState>({ open: false })
-  
-  const toggleExpanded = (proposalId: number) => {
-    setExpanded(prev => ({
-      ...prev,
-      [proposalId]: !prev[proposalId]
-    }))
-  }
+	const { user } = useAuth()
+	const {
+		proposals,
+		loading,
+		setProposals,
+		pendingCount,
+		totalCount,
+		setPendingCount,
+		setTotalCount,
+	} = useDeliberationPhase(fundingRoundId)
+	const [expanded, setExpanded] = useState<Record<number, boolean>>({})
+	const [dialogProps, setDialogProps] = useState<DialogState>({ open: false })
 
-  const { submitVote, isLoading } = useDeliberationVote();
+	const toggleExpanded = (proposalId: number) => {
+		setExpanded(prev => ({
+			...prev,
+			[proposalId]: !prev[proposalId],
+		}))
+	}
 
-  // Sort proposals - pending first, then voted
-  const sortedProposals = useMemo(() => {
-    return [...proposals].sort((a, b) => {
-      if (!a.userDeliberation && b.userDeliberation) return -1;
-      if (a.userDeliberation && !b.userDeliberation) return 1;
-      return 0;
-    });
-  }, [proposals]);
+	const { submitVote, isLoading } = useDeliberationVote()
 
-  const handleSubmit = async (feedback: string, recommendation?: boolean) => {
-    if (!dialogProps.proposalId || !user) return;
+	// Sort proposals - pending first, then voted
+	const sortedProposals = useMemo(() => {
+		return [...proposals].sort((a, b) => {
+			if (!a.userDeliberation && b.userDeliberation) return -1
+			if (a.userDeliberation && !b.userDeliberation) return 1
+			return 0
+		})
+	}, [proposals])
 
-    try {
-      const response = await submitVote(
-        dialogProps.proposalId,
-        feedback,
-        recommendation
-      );
+	const handleSubmit = async (feedback: string, recommendation?: boolean) => {
+		if (!dialogProps.proposalId || !user) return
 
-      setProposals(prevProposals => {
-        return prevProposals.map(proposal => {
-          if (proposal.id !== dialogProps.proposalId) {
-            return proposal;
-          }
+		try {
+			const response = await submitVote(
+				dialogProps.proposalId,
+				feedback,
+				recommendation,
+			)
 
-          // Create new comment object with proper date handling
-          const newComment: DeliberationComment = {
-            id: response.id,
-            feedback,
-            recommendation: proposal.isReviewerEligible ? recommendation : undefined,
-            createdAt: new Date(), // This ensures it's a proper Date object
-            isReviewerComment: Boolean(proposal.isReviewerEligible),
-            ...(proposal.isReviewerEligible ? {
-              reviewer: {
-                username: user.metadata.username
-              }
-            } : {})
-          };
+			setProposals(prevProposals => {
+				return prevProposals.map(proposal => {
+					if (proposal.id !== dialogProps.proposalId) {
+						return proposal
+					}
 
-          // Update comments list with proper date handling
-          let updatedComments = [...proposal.reviewerComments];
-          const existingCommentIndex = updatedComments.findIndex(
-            c => (c.isReviewerComment && c.reviewer?.username === user.metadata.username) ||
-                 (!c.isReviewerComment && !c.reviewer?.username)
-          );
+					// Create new comment object with proper date handling
+					const newComment: DeliberationComment = {
+						id: response.id,
+						feedback,
+						recommendation: proposal.isReviewerEligible
+							? recommendation
+							: undefined,
+						createdAt: new Date(), // This ensures it's a proper Date object
+						isReviewerComment: Boolean(proposal.isReviewerEligible),
+						...(proposal.isReviewerEligible
+							? {
+									reviewer: {
+										username: user.metadata.username,
+									},
+								}
+							: {}),
+					}
 
-          if (existingCommentIndex !== -1) {
-            updatedComments[existingCommentIndex] = newComment;
-          } else {
-            updatedComments = [...updatedComments, newComment];
-          }
+					// Update comments list with proper date handling
+					let updatedComments = [...proposal.reviewerComments]
+					const existingCommentIndex = updatedComments.findIndex(
+						c =>
+							(c.isReviewerComment &&
+								c.reviewer?.username === user.metadata.username) ||
+							(!c.isReviewerComment && !c.reviewer?.username),
+					)
 
-          // Ensure all dates are Date objects before sorting
-          updatedComments = updatedComments.map(comment => ({
-            ...comment,
-            createdAt: new Date(comment.createdAt)
-          }));
+					if (existingCommentIndex !== -1) {
+						updatedComments[existingCommentIndex] = newComment
+					} else {
+						updatedComments = [...updatedComments, newComment]
+					}
 
-          // Sort comments
-          updatedComments.sort((a, b) => 
-            b.createdAt.getTime() - a.createdAt.getTime()
-          );
+					// Ensure all dates are Date objects before sorting
+					updatedComments = updatedComments.map(comment => ({
+						...comment,
+						createdAt: new Date(comment.createdAt),
+					}))
 
-          return {
-            ...proposal,
-            userDeliberation: {
-              feedback,
-              recommendation,
-              createdAt: new Date(),
-              isReviewerVote: Boolean(proposal.isReviewerEligible)
-            },
-            hasVoted: true,
-            reviewerComments: updatedComments
-          };
-        });
-      });
+					// Sort comments
+					updatedComments.sort(
+						(a, b) => b.createdAt.getTime() - a.createdAt.getTime(),
+					)
 
-      setDialogProps({ open: false });
-    } catch (error) {
-      console.error("Failed to submit vote:", error);
-    }
-  };
+					return {
+						...proposal,
+						userDeliberation: {
+							feedback,
+							recommendation,
+							createdAt: new Date(),
+							isReviewerVote: Boolean(proposal.isReviewerEligible),
+						},
+						hasVoted: true,
+						reviewerComments: updatedComments,
+					}
+				})
+			})
 
-  const openEditDialog = (proposal: DeliberationProposal) => {
-    const mode = proposal.isReviewerEligible 
-      ? proposal.userDeliberation?.recommendation 
-        ? 'recommend' 
-        : 'not-recommend'
-      : 'community';
+			setDialogProps({ open: false })
+		} catch (error) {
+			console.error('Failed to submit vote:', error)
+		}
+	}
 
-    setDialogProps({
-      open: true,
-      proposalId: proposal.id,
-      mode,
-      existingVote: proposal.userDeliberation
-    });
-  };
+	const openEditDialog = (proposal: DeliberationProposal) => {
+		const mode = proposal.isReviewerEligible
+			? proposal.userDeliberation?.recommendation
+				? 'recommend'
+				: 'not-recommend'
+			: 'community'
 
-  const renderVoteStatus = (proposal: DeliberationProposal) => {
-    if (!proposal.userDeliberation) return null;
+		setDialogProps({
+			open: true,
+			proposalId: proposal.id,
+			mode,
+			existingVote: proposal.userDeliberation,
+		})
+	}
 
-    if (proposal.isReviewerEligible) {
-      return (
-        <Badge variant={proposal.userDeliberation.recommendation ? 'default' : 'destructive'}>
-          {proposal.userDeliberation.recommendation ? '✅ Recommended' : '❌ Not Recommended'}
-        </Badge>
-      );
-    }
+	const renderVoteStatus = (proposal: DeliberationProposal) => {
+		if (!proposal.userDeliberation) return null
 
-    return (
-      <Badge variant="secondary">
-        💭 Deliberation Submitted
-      </Badge>
-    );
-  };
+		if (proposal.isReviewerEligible) {
+			return (
+				<Badge
+					variant={
+						proposal.userDeliberation.recommendation ? 'default' : 'destructive'
+					}
+				>
+					{proposal.userDeliberation.recommendation
+						? '✅ Recommended'
+						: '❌ Not Recommended'}
+				</Badge>
+			)
+		}
 
-  const renderActionButtons = (proposal: DeliberationProposal) => {
-    if (proposal.userDeliberation) {
-      return (
-        <Button
-          variant="outline"
-          onClick={() => openEditDialog(proposal)}
-        >
-          ✏️ Edit {proposal.isReviewerEligible ? 'Review' : 'Deliberation'}
-        </Button>
-      );
-    }
+		return <Badge variant="secondary">💭 Deliberation Submitted</Badge>
+	}
 
-    if (proposal.isReviewerEligible) {
-      return (
-        <>
-          <Button
-            variant="default"
-            className="bg-green-600 hover:bg-green-700"
-            onClick={() => setDialogProps({
-              open: true,
-              proposalId: proposal.id,
-              mode: 'recommend'
-            })}
-          >
-            ✅ Recommend for Vote
-          </Button>
-          <Button
-            variant="destructive"
-            onClick={() => setDialogProps({
-              open: true,
-              proposalId: proposal.id,
-              mode: 'not-recommend'
-            })}
-          >
-            ❌ Not Recommend
-          </Button>
-        </>
-      );
-    }
+	const renderActionButtons = (proposal: DeliberationProposal) => {
+		if (proposal.userDeliberation) {
+			return (
+				<Button variant="outline" onClick={() => openEditDialog(proposal)}>
+					✏️ Edit {proposal.isReviewerEligible ? 'Review' : 'Deliberation'}
+				</Button>
+			)
+		}
 
-    return (
-      <Button
-        variant="secondary"
-        onClick={() => setDialogProps({
-          open: true,
-          proposalId: proposal.id,
-          mode: 'community'
-        })}
-      >
-        💭 Deliberate
-      </Button>
-    );
-  };
+		if (proposal.isReviewerEligible) {
+			return (
+				<>
+					<Button
+						variant="default"
+						className="bg-green-600 hover:bg-green-700"
+						onClick={() =>
+							setDialogProps({
+								open: true,
+								proposalId: proposal.id,
+								mode: 'recommend',
+							})
+						}
+					>
+						✅ Recommend for Vote
+					</Button>
+					<Button
+						variant="destructive"
+						onClick={() =>
+							setDialogProps({
+								open: true,
+								proposalId: proposal.id,
+								mode: 'not-recommend',
+							})
+						}
+					>
+						❌ Not Recommend
+					</Button>
+				</>
+			)
+		}
 
-  if (loading) {
-    return (
-      <div className="container mx-auto p-6 max-w-7xl">
-        <Card>
-          <CardContent className="p-6">
-            <div className="text-center">
-              Loading proposals...
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-    )
-  }
+		return (
+			<Button
+				variant="secondary"
+				onClick={() =>
+					setDialogProps({
+						open: true,
+						proposalId: proposal.id,
+						mode: 'community',
+					})
+				}
+			>
+				💭 Deliberate
+			</Button>
+		)
+	}
 
-  return (
-    <div className="container mx-auto p-6 max-w-7xl">
-      <div className="space-y-8">
-        <div>
-          <h1 className="text-3xl font-bold">
-            💭 Deliberation Phase: {fundingRoundName}
-            <span className="ml-2 text-lg font-normal text-muted-foreground">
-              ({pendingCount} pending, {totalCount} total)
-            </span>
-          </h1>
-        </div>
+	if (loading) {
+		return (
+			<div className="container mx-auto max-w-7xl p-6">
+				<Card>
+					<CardContent className="p-6">
+						<div className="text-center">Loading proposals...</div>
+					</CardContent>
+				</Card>
+			</div>
+		)
+	}
 
-        <div className="space-y-6">
-          {sortedProposals.map((proposal: DeliberationProposal) => (
-            <Card key={proposal.id} className={cn(
-              "hover:bg-muted/50 transition-colors",
-              proposal.userDeliberation && "bg-muted/10"
-            )}>
-              <CardHeader>
-                <div className="flex items-start justify-between">
-                  <div>
-                    <CardTitle className="text-2xl">{proposal.proposalName}</CardTitle>
-                    <CardDescription>
-                      👤 Submitted by {proposal.submitter}
-                    </CardDescription>
-                  </div>
-                  {renderVoteStatus(proposal)}
-                </div>
-              </CardHeader>
-              
-              <CardContent className="space-y-4">
-                <div>
-                  <h3 className="text-xl font-semibold mb-2">Abstract</h3>
-                  {expanded[proposal.id] ? (
-                    <>
-                      <p className="text-muted-foreground mb-4">{proposal.abstract}</p>
-                      <div className="space-y-4"> 
-                        <div>
-                          <h3 className="text-xl font-semibold mb-2">Motivation</h3>
-                          <p className="text-muted-foreground">{proposal.motivation}</p>
-                        </div>
-                        <div>
-                          <h3 className="text-xl font-semibold mb-2">Rationale</h3>
-                          <p className="text-muted-foreground">{proposal.rationale}</p>
-                        </div>
-                        <div>
-                          <h3 className="text-xl font-semibold mb-2">Delivery Requirements</h3>
-                          <p className="text-muted-foreground">{proposal.deliveryRequirements}</p>
-                        </div>
-                        <div>
-                          <h3 className="text-xl font-semibold mb-2">Security & Performance</h3>
-                          <p className="text-muted-foreground">{proposal.securityAndPerformance}</p>
-                        </div>
-                        <div>
-                          <h3 className="text-xl font-semibold mb-2">Budget Request</h3>
-                          <p className="text-muted-foreground">
-                            {proposal.budgetRequest.toLocaleString()} MINA
-                          </p>
-                        </div>
-                        <div>
-                          <h3 className="text-xl font-semibold mb-2">Contact Information</h3>
-                          <div className="space-y-2">
-                            {/* Show Discord info if author is a Discord user */}
-                            {proposal.submitterMetadata?.authSource?.type === 'discord' ? (
-                              <p className="text-muted-foreground">
-                                Discord: {proposal.submitterMetadata.authSource.username}
-                              </p>
-                            ) : (
-                              /* Check for linked Discord account */
-                              proposal.submitterMetadata?.linkedAccounts?.some(account => 
-                                account.authSource.type === 'discord'
-                              ) ? (
-                                <p className="text-muted-foreground">
-                                  Discord: {proposal.submitterMetadata.linkedAccounts.find(account => 
-                                    account.authSource.type === 'discord'
-                                  )?.authSource.username} (linked account)
-                                </p>
-                              ) : (
-                                <p className="text-muted-foreground text-sm italic">
-                                  No Discord account linked
-                                </p>
-                              )
-                            )}
-                            <p className="text-muted-foreground">Email: {proposal.email}</p>
-                          </div>
-                        </div>
-                      </div>
-                    </>
-                  ) : (
-                    <p className="text-muted-foreground line-clamp-3">{proposal.abstract}</p>
-                  )}
-                </div>
+	return (
+		<div className="container mx-auto max-w-7xl p-6">
+			<div className="space-y-8">
+				<div>
+					<h1 className="text-3xl font-bold">
+						💭 Deliberation Phase: {fundingRoundName}
+						<span className="ml-2 text-lg font-normal text-muted-foreground">
+							({pendingCount} pending, {totalCount} total)
+						</span>
+					</h1>
+				</div>
 
-                {proposal.userDeliberation && (
-                  <div className="bg-muted p-4 rounded-lg">
-                    <h4 className="font-medium mb-2">Your Deliberation:</h4>
-                    <p className="text-muted-foreground">{proposal.userDeliberation.feedback}</p>
-                  </div>
-                )}
-                {proposal.gptSurveySummary && (
-                          <Accordion type="single" collapsible>
-                            <AccordionItem value="summary">
-                              <AccordionTrigger className="flex items-center gap-2">
-                                <MessageSquare className="h-4 w-4" />
-                                <span className="font-semibold">Community Deliberation Summary</span>
-                              </AccordionTrigger>
-                              <AccordionContent>
-                                <div className="space-y-4 p-4 bg-muted/50 rounded-lg">
-                                  <div className="text-xs text-muted-foreground flex items-center gap-1.5">
-                                    <Clock className="h-3.5 w-3.5" />
-                                    Last updated: {new Date(proposal.gptSurveySummary.summaryUpdatedAt).toLocaleString()}
-                                  </div>
-                                  <div className="prose prose-sm dark:prose-invert max-w-none">
-                                    <ReactMarkdown>{proposal.gptSurveySummary.summary}</ReactMarkdown>
-                                  </div>
-                                </div>
-                              </AccordionContent>
-                            </AccordionItem>
-                          </Accordion>
-                        )}
-                {expanded[proposal.id] && proposal.reviewerComments.length > 0 && (
-                  <ReviewerComments 
-                    comments={proposal.reviewerComments}
-                  />
-                )}
-              </CardContent>
+				<div className="space-y-6">
+					{sortedProposals.map((proposal: DeliberationProposal) => (
+						<Card
+							key={proposal.id}
+							className={cn(
+								'transition-colors hover:bg-muted/50',
+								proposal.userDeliberation && 'bg-muted/10',
+							)}
+						>
+							<CardHeader>
+								<div className="flex items-start justify-between">
+									<div>
+										<CardTitle className="text-2xl">
+											{proposal.proposalName}
+										</CardTitle>
+										<CardDescription>
+											👤 Submitted by {proposal.submitter}
+										</CardDescription>
+									</div>
+									{renderVoteStatus(proposal)}
+								</div>
+							</CardHeader>
 
-              <CardFooter className="flex justify-between items-center">
-                <div className="flex items-center gap-4">
-                  <Button 
-                    variant="ghost" 
-                    className="gap-2"
-                    onClick={() => toggleExpanded(proposal.id)}
-                  >
-                    {expanded[proposal.id] ? (
-                      <>
-                        See less
-                        <ChevronDown className="h-4 w-4" />
-                      </>
-                    ) : (
-                      <>
-                        See more
-                        <ChevronRight className="h-4 w-4" />
-                      </>
-                    )}
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="gap-2"
-                    asChild
-                  >
-                    <Link href={`/proposals/${proposal.id}`} target="_blank" rel="noopener noreferrer">
-                      View Proposal Page
-                      <ExternalLink className="h-4 w-4" />
-                    </Link>
-                  </Button>
-                </div>
+							<CardContent className="space-y-4">
+								<div>
+									<h3 className="mb-2 text-xl font-semibold">Abstract</h3>
+									{expanded[proposal.id] ? (
+										<>
+											<p className="mb-4 text-muted-foreground">
+												{proposal.abstract}
+											</p>
+											<div className="space-y-4">
+												<div>
+													<h3 className="mb-2 text-xl font-semibold">
+														Motivation
+													</h3>
+													<p className="text-muted-foreground">
+														{proposal.motivation}
+													</p>
+												</div>
+												<div>
+													<h3 className="mb-2 text-xl font-semibold">
+														Rationale
+													</h3>
+													<p className="text-muted-foreground">
+														{proposal.rationale}
+													</p>
+												</div>
+												<div>
+													<h3 className="mb-2 text-xl font-semibold">
+														Delivery Requirements
+													</h3>
+													<p className="text-muted-foreground">
+														{proposal.deliveryRequirements}
+													</p>
+												</div>
+												<div>
+													<h3 className="mb-2 text-xl font-semibold">
+														Security & Performance
+													</h3>
+													<p className="text-muted-foreground">
+														{proposal.securityAndPerformance}
+													</p>
+												</div>
+												<div>
+													<h3 className="mb-2 text-xl font-semibold">
+														Budget Request
+													</h3>
+													<p className="text-muted-foreground">
+														{proposal.budgetRequest.toLocaleString()} MINA
+													</p>
+												</div>
+												<div>
+													<h3 className="mb-2 text-xl font-semibold">
+														Contact Information
+													</h3>
+													<div className="space-y-2">
+														{/* Show Discord info if author is a Discord user */}
+														{proposal.submitterMetadata?.authSource?.type ===
+														'discord' ? (
+															<p className="text-muted-foreground">
+																Discord:{' '}
+																{proposal.submitterMetadata.authSource.username}
+															</p>
+														) : /* Check for linked Discord account */
+														proposal.submitterMetadata?.linkedAccounts?.some(
+																account =>
+																	account.authSource.type === 'discord',
+														  ) ? (
+															<p className="text-muted-foreground">
+																Discord:{' '}
+																{
+																	proposal.submitterMetadata.linkedAccounts.find(
+																		account =>
+																			account.authSource.type === 'discord',
+																	)?.authSource.username
+																}{' '}
+																(linked account)
+															</p>
+														) : (
+															<p className="text-sm italic text-muted-foreground">
+																No Discord account linked
+															</p>
+														)}
+														<p className="text-muted-foreground">
+															Email: {proposal.email}
+														</p>
+													</div>
+												</div>
+											</div>
+										</>
+									) : (
+										<p className="line-clamp-3 text-muted-foreground">
+											{proposal.abstract}
+										</p>
+									)}
+								</div>
 
-                <div className="flex items-center gap-4">
-                  {renderActionButtons(proposal)}
-                </div>
-              </CardFooter>
-            </Card>
-          ))}
-        </div>
-      </div>
+								{proposal.userDeliberation && (
+									<div className="rounded-lg bg-muted p-4">
+										<h4 className="mb-2 font-medium">Your Deliberation:</h4>
+										<p className="text-muted-foreground">
+											{proposal.userDeliberation.feedback}
+										</p>
+									</div>
+								)}
+								{proposal.gptSurveySummary && (
+									<Accordion type="single" collapsible>
+										<AccordionItem value="summary">
+											<AccordionTrigger className="flex items-center gap-2">
+												<MessageSquare className="h-4 w-4" />
+												<span className="font-semibold">
+													Community Deliberation Summary
+												</span>
+											</AccordionTrigger>
+											<AccordionContent>
+												<div className="space-y-4 rounded-lg bg-muted/50 p-4">
+													<div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+														<Clock className="h-3.5 w-3.5" />
+														Last updated:{' '}
+														{new Date(
+															proposal.gptSurveySummary.summaryUpdatedAt,
+														).toLocaleString()}
+													</div>
+													<div className="prose prose-sm dark:prose-invert max-w-none">
+														<ReactMarkdown>
+															{proposal.gptSurveySummary.summary}
+														</ReactMarkdown>
+													</div>
+												</div>
+											</AccordionContent>
+										</AccordionItem>
+									</Accordion>
+								)}
+								{expanded[proposal.id] &&
+									proposal.reviewerComments.length > 0 && (
+										<ReviewerComments comments={proposal.reviewerComments} />
+									)}
+							</CardContent>
 
-      <DeliberationDialog
-        open={dialogProps.open}
-        onOpenChange={(open: boolean) => setDialogProps({ ...dialogProps, open })}
-        proposalId={dialogProps.proposalId!}
-        isReviewer={proposals.find((p: DeliberationProposal) => p.id === dialogProps.proposalId)?.isReviewerEligible ?? false}
-        mode={dialogProps.mode!}
-        existingVote={dialogProps.existingVote}
-        onSubmit={handleSubmit}
-      />
-    </div>
-  )
-} 
+							<CardFooter className="flex items-center justify-between">
+								<div className="flex items-center gap-4">
+									<Button
+										variant="ghost"
+										className="gap-2"
+										onClick={() => toggleExpanded(proposal.id)}
+									>
+										{expanded[proposal.id] ? (
+											<>
+												See less
+												<ChevronDown className="h-4 w-4" />
+											</>
+										) : (
+											<>
+												See more
+												<ChevronRight className="h-4 w-4" />
+											</>
+										)}
+									</Button>
+									<Button variant="ghost" size="sm" className="gap-2" asChild>
+										<Link
+											href={`/proposals/${proposal.id}`}
+											target="_blank"
+											rel="noopener noreferrer"
+										>
+											View Proposal Page
+											<ExternalLink className="h-4 w-4" />
+										</Link>
+									</Button>
+								</div>
+
+								<div className="flex items-center gap-4">
+									{renderActionButtons(proposal)}
+								</div>
+							</CardFooter>
+						</Card>
+					))}
+				</div>
+			</div>
+
+			<DeliberationDialog
+				open={dialogProps.open}
+				onOpenChange={(open: boolean) =>
+					setDialogProps({ ...dialogProps, open })
+				}
+				proposalId={dialogProps.proposalId!}
+				isReviewer={
+					proposals.find(
+						(p: DeliberationProposal) => p.id === dialogProps.proposalId,
+					)?.isReviewerEligible ?? false
+				}
+				mode={dialogProps.mode!}
+				existingVote={dialogProps.existingVote}
+				onSubmit={handleSubmit}
+			/>
+		</div>
+	)
+}

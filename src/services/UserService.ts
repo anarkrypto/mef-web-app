@@ -1,330 +1,333 @@
-import { PrismaClient, User } from "@prisma/client";
-import { deriveUserId, generateLinkId } from "@/lib/user/derive";
-import type { AuthSource } from "@/lib/user/types";
+import { PrismaClient, User } from '@prisma/client'
+import { deriveUserId, generateLinkId } from '@/lib/user/derive'
+import type { AuthSource } from '@/lib/user/types'
 
-type AuthSourceType = AuthSource['type'];
+type AuthSourceType = AuthSource['type']
 
 /**
  * Represents the factual structure of User.metadata in the database.
  */
 export type UserMetadata = {
-  /**
-   * Authentication source information
-   */
-  authSource: {
-    /** The type of authentication provider */
-    type: "discord" | "telegram" | "wallet";
-    /** Unique identifier from the auth provider */
-    id: string;
-    /** Username from the auth provider */
-    username: string;
-  };
-  /** Display username, defaults to authSource.username if not set */
-  username: string;
-  /** ISO timestamp of when the user was created */
-  createdAt: string;
-  /** Additional metadata fields can be added */
-  [key: string]: unknown;
-};
+	/**
+	 * Authentication source information
+	 */
+	authSource: {
+		/** The type of authentication provider */
+		type: 'discord' | 'telegram' | 'wallet'
+		/** Unique identifier from the auth provider */
+		id: string
+		/** Username from the auth provider */
+		username: string
+	}
+	/** Display username, defaults to authSource.username if not set */
+	username: string
+	/** ISO timestamp of when the user was created */
+	createdAt: string
+	/** Additional metadata fields can be added */
+	[key: string]: unknown
+}
 
 interface LinkingRule {
-  allowedTargets: AuthSourceType[];
-  maxConnections: number;
+	allowedTargets: AuthSourceType[]
+	maxConnections: number
 }
 
 interface LinkingRules {
-  [sourceType: string]: LinkingRule;
+	[sourceType: string]: LinkingRule
 }
 
 // Linking rules configuration
 const LINKING_RULES: LinkingRules = {
-  wallet: {
-    allowedTargets: ['discord'],
-    maxConnections: 1, // Wallet can only link to one Discord user
-  },
-  discord: {
-    allowedTargets: ['wallet'],
-    maxConnections: Infinity, // Discord can link to unlimited wallet users
-  },
-  telegram: {
-    allowedTargets: [],
-    maxConnections: 0, // Telegram linking not supported yet
-  },
-} as const;
+	wallet: {
+		allowedTargets: ['discord'],
+		maxConnections: 1, // Wallet can only link to one Discord user
+	},
+	discord: {
+		allowedTargets: ['wallet'],
+		maxConnections: Infinity, // Discord can link to unlimited wallet users
+	},
+	telegram: {
+		allowedTargets: [],
+		maxConnections: 0, // Telegram linking not supported yet
+	},
+} as const
 
 // Helper function to make AuthSource serializable
 function serializeAuthSource(authSource: AuthSource): Record<string, string> {
-  return {
-    type: authSource.type,
-    id: authSource.id,
-    username: authSource.username,
-  };
+	return {
+		type: authSource.type,
+		id: authSource.id,
+		username: authSource.username,
+	}
 }
 
 // Add these types at the top of the file
 interface LinkedUserInfo {
-  id: string;
-  authSource: {
-    type: AuthSourceType;
-    id: string;
-    username: string;
-  };
+	id: string
+	authSource: {
+		type: AuthSourceType
+		id: string
+		username: string
+	}
 }
 
 interface UserInfoResponse {
-  user: {
-    id: string;
-    linkId: string;
-    createdAt: string;
-    metadata: {
-      authSource: {
-        type: AuthSourceType;
-        id: string;
-        username: string;
-      };
-      username: string;
-      [key: string]: unknown;
-    };
-  };
-  linkedAccounts: LinkedUserInfo[];
+	user: {
+		id: string
+		linkId: string
+		createdAt: string
+		metadata: {
+			authSource: {
+				type: AuthSourceType
+				id: string
+				username: string
+			}
+			username: string
+			[key: string]: unknown
+		}
+	}
+	linkedAccounts: LinkedUserInfo[]
 }
 
 export class UserService {
-  constructor(private prisma: PrismaClient) {}
+	constructor(private prisma: PrismaClient) {}
 
-  async findOrCreateUser(authSource: AuthSource): Promise<User> {
-    const userId = deriveUserId(authSource);
-    
-    const existingUser = await this.prisma.user.findUnique({
-      where: { id: userId },
-    });
+	async findOrCreateUser(authSource: AuthSource): Promise<User> {
+		const userId = deriveUserId(authSource)
 
-    if (existingUser) {
-      return existingUser;
-    }
+		const existingUser = await this.prisma.user.findUnique({
+			where: { id: userId },
+		})
 
-    return this.prisma.user.create({
-      data: {
-        id: userId,
-        linkId: generateLinkId(),
-        metadata: {
-          authSource: serializeAuthSource(authSource),
-          username: authSource.username,
-          createdAt: new Date().toISOString(),
-        },
-      },
-    });
-  }
+		if (existingUser) {
+			return existingUser
+		}
 
-  async getLinkedAccounts(userId: string): Promise<User[]> {
-    const user = await this.prisma.user.findUnique({
-      where: { id: userId },
-      select: { linkId: true },
-    });
+		return this.prisma.user.create({
+			data: {
+				id: userId,
+				linkId: generateLinkId(),
+				metadata: {
+					authSource: serializeAuthSource(authSource),
+					username: authSource.username,
+					createdAt: new Date().toISOString(),
+				},
+			},
+		})
+	}
 
-    if (!user?.linkId) {
-      return [];
-    }
+	async getLinkedAccounts(userId: string): Promise<User[]> {
+		const user = await this.prisma.user.findUnique({
+			where: { id: userId },
+			select: { linkId: true },
+		})
 
-    return this.prisma.user.findMany({
-      where: {
-        linkId: user.linkId,
-        NOT: { id: userId },
-      },
-    });
-  }
+		if (!user?.linkId) {
+			return []
+		}
 
-  async linkAccounts(userId: string, targetUserId: string): Promise<boolean> {
-    // Start a transaction
-    return this.prisma.$transaction(async (tx) => {
-      // Get both users
-      const [user1, user2] = await Promise.all([
-        tx.user.findUnique({ where: { id: userId } }),
-        tx.user.findUnique({ where: { id: targetUserId } }),
-      ]);
+		return this.prisma.user.findMany({
+			where: {
+				linkId: user.linkId,
+				NOT: { id: userId },
+			},
+		})
+	}
 
-      if (!user1 || !user2) {
-        return false;
-      }
+	async linkAccounts(userId: string, targetUserId: string): Promise<boolean> {
+		// Start a transaction
+		return this.prisma.$transaction(async tx => {
+			// Get both users
+			const [user1, user2] = await Promise.all([
+				tx.user.findUnique({ where: { id: userId } }),
+				tx.user.findUnique({ where: { id: targetUserId } }),
+			])
 
-      // Generate new linkId if neither user has one
-      const linkId = user1.linkId || user2.linkId || generateLinkId();
+			if (!user1 || !user2) {
+				return false
+			}
 
-      // Update both users with the same linkId
-      await Promise.all([
-        tx.user.update({
-          where: { id: userId },
-          data: { linkId },
-        }),
-        tx.user.update({
-          where: { id: targetUserId },
-          data: { linkId },
-        }),
-      ]);
+			// Generate new linkId if neither user has one
+			const linkId = user1.linkId || user2.linkId || generateLinkId()
 
-      return true;
-    });
-  }
+			// Update both users with the same linkId
+			await Promise.all([
+				tx.user.update({
+					where: { id: userId },
+					data: { linkId },
+				}),
+				tx.user.update({
+					where: { id: targetUserId },
+					data: { linkId },
+				}),
+			])
 
-  private async getAuthSourceFromUser(userId: string): Promise<AuthSource | null> {
-    const user = await this.prisma.user.findUnique({
-      where: { id: userId },
-      select: { metadata: true },
-    });
+			return true
+		})
+	}
 
-    if (!user?.metadata || typeof user.metadata !== 'object') {
-      return null;
-    }
+	private async getAuthSourceFromUser(
+		userId: string,
+	): Promise<AuthSource | null> {
+		const user = await this.prisma.user.findUnique({
+			where: { id: userId },
+			select: { metadata: true },
+		})
 
-    const metadata = user.metadata as { authSource?: Record<string, string> };
-    const authSource = metadata.authSource;
+		if (!user?.metadata || typeof user.metadata !== 'object') {
+			return null
+		}
 
-    if (!authSource || !('type' in authSource)) {
-      return null;
-    }
+		const metadata = user.metadata as { authSource?: Record<string, string> }
+		const authSource = metadata.authSource
 
-    return {
-      type: authSource.type as AuthSourceType,
-      id: authSource.id,
-      username: authSource.username,
-    };
-  }
+		if (!authSource || !('type' in authSource)) {
+			return null
+		}
 
-  private async countExistingLinks(userId: string): Promise<number> {
-    const user = await this.prisma.user.findUnique({
-      where: { id: userId },
-      select: { linkId: true },
-    });
+		return {
+			type: authSource.type as AuthSourceType,
+			id: authSource.id,
+			username: authSource.username,
+		}
+	}
 
-    if (!user?.linkId) return 0;
+	private async countExistingLinks(userId: string): Promise<number> {
+		const user = await this.prisma.user.findUnique({
+			where: { id: userId },
+			select: { linkId: true },
+		})
 
-    const linkedUsers = await this.prisma.user.count({
-      where: {
-        linkId: user.linkId,
-        NOT: { id: userId },
-      },
-    });
+		if (!user?.linkId) return 0
 
-    return linkedUsers;
-  }
+		const linkedUsers = await this.prisma.user.count({
+			where: {
+				linkId: user.linkId,
+				NOT: { id: userId },
+			},
+		})
 
-  async canLink(userId: string, targetUserId: string): Promise<boolean> {
-    // Get auth sources for both users
-    const [sourceAuth, targetAuth] = await Promise.all([
-      this.getAuthSourceFromUser(userId),
-      this.getAuthSourceFromUser(targetUserId),
-    ]);
+		return linkedUsers
+	}
 
-    // If we can't determine auth source for either user, they can't be linked
-    if (!sourceAuth || !targetAuth) {
-      return false;
-    }
+	async canLink(userId: string, targetUserId: string): Promise<boolean> {
+		// Get auth sources for both users
+		const [sourceAuth, targetAuth] = await Promise.all([
+			this.getAuthSourceFromUser(userId),
+			this.getAuthSourceFromUser(targetUserId),
+		])
 
-    // Get linking rules for source user
-    const sourceRules = LINKING_RULES[sourceAuth.type];
-    const targetRules = LINKING_RULES[targetAuth.type];
+		// If we can't determine auth source for either user, they can't be linked
+		if (!sourceAuth || !targetAuth) {
+			return false
+		}
 
-    // Check if target type is allowed for source
-    if (!sourceRules.allowedTargets.includes(targetAuth.type)) {
-      return false;
-    }
+		// Get linking rules for source user
+		const sourceRules = LINKING_RULES[sourceAuth.type]
+		const targetRules = LINKING_RULES[targetAuth.type]
 
-    // Check if source type is allowed for target
-    if (!targetRules.allowedTargets.includes(sourceAuth.type)) {
-      return false;
-    }
+		// Check if target type is allowed for source
+		if (!sourceRules.allowedTargets.includes(targetAuth.type)) {
+			return false
+		}
 
-    // Get existing link counts
-    const [sourceLinks, targetLinks] = await Promise.all([
-      this.countExistingLinks(userId),
-      this.countExistingLinks(targetUserId),
-    ]);
+		// Check if source type is allowed for target
+		if (!targetRules.allowedTargets.includes(sourceAuth.type)) {
+			return false
+		}
 
-    // Check if either user has reached their max connections
-    if (sourceLinks >= sourceRules.maxConnections || 
-        targetLinks >= targetRules.maxConnections) {
-      return false;
-    }
+		// Get existing link counts
+		const [sourceLinks, targetLinks] = await Promise.all([
+			this.countExistingLinks(userId),
+			this.countExistingLinks(targetUserId),
+		])
 
-    // NOTE: No need to check if both users have different linkIds - by default, a new random linkId is generated for each user
+		// Check if either user has reached their max connections
+		if (
+			sourceLinks >= sourceRules.maxConnections ||
+			targetLinks >= targetRules.maxConnections
+		) {
+			return false
+		}
 
-    return true;
-  }
+		// NOTE: No need to check if both users have different linkIds - by default, a new random linkId is generated for each user
 
-  async getUserInfo(userId: string): Promise<UserInfoResponse | null> {
-    const user = await this.prisma.user.findUnique({
-      where: { id: userId },
-      select: {
-        id: true,
-        linkId: true,
-        createdAt: true,
-        metadata: true,
-      },
-    });
+		return true
+	}
 
-    if (!user || !user.metadata || typeof user.metadata !== 'object') {
-      return null;
-    }
+	async getUserInfo(userId: string): Promise<UserInfoResponse | null> {
+		const user = await this.prisma.user.findUnique({
+			where: { id: userId },
+			select: {
+				id: true,
+				linkId: true,
+				createdAt: true,
+				metadata: true,
+			},
+		})
 
-    const metadata = user.metadata as {
-      authSource?: Record<string, string>;
-      username?: string;
-      [key: string]: unknown;
-    };
+		if (!user || !user.metadata || typeof user.metadata !== 'object') {
+			return null
+		}
 
-    if (!metadata.authSource) {
-      return null;
-    }
+		const metadata = user.metadata as {
+			authSource?: Record<string, string>
+			username?: string
+			[key: string]: unknown
+		}
 
-    // Get linked accounts
-    const linkedAccounts = await this.prisma.user.findMany({
-      where: {
-        linkId: user.linkId,
-        NOT: { id: userId },
-      },
-      select: {
-        id: true,
-        metadata: true,
-      },
-    });
+		if (!metadata.authSource) {
+			return null
+		}
 
-    // Transform linked accounts into standardized format
-    const transformedLinkedAccounts: LinkedUserInfo[] = linkedAccounts
-      .map(account => {
-        const accountMetadata = account.metadata as {
-          authSource?: Record<string, string>;
-        };
-        
-        if (!accountMetadata?.authSource) return null;
+		// Get linked accounts
+		const linkedAccounts = await this.prisma.user.findMany({
+			where: {
+				linkId: user.linkId,
+				NOT: { id: userId },
+			},
+			select: {
+				id: true,
+				metadata: true,
+			},
+		})
 
-        return {
-          id: account.id,
-          authSource: {
-            type: accountMetadata.authSource.type as AuthSourceType,
-            id: accountMetadata.authSource.id,
-            username: accountMetadata.authSource.username,
-          },
-        };
-      })
-      .filter((account): account is LinkedUserInfo => account !== null);
+		// Transform linked accounts into standardized format
+		const transformedLinkedAccounts: LinkedUserInfo[] = linkedAccounts
+			.map(account => {
+				const accountMetadata = account.metadata as {
+					authSource?: Record<string, string>
+				}
 
-    return {
-      user: {
-        id: user.id,
-        linkId: user.linkId,
-        createdAt: user.createdAt.toISOString(),
-        metadata: {
-          ...metadata,
-          authSource: {
-            type: metadata.authSource.type as AuthSourceType,
-            id: metadata.authSource.id,
-            username: metadata.authSource.username,
-          },
-          username: metadata.username || metadata.authSource.username,
-        },
-      },
-      linkedAccounts: transformedLinkedAccounts,
-    };
-  }
+				if (!accountMetadata?.authSource) return null
+
+				return {
+					id: account.id,
+					authSource: {
+						type: accountMetadata.authSource.type as AuthSourceType,
+						id: accountMetadata.authSource.id,
+						username: accountMetadata.authSource.username,
+					},
+				}
+			})
+			.filter((account): account is LinkedUserInfo => account !== null)
+
+		return {
+			user: {
+				id: user.id,
+				linkId: user.linkId,
+				createdAt: user.createdAt.toISOString(),
+				metadata: {
+					...metadata,
+					authSource: {
+						type: metadata.authSource.type as AuthSourceType,
+						id: metadata.authSource.id,
+						username: metadata.authSource.username,
+					},
+					username: metadata.username || metadata.authSource.username,
+				},
+			},
+			linkedAccounts: transformedLinkedAccounts,
+		}
+	}
 }
-

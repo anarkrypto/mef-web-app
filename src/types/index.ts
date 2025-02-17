@@ -1,2 +1,2 @@
 export * from './consideration'
-export * from './deliberation' 
+export * from './deliberation'

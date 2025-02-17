@@ -6,9 +6,9 @@ services:
       context: .
       dockerfile: Dockerfile
     ports:
-      - "3000:3000"
+      - '3000:3000'
     env_file:
-      - .env 
+      - .env
     environment:
       - DATABASE_URL=postgresql://postgres:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}?schema=public
       - NODE_ENV=production
@@ -18,11 +18,11 @@ services:
       db:
         condition: service_healthy
     restart: unless-stopped
-   
+
   db:
     image: postgres:17-alpine
     ports:
-      - "5432:5432"
+      - '5432:5432'
     environment:
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
       - POSTGRES_DB=${POSTGRES_DB}
@@ -30,16 +30,16 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      test: ['CMD-SHELL', 'pg_isready -U postgres']
       interval: 5s
       timeout: 5s
       retries: 5
     restart: unless-stopped
-  
+
   pgadmin:
     image: dpage/pgadmin4
     ports:
-      - "5050:80"
+      - '5050:80'
     environment:
       - PGADMIN_DEFAULT_EMAIL=${PGADMIN_EMAIL}
       - PGADMIN_DEFAULT_PASSWORD=${PGADMIN_PASSWORD}
@@ -51,4 +51,3 @@ services:
 volumes:
   postgres_data:
   pgadmin_data:
-

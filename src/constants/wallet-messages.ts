@@ -1,6 +1,6 @@
 export const WALLET_MESSAGE_VERSIONS = {
-  "0.1": {
-    template: `Welcome to Mina Ecosystem Funding! 👋
+	'0.1': {
+		template: `Welcome to Mina Ecosystem Funding! 👋
 
 By signing this message with your wallet ({{walletAddress}}), you confirm and agree that:
 
@@ -19,14 +19,14 @@ Don't want this? No problem - just don't sign the message! You can always create
 If something is not clear, or you have any questions - reach out to our team.
 
 Signature Version: 0.1`,
-    generateMessage: (walletAddress: string, timestamp: string) => {
-      return WALLET_MESSAGE_VERSIONS["0.1"].template
-        .replace("{{walletAddress}}", walletAddress)
-        .replace("{{timestamp}}", timestamp);
-    }
-  }
-} as const;
+		generateMessage: (walletAddress: string, timestamp: string) => {
+			return WALLET_MESSAGE_VERSIONS['0.1'].template
+				.replace('{{walletAddress}}', walletAddress)
+				.replace('{{timestamp}}', timestamp)
+		},
+	},
+} as const
 
-export const LATEST_WALLET_MESSAGE_VERSION = "0.1";
+export const LATEST_WALLET_MESSAGE_VERSION = '0.1'
 
-export type WalletMessageVersion = keyof typeof WALLET_MESSAGE_VERSIONS; 
+export type WalletMessageVersion = keyof typeof WALLET_MESSAGE_VERSIONS

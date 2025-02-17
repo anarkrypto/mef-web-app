@@ -7,388 +7,440 @@ import RankedVoteList from '@/components/voting-phase/RankedVoteList'
 import { VotingResultsDistribution } from '@/components/voting-phase/VotingResultsDistribution'
 import { RankedVoteTransactionDialog } from '@/components/web3/dialogs/RankedVoteTransactionDialog'
 import { WalletConnectorDialog } from '@/components/web3/WalletConnectorDialog'
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
+import {
+	Card,
+	CardHeader,
+	CardTitle,
+	CardDescription,
+	CardContent,
+} from '@/components/ui/card'
+import { Button } from '@/components/ui/button'
 import { ChevronDownIcon, ChevronUpIcon, ChartBarIcon } from 'lucide-react'
-import { InfoCircledIcon } from "@radix-ui/react-icons"
+import { InfoCircledIcon } from '@radix-ui/react-icons'
 import { GetRankedEligibleProposalsAPIResponse } from '@/services/RankedVotingService'
 import type { OCVRankedVoteResponse } from '@/services/OCVApiService'
 import { LocalStorageCache } from '@/lib/local-storage-cache'
 import { cn } from '@/lib/utils'
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 
-const VOTE_DATA_CACHE_PREFIX = 'ocv_vote_data';
+const VOTE_DATA_CACHE_PREFIX = 'ocv_vote_data'
 
 interface VotingPhaseProps {
-  fundingRoundId: string;
-  fundingRoundName: string;
+	fundingRoundId: string
+	fundingRoundName: string
 }
 
 interface SelectedProposalId {
-  id: number 
+	id: number
 }
 
 interface FundingRoundDetails {
-  totalBudget: number;
+	totalBudget: number
 }
 
-export function VotingPhase({ 
-  fundingRoundId, 
-  fundingRoundName,
+export function VotingPhase({
+	fundingRoundId,
+	fundingRoundName,
 }: VotingPhaseProps) {
-  const { state } = useWallet();
-  const { toast } = useToast();
-  const [proposals, setProposals] = useState<GetRankedEligibleProposalsAPIResponse>();
-  const [voteData, setVoteData] = useState<OCVRankedVoteResponse>();
-  const [fundingRound, setFundingRound] = useState<FundingRoundDetails>();
-  const [isLoading, setIsLoading] = useState(true);
-  const [showWalletDialog, setShowWalletDialog] = useState(false);
-  const [showTransactionDialog, setShowTransactionDialog] = useState(false);
-  const [selectedProposals, setSelectedProposals] = useState<SelectedProposalId[]>();
-  const [showFundingDistribution, setShowFundingDistribution] = useState(false);
+	const { state } = useWallet()
+	const { toast } = useToast()
+	const [proposals, setProposals] =
+		useState<GetRankedEligibleProposalsAPIResponse>()
+	const [voteData, setVoteData] = useState<OCVRankedVoteResponse>()
+	const [fundingRound, setFundingRound] = useState<FundingRoundDetails>()
+	const [isLoading, setIsLoading] = useState(true)
+	const [showWalletDialog, setShowWalletDialog] = useState(false)
+	const [showTransactionDialog, setShowTransactionDialog] = useState(false)
+	const [selectedProposals, setSelectedProposals] =
+		useState<SelectedProposalId[]>()
+	const [showFundingDistribution, setShowFundingDistribution] = useState(false)
 
-  // Fetch funding round details
-  useEffect(() => {
-    let ignore = false;
+	// Fetch funding round details
+	useEffect(() => {
+		let ignore = false
 
-    const fetchFundingRound = async () => {
-      try {
-        const response = await fetch(`/api/funding-rounds/${fundingRoundId}`);
-        if (!response.ok) {
-          throw new Error('Failed to fetch funding round details');
-        }
-        const data = await response.json();
-        
-        if (!ignore) {
-          setFundingRound(data);
-        }
-      } catch (error) {
-        if (!ignore) {
-          toast({
-            title: "Error",
-            description: "Failed to load funding round details",
-            variant: "destructive",
-          });
-        }
-      }
-    };
+		const fetchFundingRound = async () => {
+			try {
+				const response = await fetch(`/api/funding-rounds/${fundingRoundId}`)
+				if (!response.ok) {
+					throw new Error('Failed to fetch funding round details')
+				}
+				const data = await response.json()
 
-    fetchFundingRound();
+				if (!ignore) {
+					setFundingRound(data)
+				}
+			} catch (error) {
+				if (!ignore) {
+					toast({
+						title: 'Error',
+						description: 'Failed to load funding round details',
+						variant: 'destructive',
+					})
+				}
+			}
+		}
 
-    return () => {
-      ignore = true;
-    };
-  }, [fundingRoundId, toast]);
+		fetchFundingRound()
 
-  // Fetch proposals
-  useEffect(() => {
-    let ignore = false;
+		return () => {
+			ignore = true
+		}
+	}, [fundingRoundId, toast])
 
-    const fetchProposals = async () => {
-      try {
-        const response = await fetch(`/api/voting/ranked?fundingRoundId=${fundingRoundId}`);
-        if (!response.ok) {
-          throw new Error('Failed to fetch proposals');
-        }
-        const data: GetRankedEligibleProposalsAPIResponse = await response.json();
-        
-        if (!ignore) {
-          setProposals(data);
-          // Reset vote data when switching funding rounds
-          setVoteData(undefined);
-          setSelectedProposals(undefined);
-        }
-      } catch (error) {
-        if (!ignore) {
-          toast({
-            title: "Error",
-            description: "Failed to load proposals",
-            variant: "destructive",
-          });
-        }
-      } finally {
-        if (!ignore) {
-          setIsLoading(false);
-        }
-      }
-    };
+	// Fetch proposals
+	useEffect(() => {
+		let ignore = false
 
-    setIsLoading(true);
-    fetchProposals();
+		const fetchProposals = async () => {
+			try {
+				const response = await fetch(
+					`/api/voting/ranked?fundingRoundId=${fundingRoundId}`,
+				)
+				if (!response.ok) {
+					throw new Error('Failed to fetch proposals')
+				}
+				const data: GetRankedEligibleProposalsAPIResponse =
+					await response.json()
 
-    return () => {
-      ignore = true;
-    };
-  }, [fundingRoundId, toast]);
+				if (!ignore) {
+					setProposals(data)
+					// Reset vote data when switching funding rounds
+					setVoteData(undefined)
+					setSelectedProposals(undefined)
+				}
+			} catch (error) {
+				if (!ignore) {
+					toast({
+						title: 'Error',
+						description: 'Failed to load proposals',
+						variant: 'destructive',
+					})
+				}
+			} finally {
+				if (!ignore) {
+					setIsLoading(false)
+				}
+			}
+		}
 
-  // Fetch vote data when wallet is connected
-  useEffect(() => {
-    let ignore = false;
+		setIsLoading(true)
+		fetchProposals()
 
-    const fetchAndUpdateVoteData = async () => {
-      if (!state.wallet?.address || !proposals?.fundingRound.mefId || !proposals.fundingRound.votingPhase) return;
+		return () => {
+			ignore = true
+		}
+	}, [fundingRoundId, toast])
 
-      try {
-        const startTimeDate = new Date(proposals.fundingRound.votingPhase.startDate);
-        const endTimeDate = new Date(proposals.fundingRound.votingPhase.endDate);
+	// Fetch vote data when wallet is connected
+	useEffect(() => {
+		let ignore = false
 
-        const startTime = startTimeDate.getTime();
-        const endTime = endTimeDate.getTime();
+		const fetchAndUpdateVoteData = async () => {
+			if (
+				!state.wallet?.address ||
+				!proposals?.fundingRound.mefId ||
+				!proposals.fundingRound.votingPhase
+			)
+				return
 
-        // Try to get cached data first
-        const cacheKey = LocalStorageCache.getKey(VOTE_DATA_CACHE_PREFIX, proposals.fundingRound.mefId);
-        const cachedData = LocalStorageCache.get<OCVRankedVoteResponse>(cacheKey);
+			try {
+				const startTimeDate = new Date(
+					proposals.fundingRound.votingPhase.startDate,
+				)
+				const endTimeDate = new Date(proposals.fundingRound.votingPhase.endDate)
 
-        // If we have cached data, use it immediately
-        if (cachedData && !ignore) {
-          setVoteData(cachedData);
-          updateSelectedProposals(cachedData, proposals);
-        }
+				const startTime = startTimeDate.getTime()
+				const endTime = endTimeDate.getTime()
 
-        // Always fetch fresh data
-        const response = await fetch(
-          `/api/voting/ranked-votes?roundId=${proposals.fundingRound.mefId}&startTime=${startTime}&endTime=${endTime}`
-        );
-        
-        if (!response.ok) {
-          throw new Error('Failed to fetch vote data');
-        }
+				// Try to get cached data first
+				const cacheKey = LocalStorageCache.getKey(
+					VOTE_DATA_CACHE_PREFIX,
+					proposals.fundingRound.mefId,
+				)
+				const cachedData =
+					LocalStorageCache.get<OCVRankedVoteResponse>(cacheKey)
 
-        const data  = await response.json();
-        
-        // Only update state if this effect is still valid
-        if (!ignore) {
-          setVoteData(data);
-          // Cache the fresh data
-          LocalStorageCache.set(cacheKey, data);
-          updateSelectedProposals(data, proposals);
-        }
-      } catch (error) {
-        if (!ignore) {
-          toast({
-            title: "Warning",
-            description: "Failed to load vote data. You may still submit a new vote.",
-            variant: "default",
-          });
-        }
-      }
-    };
+				// If we have cached data, use it immediately
+				if (cachedData && !ignore) {
+					setVoteData(cachedData)
+					updateSelectedProposals(cachedData, proposals)
+				}
 
-    const updateSelectedProposals = (
-      voteData: OCVRankedVoteResponse, 
-      proposals: GetRankedEligibleProposalsAPIResponse
-    ) => {
-      const userVote = voteData.votes.find(
-        (vote: OCVRankedVoteResponse['votes'][0]) => vote.account.toLowerCase() === state.wallet!.address.toLowerCase()
-      );
+				// Always fetch fresh data
+				const response = await fetch(
+					`/api/voting/ranked-votes?roundId=${proposals.fundingRound.mefId}&startTime=${startTime}&endTime=${endTime}`,
+				)
 
-      if (userVote) {
-        const votedProposals = proposals.proposals
-          .filter(p => userVote.proposals.includes(p.id))
-          .sort((a, b) => {
-            const aIndex = userVote.proposals.indexOf(a.id);
-            const bIndex = userVote.proposals.indexOf(b.id);
-            return aIndex - bIndex;
-          })
-          .map(p => ({ id: p.id }));
+				if (!response.ok) {
+					throw new Error('Failed to fetch vote data')
+				}
 
-        setSelectedProposals(votedProposals);
-      }
-    };
+				const data = await response.json()
 
-    fetchAndUpdateVoteData();
+				// Only update state if this effect is still valid
+				if (!ignore) {
+					setVoteData(data)
+					// Cache the fresh data
+					LocalStorageCache.set(cacheKey, data)
+					updateSelectedProposals(data, proposals)
+				}
+			} catch (error) {
+				if (!ignore) {
+					toast({
+						title: 'Warning',
+						description:
+							'Failed to load vote data. You may still submit a new vote.',
+						variant: 'default',
+					})
+				}
+			}
+		}
 
-    return () => {
-      ignore = true;
-    };
-  }, [state.wallet?.address, proposals?.fundingRound.mefId, proposals?.fundingRound.votingPhase, toast, proposals, state.wallet]);
+		const updateSelectedProposals = (
+			voteData: OCVRankedVoteResponse,
+			proposals: GetRankedEligibleProposalsAPIResponse,
+		) => {
+			const userVote = voteData.votes.find(
+				(vote: OCVRankedVoteResponse['votes'][0]) =>
+					vote.account.toLowerCase() === state.wallet!.address.toLowerCase(),
+			)
 
-  const handleSubmit = (selectedProposals: GetRankedEligibleProposalsAPIResponse) => {
-    const proposalIds: SelectedProposalId[] = selectedProposals?.proposals.map(p => ({ id: p.id })) ?? [];
-    setSelectedProposals(proposalIds);
-    setShowTransactionDialog(true);
-  };
+			if (userVote) {
+				const votedProposals = proposals.proposals
+					.filter(p => userVote.proposals.includes(p.id))
+					.sort((a, b) => {
+						const aIndex = userVote.proposals.indexOf(a.id)
+						const bIndex = userVote.proposals.indexOf(b.id)
+						return aIndex - bIndex
+					})
+					.map(p => ({ id: p.id }))
 
-  const handleSaveToMemo = (selectedProposals: GetRankedEligibleProposalsAPIResponse) => {
-    const memo = `YES ${selectedProposals.proposals.map(p => p.id).join(' ')}`;
-    navigator.clipboard.writeText(memo).then(() => {
-      toast({
-        title: "Copied to Clipboard",
-        description: "The vote memo has been copied to your clipboard",
-      });
-    });
-  };
+				setSelectedProposals(votedProposals)
+			}
+		}
 
-  const handleConnectWallet = () => {
-    if (!state.wallet) {
-      setShowWalletDialog(true);
-    } else {
-      setShowTransactionDialog(true);
-    }
-  };
+		fetchAndUpdateVoteData()
 
-  // Check if voting phase is active
-  const isVotingActive = () => {
-    if (!proposals?.fundingRound.votingPhase) return false
-    const now = new Date()
-    const startDate = new Date(proposals.fundingRound.votingPhase.startDate)
-    const endDate = new Date(proposals.fundingRound.votingPhase.endDate)
-    return now >= startDate && now <= endDate
-  }
+		return () => {
+			ignore = true
+		}
+	}, [
+		state.wallet?.address,
+		proposals?.fundingRound.mefId,
+		proposals?.fundingRound.votingPhase,
+		toast,
+		proposals,
+		state.wallet,
+	])
 
-  const hasVotingEnded = () => {
-    if (!proposals?.fundingRound.votingPhase) return false
-    const now = new Date()
-    const endDate = new Date(proposals.fundingRound.votingPhase.endDate)
-    return now > endDate
-  }
+	const handleSubmit = (
+		selectedProposals: GetRankedEligibleProposalsAPIResponse,
+	) => {
+		const proposalIds: SelectedProposalId[] =
+			selectedProposals?.proposals.map(p => ({ id: p.id })) ?? []
+		setSelectedProposals(proposalIds)
+		setShowTransactionDialog(true)
+	}
 
-  if (isLoading) {
-    return (
-      <div className="container mx-auto p-6 max-w-7xl">
-        <Card>
-          <CardHeader>
-            <CardTitle>Loading Proposals...</CardTitle>
-            <CardDescription>
-              Please wait while we fetch the available proposals.
-            </CardDescription>
-          </CardHeader>
-        </Card>
-      </div>
-    );
-  }
+	const handleSaveToMemo = (
+		selectedProposals: GetRankedEligibleProposalsAPIResponse,
+	) => {
+		const memo = `YES ${selectedProposals.proposals.map(p => p.id).join(' ')}`
+		navigator.clipboard.writeText(memo).then(() => {
+			toast({
+				title: 'Copied to Clipboard',
+				description: 'The vote memo has been copied to your clipboard',
+			})
+		})
+	}
 
-  const renderFundingDistribution = () => {
-    if (!proposals || !voteData || !fundingRound) return null;
+	const handleConnectWallet = () => {
+		if (!state.wallet) {
+			setShowWalletDialog(true)
+		} else {
+			setShowTransactionDialog(true)
+		}
+	}
 
-    return (
-      <VotingResultsDistribution
-        fundingRoundName={fundingRoundName}
-        totalBudget={fundingRound.totalBudget}
-        isVotingActive={isVotingActive()}
-        proposals={proposals.proposals.map(p => ({
-          id: p.id,
-          proposalName: p.proposalName,
-          budgetRequest: Number(p.budgetRequest),
-          author: {
-            username: p.author.username,
-            authType: p.author.authType
-          }
-        }))}
-        winnerIds={voteData.winners}
-      />
-    );
-  };
+	// Check if voting phase is active
+	const isVotingActive = () => {
+		if (!proposals?.fundingRound.votingPhase) return false
+		const now = new Date()
+		const startDate = new Date(proposals.fundingRound.votingPhase.startDate)
+		const endDate = new Date(proposals.fundingRound.votingPhase.endDate)
+		return now >= startDate && now <= endDate
+	}
 
-  // If voting has ended, only show the funding distribution
-  if (hasVotingEnded()) {
-    return (
-      <div className="container mx-auto px-4 py-8 max-w-7xl space-y-6">
-        <Card>
-          <CardHeader>
-            <CardTitle>Voting Phase Completed</CardTitle>
-            <CardDescription>
-              The voting phase for {fundingRoundName} has ended. Below are the final results and funding distribution.
-            </CardDescription>
-          </CardHeader>
-        </Card>
-        {renderFundingDistribution()}
-      </div>
-    );
-  }
+	const hasVotingEnded = () => {
+		if (!proposals?.fundingRound.votingPhase) return false
+		const now = new Date()
+		const endDate = new Date(proposals.fundingRound.votingPhase.endDate)
+		return now > endDate
+	}
 
-  return (
-    <>
-      <RankedVoteList
-        proposals={proposals}
-        existingVote={voteData?.votes.find(
-          vote => vote.account.toLowerCase() === state.wallet?.address?.toLowerCase()
-        )}
-        onSubmit={handleSubmit}
-        onSaveToMemo={handleSaveToMemo}
-        onConnectWallet={handleConnectWallet}
-        title={`Rank your vote - ${fundingRoundName}`}
-        fundingRoundMEFId={proposals?.fundingRound.mefId || 0}
-      />
+	if (isLoading) {
+		return (
+			<div className="container mx-auto max-w-7xl p-6">
+				<Card>
+					<CardHeader>
+						<CardTitle>Loading Proposals...</CardTitle>
+						<CardDescription>
+							Please wait while we fetch the available proposals.
+						</CardDescription>
+					</CardHeader>
+				</Card>
+			</div>
+		)
+	}
 
-      <div className="container mx-auto px-4 py-8 max-w-7xl">
-        <div className="rounded-lg border bg-card text-card-foreground shadow-sm hover:shadow-md transition-shadow">
-          <div 
-            className="flex flex-col space-y-1.5 p-4 cursor-pointer group"
-            onClick={() => setShowFundingDistribution(!showFundingDistribution)}
-          >
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10">
-                  <ChartBarIcon className="h-4 w-4 text-primary" />
-                </div>
-                <div>
-                  <h3 className="font-semibold text-lg leading-none tracking-tight">
-                    Live Funding Distribution
-                  </h3>
-                  <p className="text-sm text-muted-foreground mt-1">
-                    Based on current OCV votes • Updates in real-time
-                  </p>
-                </div>
-              </div>
-              <Button 
-                variant="ghost" 
-                size="icon"
-                className="group-hover:bg-primary/10 transition-colors"
-              >
-                {showFundingDistribution ? (
-                  <ChevronUpIcon className="h-5 w-5" />
-                ) : (
-                  <ChevronDownIcon className="h-5 w-5" />
-                )}
-              </Button>
-            </div>
-            {!showFundingDistribution && (
-              <div className="mt-2 flex items-center gap-2 text-sm text-muted-foreground">
-                <InfoCircledIcon className="h-4 w-4" />
-                <span>Click to see how the funding would be distributed based on current votes</span>
-              </div>
-            )}
-          </div>
+	const renderFundingDistribution = () => {
+		if (!proposals || !voteData || !fundingRound) return null
 
-          <div className={cn(
-            "overflow-hidden transition-all duration-300 ease-in-out",
-            showFundingDistribution ? "max-h-[2000px] opacity-100" : "max-h-0 opacity-0"
-          )}>
-            <div className="px-4 pb-4">
-              <Alert className="mb-4 bg-blue-50 border-blue-200">
-                <InfoCircledIcon className="h-4 w-4 text-blue-700" />
-                <AlertTitle className="text-blue-900">Ongoing Voting Phase</AlertTitle>
-                <AlertDescription className="text-blue-800">
-                  This distribution is based on current OCV votes and may change as more votes are counted. 
-                  The final distribution will be determined when the voting phase ends 
-                  on {proposals?.fundingRound.votingPhase?.endDate ? 
-                    new Date(proposals.fundingRound.votingPhase.endDate).toLocaleDateString('en-US', {
-                      month: 'long',
-                      day: 'numeric',
-                      year: 'numeric',
-                      hour: '2-digit',
-                      minute: '2-digit'
-                    }) : 'the scheduled end date'}.
-                </AlertDescription>
-              </Alert>
-              {renderFundingDistribution()}
-            </div>
-          </div>
-        </div>
-      </div>
+		return (
+			<VotingResultsDistribution
+				fundingRoundName={fundingRoundName}
+				totalBudget={fundingRound.totalBudget}
+				isVotingActive={isVotingActive()}
+				proposals={proposals.proposals.map(p => ({
+					id: p.id,
+					proposalName: p.proposalName,
+					budgetRequest: Number(p.budgetRequest),
+					author: {
+						username: p.author.username,
+						authType: p.author.authType,
+					},
+				}))}
+				winnerIds={voteData.winners}
+			/>
+		)
+	}
 
-      <WalletConnectorDialog
-        open={showWalletDialog}
-        onOpenChange={setShowWalletDialog}
-      />
+	// If voting has ended, only show the funding distribution
+	if (hasVotingEnded()) {
+		return (
+			<div className="container mx-auto max-w-7xl space-y-6 px-4 py-8">
+				<Card>
+					<CardHeader>
+						<CardTitle>Voting Phase Completed</CardTitle>
+						<CardDescription>
+							The voting phase for {fundingRoundName} has ended. Below are the
+							final results and funding distribution.
+						</CardDescription>
+					</CardHeader>
+				</Card>
+				{renderFundingDistribution()}
+			</div>
+		)
+	}
 
-      <RankedVoteTransactionDialog
-        open={showTransactionDialog}
-        onOpenChange={setShowTransactionDialog}
-        selectedProposals={selectedProposals??[]}
-        fundingRoundMEFId={parseInt(fundingRoundId)}
-      />
-    </>
-  );
-} 
+	return (
+		<>
+			<RankedVoteList
+				proposals={proposals}
+				existingVote={voteData?.votes.find(
+					vote =>
+						vote.account.toLowerCase() === state.wallet?.address?.toLowerCase(),
+				)}
+				onSubmit={handleSubmit}
+				onSaveToMemo={handleSaveToMemo}
+				onConnectWallet={handleConnectWallet}
+				title={`Rank your vote - ${fundingRoundName}`}
+				fundingRoundMEFId={proposals?.fundingRound.mefId || 0}
+			/>
+
+			<div className="container mx-auto max-w-7xl px-4 py-8">
+				<div className="rounded-lg border bg-card text-card-foreground shadow-sm transition-shadow hover:shadow-md">
+					<div
+						className="group flex cursor-pointer flex-col space-y-1.5 p-4"
+						onClick={() => setShowFundingDistribution(!showFundingDistribution)}
+					>
+						<div className="flex items-center justify-between">
+							<div className="flex items-center gap-2">
+								<div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10">
+									<ChartBarIcon className="h-4 w-4 text-primary" />
+								</div>
+								<div>
+									<h3 className="text-lg font-semibold leading-none tracking-tight">
+										Live Funding Distribution
+									</h3>
+									<p className="mt-1 text-sm text-muted-foreground">
+										Based on current OCV votes • Updates in real-time
+									</p>
+								</div>
+							</div>
+							<Button
+								variant="ghost"
+								size="icon"
+								className="transition-colors group-hover:bg-primary/10"
+							>
+								{showFundingDistribution ? (
+									<ChevronUpIcon className="h-5 w-5" />
+								) : (
+									<ChevronDownIcon className="h-5 w-5" />
+								)}
+							</Button>
+						</div>
+						{!showFundingDistribution && (
+							<div className="mt-2 flex items-center gap-2 text-sm text-muted-foreground">
+								<InfoCircledIcon className="h-4 w-4" />
+								<span>
+									Click to see how the funding would be distributed based on
+									current votes
+								</span>
+							</div>
+						)}
+					</div>
+
+					<div
+						className={cn(
+							'overflow-hidden transition-all duration-300 ease-in-out',
+							showFundingDistribution
+								? 'max-h-[2000px] opacity-100'
+								: 'max-h-0 opacity-0',
+						)}
+					>
+						<div className="px-4 pb-4">
+							<Alert className="mb-4 border-blue-200 bg-blue-50">
+								<InfoCircledIcon className="h-4 w-4 text-blue-700" />
+								<AlertTitle className="text-blue-900">
+									Ongoing Voting Phase
+								</AlertTitle>
+								<AlertDescription className="text-blue-800">
+									This distribution is based on current OCV votes and may change
+									as more votes are counted. The final distribution will be
+									determined when the voting phase ends on{' '}
+									{proposals?.fundingRound.votingPhase?.endDate
+										? new Date(
+												proposals.fundingRound.votingPhase.endDate,
+											).toLocaleDateString('en-US', {
+												month: 'long',
+												day: 'numeric',
+												year: 'numeric',
+												hour: '2-digit',
+												minute: '2-digit',
+											})
+										: 'the scheduled end date'}
+									.
+								</AlertDescription>
+							</Alert>
+							{renderFundingDistribution()}
+						</div>
+					</div>
+				</div>
+			</div>
+
+			<WalletConnectorDialog
+				open={showWalletDialog}
+				onOpenChange={setShowWalletDialog}
+			/>
+
+			<RankedVoteTransactionDialog
+				open={showTransactionDialog}
+				onOpenChange={setShowTransactionDialog}
+				selectedProposals={selectedProposals ?? []}
+				fundingRoundMEFId={parseInt(fundingRoundId)}
+			/>
+		</>
+	)
+}
