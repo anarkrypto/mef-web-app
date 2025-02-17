@@ -1,10 +1,7 @@
 'use client'
 
 import { useState, useCallback } from 'react'
-import Link from 'next/link'
 import { ArrowDownNarrowWide, ArrowDownWideNarrow, Search } from 'lucide-react'
-
-import { cn } from '@/lib/utils'
 import { FundingRoundCard } from '@/components/funding-rounds/FundingRoundCard'
 import { Input } from '@/components/ui/input'
 import {
@@ -22,6 +19,7 @@ import {
 } from '@/services'
 import { useQueryState } from 'nuqs'
 import { FundingRoundWithPhases } from '@/types/funding-round'
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 
 const SORT_OPTIONS: {
 	value: NonNullable<GetPublicFundingRoundOptions['sortBy']>
@@ -32,8 +30,10 @@ const SORT_OPTIONS: {
 	{ value: 'totalBudget', label: 'Budget' },
 ]
 
+type FundingRoundTab = 'details' | 'summary'
+
 export default function FundingRounds() {
-	const { sortBy, sortOrder, filterName } = useFundingRoundsSearchParams()
+	const { tab, sortBy, sortOrder, filterName } = useFundingRoundsSearchParams()
 
 	const { isLoading, data: rounds = [] } = useFundingRounds({
 		filterName,
@@ -42,15 +42,19 @@ export default function FundingRounds() {
 	})
 
 	return (
-		<main className="space-y-8">
-			<FundingRoundsHeader />
+		<main className="w-full max-w-5xl space-y-8">
+			<header className="space-y-4">
+				<FundingRoundsHeader />
 
-			<FundingRoundsControls disabled={isLoading} />
+				<FundingRoundsTabs />
+
+				<FundingRoundsControls disabled={isLoading} />
+			</header>
 
 			{isLoading ? (
 				<FundingRoudsListSkeleton />
 			) : (
-				<FundingRoundsList rounds={rounds} />
+				<FundingRoundsList tab={tab} rounds={rounds} />
 			)}
 		</main>
 	)
@@ -72,13 +76,19 @@ function useFundingRoundsSearchParams() {
 			getPublicFundingRoundsOptionsSchema.shape.sortOrder.parse(value),
 	})
 	const [filterName, setFilterName] = useQueryState('filterName')
+	const [tab, setTab] = useQueryState<FundingRoundTab>('tab', {
+		defaultValue: 'details',
+		parse: value => (value === 'summary' ? 'summary' : 'details'),
+	})
 
 	return {
+		tab,
+		setTab,
 		sortBy,
-		sortOrder,
-		filterName,
 		setSortBy,
+		sortOrder,
 		setSortOrder,
+		filterName,
 		setFilterName,
 	}
 }
@@ -92,8 +102,38 @@ function FundingRoundsHeader() {
 	)
 }
 
+function FundingRoundsTabs() {
+	const { tab, setTab } = useFundingRoundsSearchParams()
+
+	const handleTabChange = useCallback((value: string) => {
+		setTab(value as FundingRoundTab)
+	}, [])
+
+	return (
+		<Tabs
+			defaultValue={tab}
+			onValueChange={handleTabChange}
+			className="w-[400px]"
+		>
+			<TabsList
+				className="grid h-11 w-full grid-cols-2"
+				onChange={() => console.log('changed')}
+			>
+				<TabsTrigger value="details" className="text-base">
+					Rounds List
+				</TabsTrigger>
+				<TabsTrigger value="summary" className="text-base">
+					Rounds Summary
+				</TabsTrigger>
+			</TabsList>
+		</Tabs>
+	)
+}
+
 function FundingRoundsControls({ disabled }: { disabled?: boolean }) {
 	const {
+		tab,
+		setTab,
 		sortBy,
 		sortOrder,
 		filterName,
@@ -205,11 +245,17 @@ function FundingRoundsControls({ disabled }: { disabled?: boolean }) {
 	)
 }
 
-function FundingRoundsList({ rounds }: { rounds: FundingRoundWithPhases[] }) {
+function FundingRoundsList({
+	tab,
+	rounds,
+}: {
+	tab: FundingRoundTab
+	rounds: FundingRoundWithPhases[]
+}) {
 	return (
 		<section className="flex flex-col gap-6">
 			{rounds.map(round => (
-				<FundingRoundCard {...round} className="h-full" />
+				<FundingRoundCard linkType={tab} {...round} className="h-full" />
 			))}
 
 			{/* Empty State */}

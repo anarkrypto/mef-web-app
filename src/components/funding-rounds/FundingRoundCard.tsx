@@ -15,12 +15,14 @@ import Link from 'next/link'
 const formatMinaNumber = (n: number | string) =>
 	new Intl.NumberFormat('en-US').format(Number(n))
 
-export type RoundCardProps = FundingRound & React.ComponentProps<typeof Card>
+export type RoundCardProps = FundingRound & {
+	linkType?: 'details' | 'summary'
+} & React.ComponentProps<typeof Card>
 
 const getStatusColor = (status: FundingRoundStatus) => {
 	switch (status) {
 		case 'ACTIVE':
-			return 'bg-primary text-primary-foreground'
+			return 'bg-green-600 text-white'
 		case 'UPCOMING':
 			return 'bg-accent-mint text-accent-mint-foreground'
 		case 'COMPLETED':
@@ -40,6 +42,7 @@ export const FundingRoundCard = ({
 	endDate,
 	phase,
 	description,
+	linkType = 'details',
 	...props
 }: RoundCardProps) => {
 	const timeUntilEnd = new Date(endDate).toLocaleDateString('en-US', {
@@ -73,13 +76,16 @@ export const FundingRoundCard = ({
 
 	const isActive = status === 'ACTIVE'
 
+	const buttonLink = `/funding-rounds/${id}${linkType === 'summary' ? '/summaries' : ''}`
+	const buttonLabel = linkType === 'summary' ? 'View Summary' : 'View Details'
+
 	return (
 		<Card
 			{...props}
 			className={cn(
 				'rounded-l-none border-l-4',
 				status === 'ACTIVE' &&
-					'border-primary/30 bg-gradient-to-tr from-primary/5 to-card',
+					'border-accent/30 bg-gradient-to-tr from-accent/5 to-card',
 				props.className,
 			)}
 		>
@@ -108,7 +114,7 @@ export const FundingRoundCard = ({
 										className={cn(
 											'rounded-full p-1.5 md:p-2',
 											isActive
-												? 'bg-primary/10 text-primary'
+												? 'bg-accent/10 text-accent'
 												: 'bg-muted text-muted-foreground',
 										)}
 									>
@@ -141,11 +147,9 @@ export const FundingRoundCard = ({
 			</CardContent>
 			<CardFooter className="justify-end">
 				{phase !== 'UPCOMING' && (
-					<Link
-						href={`/funding-rounds/${id}/${phase === 'COMPLETED' ? 'summaries' : phase.toLowerCase()}`}
-					>
-						<Button size="lg" variant="secondary">
-							{phase === 'COMPLETED' ? 'View Summary' : 'View Details'}
+					<Link href={buttonLink}>
+						<Button size="lg" className="bg-accent">
+							{buttonLabel}
 							<ArrowRightIcon className="h-4 w-4" />
 						</Button>
 					</Link>
