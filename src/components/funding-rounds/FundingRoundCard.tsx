@@ -108,7 +108,10 @@ export const FundingRoundCard = ({
 					{status === 'ACTIVE' && <div>{description}</div>}
 					<div className="grid grid-cols-2 gap-4 py-8 md:grid-cols-4">
 						{info.map(({ title, value, icon: Icon }) => (
-							<div className="flex flex-col items-start md:items-center">
+							<div
+								key={title}
+								className="flex flex-col items-start md:items-center"
+							>
 								<div className="flex items-center gap-2">
 									<div
 										className={cn(

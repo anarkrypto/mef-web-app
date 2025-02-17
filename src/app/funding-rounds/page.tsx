@@ -105,9 +105,12 @@ function FundingRoundsHeader() {
 function FundingRoundsTabs() {
 	const { tab, setTab } = useFundingRoundsSearchParams()
 
-	const handleTabChange = useCallback((value: string) => {
-		setTab(value as FundingRoundTab)
-	}, [])
+	const handleTabChange = useCallback(
+		(value: string) => {
+			setTab(value as FundingRoundTab)
+		},
+		[setTab],
+	)
 
 	return (
 		<Tabs
@@ -147,21 +150,21 @@ function FundingRoundsControls({ disabled }: { disabled?: boolean }) {
 				setFilterName(e.currentTarget.value)
 			}
 		},
-		[],
+		[setFilterName],
 	)
 
 	const handleSortByChange = useCallback(
 		(value: NonNullable<GetPublicFundingRoundOptions['sortBy']>) => {
 			setSortBy(value)
 		},
-		[],
+		[setSortBy],
 	)
 
 	const handleSortOrderChange = useCallback(
 		(value: NonNullable<GetPublicFundingRoundOptions['sortOrder']>) => {
 			setSortOrder(value)
 		},
-		[],
+		[setSortOrder],
 	)
 
 	return (
@@ -252,7 +255,12 @@ function FundingRoundsList({
 	return (
 		<section className="flex flex-col gap-6">
 			{rounds.map(round => (
-				<FundingRoundCard linkType={tab} {...round} className="h-full" />
+				<FundingRoundCard
+					key={round.id}
+					linkType={tab}
+					{...round}
+					className="h-full"
+				/>
 			))}
 
 			{/* Empty State */}

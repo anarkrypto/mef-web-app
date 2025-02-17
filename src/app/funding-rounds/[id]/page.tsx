@@ -11,6 +11,7 @@ import Link from 'next/link'
 import { cn } from '@/lib/utils'
 import {
 	FundingRoundPhase,
+	FundingRoundPhases,
 	FundingRoundWithPhases,
 } from '@/types/funding-round'
 import { CompletedPhase } from '@/components/phases/CompletedPhase'
@@ -149,7 +150,11 @@ function FundingRoundStatusOverviewCard({
 	const endDate =
 		data.phase === 'COMPLETED'
 			? new Date(data.endDate)
-			: new Date((data.phases as any)[data.phase].endDate || Date.now() + 6000)
+			: new Date(
+					data.phases[
+						data.phase.toLowerCase() as keyof FundingRoundPhases
+					].endDate,
+				)
 
 	return (
 		<Card className="bg-muted/50">
