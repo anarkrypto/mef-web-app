@@ -2,7 +2,7 @@ import logger from '@/logging'
 import { FundingRoundWithPhases } from '@/types/funding-round'
 import { useQuery } from '@tanstack/react-query'
 
-export function useFundingRound({ id }: { id: string }) {
+export function useFundingRound(id: string) {
 	const url = `/api/funding-rounds/${id}`
 
 	return useQuery<FundingRoundWithPhases>({
