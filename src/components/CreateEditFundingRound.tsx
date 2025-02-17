@@ -73,17 +73,27 @@ type DatePhase = {
 }
 
 const DATE_PHASES: DatePhase[] = [
-	{ key: 'fundingRoundDates', label: 'Funding Round Period' },
-	{ key: 'submissionDates', label: 'Submission Phase (UTC)' },
-	{ key: 'considerationDates', label: 'Consideration Phase (UTC)' },
-	{ key: 'deliberationDates', label: 'Deliberation Phase (UTC)' },
-	{ key: 'votingDates', label: 'Voting Phase (UTC)' },
-]
+  { key: 'fundingRoundDates', label: "Funding Round Period (UTC)" },
+  { key: 'submissionDates', label: "Submission Phase (UTC)" },
+  { key: 'considerationDates', label: "Consideration Phase (UTC)" },
+  { key: 'deliberationDates', label: "Deliberation Phase (UTC)" },
+  { key: 'votingDates', label: "Voting Phase (UTC)" }
+];
 
-export function AddEditFundingRoundComponent({
-	roundId,
-}: {
-	roundId: string | null
+// Format dates in UTC without local timezone conversion
+function formatUTC(date: Date): string {
+  const day = date.getUTCDate();
+  const month = date.getUTCMonth() + 1;
+  const year = date.getUTCFullYear();
+  const hours = date.getUTCHours();
+  const minutes = date.getUTCMinutes();
+  return `${year}-${month.toString().padStart(2, '0')}-${day.toString().padStart(2, '0')} ${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')} UTC`;
+}
+
+export function AddEditFundingRoundComponent({ 
+  roundId 
+}: { 
+  roundId: string | null 
 }) {
 	const router = useRouter()
 	const { toast } = useToast()
@@ -433,6 +443,102 @@ export function AddEditFundingRoundComponent({
 					</h1>
 				</div>
 
+<<<<<<< HEAD
+  return (
+    <div key={phase.key} className="grid gap-4">
+      <Label>{phase.label}</Label>
+      <div className="grid grid-cols-2 gap-4">
+        <div className="space-y-2">
+          <Label>From</Label>
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button
+                variant="outline"
+                className={cn(
+                  "w-full justify-start text-left font-normal bg-muted",
+                  !dates.from && "text-muted-foreground"
+                )}
+              >
+                {dates.from ? (
+                  formatUTC(dates.from)
+                ) : (
+                  <span>Pick a date</span>
+                )}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0" align="start">
+            <Calendar
+  mode="single"
+  selected={dates.from || undefined}  // Convert null to undefined
+  onSelect={(date) => handleDateChange(phase.key, 'from', date || null)}  // Handle undefined
+  disabled={loading}
+                initialFocus
+              />
+              <div className="p-3 border-t">
+                <Input
+                  type="time"
+                  onChange={(e) => {
+                    if (dates.from) {
+                      const [hours, minutes] = e.target.value.split(':');
+                      const newDate = new Date(dates.from);
+                      newDate.setUTCHours(parseInt(hours), parseInt(minutes));
+                      handleDateChange(phase.key, 'from', newDate);
+                    }
+                  }}
+                  disabled={loading}
+                />
+              </div>
+            </PopoverContent>
+          </Popover>
+        </div>
+        <div className="space-y-2">
+          <Label>To</Label>
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button
+                variant="outline"
+                className={cn(
+                  "w-full justify-start text-left font-normal bg-muted",
+                  !dates.to && "text-muted-foreground"
+                )}
+              >
+                {dates.to ? (
+                  formatUTC(dates.to)
+                ) : (
+                  <span>Pick a date</span>
+                )}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0" align="start">
+            <Calendar
+  mode="single"
+  selected={dates.to || undefined}  // Convert null to undefined
+  onSelect={(date) => handleDateChange(phase.key, 'to', date || null)}  // Handle undefined
+  disabled={loading}
+  initialFocus
+/>
+              <div className="p-3 border-t">
+                <Input
+                  type="time"
+                  onChange={(e) => {
+                    if (dates.to) {
+                      const [hours, minutes] = e.target.value.split(':');
+                      const newDate = new Date(dates.to);
+                      newDate.setUTCHours(parseInt(hours), parseInt(minutes));
+                      handleDateChange(phase.key, 'to', newDate);
+                    }
+                  }}
+                  disabled={loading}
+                />
+              </div>
+            </PopoverContent>
+          </Popover>
+        </div>
+      </div>
+    </div>
+              );
+            })}
+=======
 				<form onSubmit={e => e.preventDefault()} className="space-y-6">
 					{/* Basic Information */}
 					<div className="space-y-4">
@@ -447,6 +553,7 @@ export function AddEditFundingRoundComponent({
 							disabled={loading}
 						/>
 					</div>
+>>>>>>> main
 
 					<div className="space-y-4">
 						<Label htmlFor="description">Description</Label>
