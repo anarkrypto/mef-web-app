@@ -64,7 +64,7 @@ function useFundingRoundsSearchParams() {
 	const [sortBy, setSortBy] = useQueryState<
 		GetPublicFundingRoundOptions['sortBy']
 	>('sortBy', {
-		defaultValue: 'status',
+		defaultValue: 'startDate',
 		parse: value =>
 			getPublicFundingRoundsOptionsSchema.shape.sortBy.parse(value),
 	})
@@ -132,8 +132,6 @@ function FundingRoundsTabs() {
 
 function FundingRoundsControls({ disabled }: { disabled?: boolean }) {
 	const {
-		tab,
-		setTab,
 		sortBy,
 		sortOrder,
 		filterName,
