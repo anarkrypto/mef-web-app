@@ -401,14 +401,14 @@ export default function CreateProposal({ mode = 'create', proposalId }: Props) {
 						<Button
 							type="button"
 							variant="outline"
-							className="bg-gray-600 text-white hover:bg-gray-700"
+							className="bg-[#2d2d2d] text-white hover:bg-gray-700"
 							onClick={() => router.push('/proposals')}
 						>
 							Cancel
 						</Button>
 						<Button
 							type="submit"
-							className="bg-gray-600 text-white hover:bg-gray-700"
+							className="bg-primary text-white hover:bg-gray-700"
 							disabled={loading}
 						>
 							{loading ? <span className="mr-2 animate-spin">⌛</span> : null}
