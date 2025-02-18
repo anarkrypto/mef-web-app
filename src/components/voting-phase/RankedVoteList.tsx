@@ -99,14 +99,12 @@ const DraggableProposal = ({
 	isRanked,
 	moveProposal,
 	onDoubleClick,
-	disabled = false,
 }: {
 	proposal: ProposalWithUniqueId
 	index: number
 	isRanked: boolean
 	moveProposal: (dragIndex: number, hoverIndex: number) => void
 	onDoubleClick: () => void
-	disabled?: boolean
 }) => {
 	const ref = useRef<HTMLDivElement>(null)
 
@@ -121,13 +119,12 @@ const DraggableProposal = ({
 		collect: monitor => ({
 			isDragging: monitor.isDragging(),
 		}),
-		canDrag: !disabled,
 	})
 
 	const [, drop] = useDrop({
 		accept: ItemTypes.PROPOSAL,
 		hover: (item: DragItem, monitor) => {
-			if (!ref.current || disabled) return
+			if (!ref.current) return
 			if (!isRanked) return // Only allow reordering in ranked list
 
 			const dragIndex = item.index
@@ -164,9 +161,9 @@ const DraggableProposal = ({
 	return (
 		<div
 			ref={ref}
-			onDoubleClick={disabled ? undefined : onDoubleClick}
+			onDoubleClick={onDoubleClick}
 			style={{ opacity: isDragging ? 0.5 : 1 }}
-			className={`group flex select-none flex-col gap-2 rounded-lg border bg-white p-3 ${disabled ? 'cursor-not-allowed opacity-80' : 'cursor-grab active:cursor-grabbing'} shadow-sm hover:shadow-md hover:bg-${isRanked ? 'purple' : 'blue'}-50 hover:border-${isRanked ? 'purple' : 'blue'}-300 transition-all duration-200 ${isDragging ? 'ring-2 ring-purple-400' : ''} ${disabled ? 'ring-2 ring-purple-200' : ''} `}
+			className={`group flex select-none flex-col gap-2 rounded-lg border bg-white p-3 ${isDragging ? 'ring-2 ring-purple-400' : ''}`}
 		>
 			<ProposalContent proposal={proposal} index={index} isRanked={isRanked} />
 		</div>
@@ -231,9 +228,8 @@ const DndContent = ({
 		...rankedProposals.map(p => p.id),
 	].join(' ')
 
-	const isVoteDisabled = Boolean(existingVote)
 	const voteButtonTooltip = existingVote
-		? `You have already voted ${formatDistanceToNow(existingVote.timestamp)} ago`
+		? `Your last vote was ${formatDistanceToNow(existingVote.timestamp)} ago`
 		: undefined
 
 	return (
@@ -244,7 +240,7 @@ const DndContent = ({
 					Available Candidates ({availableProposals.length})
 				</h2>
 				<DropTarget
-					onDrop={existingVote ? undefined : onDropToAvailable}
+					onDrop={onDropToAvailable}
 					className="min-h-[400px] space-y-2 rounded-lg border-2 border-dashed border-blue-200 p-4 transition-colors duration-300 hover:border-blue-300"
 				>
 					{availableProposals.map((proposal, index) => (
@@ -255,7 +251,6 @@ const DndContent = ({
 							isRanked={false}
 							moveProposal={onMoveProposal}
 							onDoubleClick={() => onDoubleClick(proposal, 'available')}
-							disabled={Boolean(existingVote)}
 						/>
 					))}
 				</DropTarget>
@@ -267,7 +262,7 @@ const DndContent = ({
 					Your Ranked Choices ({rankedProposals.length})
 				</h2>
 				<DropTarget
-					onDrop={existingVote ? undefined : onDropToRanked}
+					onDrop={onDropToRanked}
 					className="mb-6 min-h-[400px] space-y-2 rounded-lg border-2 border-dashed border-purple-200 p-4 transition-colors duration-300 hover:border-purple-300"
 				>
 					{rankedProposals.length > 0 ? (
@@ -279,7 +274,6 @@ const DndContent = ({
 								isRanked={true}
 								moveProposal={onMoveProposal}
 								onDoubleClick={() => onDoubleClick(proposal, 'ranked')}
-								disabled={Boolean(existingVote)}
 							/>
 						))
 					) : (
@@ -307,12 +301,15 @@ const DndContent = ({
 									<Button
 										className="w-full transform bg-purple-600 transition-all duration-300 hover:scale-105 hover:bg-purple-700"
 										onClick={handleVoteClick}
-										disabled={isVoteDisabled}
 									>
 										<Wallet className="mr-2 h-4 w-4" />
 										{state.wallet
-											? 'Vote with Wallet'
-											: 'Connect Wallet to Submit Vote'}
+											? existingVote
+												? 'Re-Vote With Wallet'
+												: 'Vote with Wallet'
+											: existingVote
+												? 'Re-Vote With Memo without A Wallet'
+												: 'Connect Wallet to Submit Vote'}
 									</Button>
 								</div>
 							</TooltipTrigger>
@@ -328,10 +325,11 @@ const DndContent = ({
 						variant="outline"
 						className="w-full"
 						onClick={handleSaveToMemo}
-						disabled={isVoteDisabled}
 					>
 						<Save className="mr-2 h-4 w-4" />
-						Vote Via Memo Without A Wallet
+						{existingVote
+							? 'Re-Vote Via Memo Without A Wallet'
+							: 'Vote Via Memo Without A Wallet'}
 					</Button>
 				</div>
 
