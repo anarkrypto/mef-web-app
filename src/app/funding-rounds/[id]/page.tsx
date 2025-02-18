@@ -1,11 +1,5 @@
 'use client'
 
-import {
-	Card,
-	CardHeader,
-	CardTitle,
-	CardDescription,
-} from '@/components/ui/card'
 import Link from 'next/link'
 import { cn } from '@/lib/utils'
 import {
@@ -118,13 +112,17 @@ function FundingRoundStatusOverviewCards({
 	data: StartedFundingRoundWithPhases
 }) {
 	const endDate =
-		data.phase === 'COMPLETED'
-			? new Date(data.endDate)
-			: new Date(
-					data.phases[
-						data.phase.toLowerCase() as keyof FundingRoundPhases
-					].endDate,
+		data.phase === 'BETWEEN_PHASES'
+			? new Date(
+					getPreviousAndNextForBetweenPhase(data.phases)!.nextPhase!.startDate,
 				)
+			: data.phase === 'COMPLETED'
+				? new Date(data.endDate)
+				: new Date(
+						data.phases[
+							data.phase.toLowerCase() as keyof FundingRoundPhases
+						].endDate,
+					)
 
 	const cards = [
 		{
@@ -139,7 +137,7 @@ function FundingRoundStatusOverviewCards({
 		},
 		{
 			label: 'Until End',
-			value: getTimeRemaining(new Date(data.endDate)),
+			value: getTimeRemaining(endDate),
 			icon: ClockIcon,
 		},
 		{
@@ -236,25 +234,11 @@ function FundingRoundPhaseComponent({
 	// If we're between phases, render the BetweenPhases component
 	// TODO: I hope we can remove the possibility of between phases, otherwise we need to consider moving this logic to backend
 	if (data.phase === null) {
-		const now = new Date()
-
-		const destructuredPhases = Object.entries(data.phases).map(
-			([name, { startDate }], index) => ({
-				index,
-				name,
-				startDate,
-			}),
-		)
-
-		const nextPhase = destructuredPhases.find(
-			({ startDate }) => new Date(startDate) > now,
+		const { nextPhase, previousPhase } = getPreviousAndNextForBetweenPhase(
+			data.phases,
 		)
 
 		if (nextPhase) {
-			// Find the previous phase for context
-			const previousPhase =
-				nextPhase.index > 0 ? destructuredPhases[nextPhase.index - 1] : null
-
 			return (
 				<BetweenPhases
 					currentPhase={previousPhase?.name ?? null}
@@ -308,4 +292,27 @@ function getTimeRemaining(date: Date): string {
 		return `${hours}h ${minutes}m`
 	}
 	return `${minutes}m`
+}
+
+const getPreviousAndNextForBetweenPhase = (phases: FundingRoundPhases) => {
+	const now = new Date()
+
+	const destructuredPhases = Object.entries(phases).map(
+		([name, { startDate }], index) => ({
+			index,
+			name,
+			startDate,
+		}),
+	)
+
+	const nextPhase = destructuredPhases.find(
+		({ startDate }) => new Date(startDate) > now,
+	)
+
+	const previousPhase =
+		nextPhase && nextPhase.index > 0
+			? destructuredPhases[nextPhase.index - 1]
+			: null
+
+	return { nextPhase, previousPhase }
 }
