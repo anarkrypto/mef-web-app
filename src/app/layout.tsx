@@ -31,7 +31,9 @@ export default function RootLayout({
 }>) {
 	return (
 		<html lang="en" suppressHydrationWarning>
-			<body className={`${fontSans.className} antialiased`}>
+			<body
+				className={`${fontSans.className} flex min-h-screen flex-col antialiased`}
+			>
 				<ThemeProvider
 					attribute="class"
 					defaultTheme="light"
@@ -45,7 +47,7 @@ export default function RootLayout({
 									<AuthProvider>
 										<WalletProvider>
 											<Header />
-											<main>{children}</main>
+											<main className="flex flex-1 flex-col">{children}</main>
 											<Toaster />
 											<FeedbackDialog />
 										</WalletProvider>
