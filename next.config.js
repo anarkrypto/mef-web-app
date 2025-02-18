@@ -5,6 +5,7 @@ const config = {
 		serverActions: {
 			bodySizeLimit: '2mb',
 		},
+		authInterrupts: true,
 	},
 	serverExternalPackages: ['@prisma/client'],
 	webpack: (config, { isServer }) => {
