@@ -111,11 +111,11 @@ function FundingRoundStatusOverviewCards({
 }: {
 	data: StartedFundingRoundWithPhases
 }) {
+	const { nextPhase } = getPreviousAndNextForBetweenPhase(data.phases)
+
 	const endDate =
 		data.phase === 'BETWEEN_PHASES'
-			? new Date(
-					getPreviousAndNextForBetweenPhase(data.phases)!.nextPhase!.startDate,
-				)
+			? new Date(nextPhase ? nextPhase.startDate : data.endDate)
 			: data.phase === 'COMPLETED'
 				? new Date(data.endDate)
 				: new Date(
@@ -233,7 +233,7 @@ function FundingRoundPhaseComponent({
 }) {
 	// If we're between phases, render the BetweenPhases component
 	// TODO: I hope we can remove the possibility of between phases, otherwise we need to consider moving this logic to backend
-	if (data.phase === null) {
+	if (data.phase === 'BETWEEN_PHASES') {
 		const { nextPhase, previousPhase } = getPreviousAndNextForBetweenPhase(
 			data.phases,
 		)
@@ -242,7 +242,7 @@ function FundingRoundPhaseComponent({
 			return (
 				<BetweenPhases
 					currentPhase={previousPhase?.name ?? null}
-					nextPhaseStart={nextPhase.startDate}
+					nextPhaseStart={nextPhase ? nextPhase.startDate : data.endDate}
 					nextPhaseName={nextPhase.name}
 				/>
 			)
