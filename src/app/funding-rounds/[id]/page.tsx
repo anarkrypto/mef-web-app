@@ -142,7 +142,7 @@ function FundingRoundStatusOverviewCards({
 		},
 		{
 			label: 'In Phase',
-			value: getTimeRemaining(endDate),
+			value: getTimeSince(endDate),
 			icon: TimerIcon,
 		},
 	]
@@ -241,7 +241,9 @@ function FundingRoundPhaseComponent({
 		return (
 			<BetweenPhases
 				currentPhase={previousPhase?.name ?? null}
-				nextPhaseStart={nextPhase ? nextPhase.startDate : data.endDate}
+				nextPhaseStart={
+					new Date(nextPhase ? nextPhase.startDate : data.endDate)
+				} // If there's no next phase, it means the funding round is completed
 				nextPhaseName={nextPhase?.name || 'COMPLETED'}
 			/>
 		)
@@ -269,15 +271,7 @@ function FundingRoundPhaseComponent({
 	}
 }
 
-function getTimeRemaining(date: Date): string {
-	const now = Date.now()
-	const diff = date.getTime() - now
-
-	// Time already passed
-	if (diff < 0) {
-		return 'Ended'
-	}
-
+function formatDateDiff(diff: number): string {
 	// Calculate days, hours, minutes
 	const days = Math.floor(diff / (1000 * 60 * 60 * 24))
 	const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60))
@@ -292,7 +286,31 @@ function getTimeRemaining(date: Date): string {
 	return `${minutes}m`
 }
 
-const getPreviousAndNextForBetweenPhase = (phases: FundingRoundPhases) => {
+function getTimeRemaining(date: Date): string {
+	const now = Date.now()
+	const diff = date.getTime() - now
+
+	// Time already passed
+	if (diff < 0) {
+		return 'Ended'
+	}
+
+	return formatDateDiff(diff)
+}
+
+function getTimeSince(date: Date): string {
+	const now = Date.now()
+	const diff = now - date.getTime()
+
+	return formatDateDiff(diff)
+}
+
+const getPreviousAndNextForBetweenPhase = (
+	phases: FundingRoundPhases,
+): {
+	nextPhase: { name: string; startDate: string; endDate: string } | null
+	previousPhase: { name: string; startDate: string; endDate: string } | null
+} => {
 	const now = new Date()
 
 	const destructuredPhases = Object.entries(phases).map(
@@ -300,6 +318,7 @@ const getPreviousAndNextForBetweenPhase = (phases: FundingRoundPhases) => {
 			index,
 			name,
 			startDate,
+			endDate: phases[name as keyof FundingRoundPhases].endDate,
 		}),
 	)
 
@@ -312,5 +331,20 @@ const getPreviousAndNextForBetweenPhase = (phases: FundingRoundPhases) => {
 			? destructuredPhases[nextPhase.index - 1]
 			: null
 
-	return { nextPhase, previousPhase }
+	return {
+		nextPhase: nextPhase
+			? {
+					name: nextPhase.name,
+					startDate: nextPhase?.startDate,
+					endDate: nextPhase.endDate,
+				}
+			: null,
+		previousPhase: previousPhase
+			? {
+					name: previousPhase.name,
+					startDate: previousPhase?.startDate,
+					endDate: previousPhase.endDate,
+				}
+			: null,
+	}
 }
