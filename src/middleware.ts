@@ -37,11 +37,11 @@ function isAuthPath(path: string): path is AuthPath {
 }
 
 // Route type determination
-type RouteType = 'api' | 'web' | 'admin'
+type RouteType = 'api' | 'web' | 'admin' | 'admin-api'
 
 function getRouteType(path: string): RouteType {
-	if (path.startsWith('/api/admin')) return 'admin'
 	if (path.startsWith('/api')) return 'api'
+	if (path.startsWith('/api/admin')) return 'admin-api'
 	if (path.startsWith('/admin')) return 'admin'
 	return 'web'
 }
@@ -261,7 +261,7 @@ export async function middleware(request: NextRequest) {
 			const response = NextResponse.next()
 
 			// For admin routes, check permissions
-			if (routeType === 'admin') {
+			if (routeType === 'admin' || routeType === 'admin-api') {
 				const isAdmin = await checkAdminAccess(accessToken)
 				if (!isAdmin) {
 					return generateAdminUnauthorizedResponse(routeType, request)
@@ -324,7 +324,7 @@ export async function middleware(request: NextRequest) {
 			})
 
 			// For admin routes, check permissions
-			if (routeType === 'admin') {
+			if (routeType === 'admin' || routeType === 'admin-api') {
 				// Verify admin status with new token
 				const isAdmin = await checkAdminAccess(newAccessToken)
 				if (!isAdmin) {
@@ -370,16 +370,15 @@ function generateAdminUnauthorizedResponse(
 	routeType: RouteType,
 	request: NextRequest,
 ): NextResponse {
-	if (routeType === 'api') {
+	if (routeType === 'admin-api') {
 		return new NextResponse(
 			JSON.stringify({ error: 'Admin access required' }),
 			{ status: 403, headers: { 'Content-Type': 'application/json' } },
 		)
 	}
 
-	// For web routes, redirect to home with error
-	const url = new URL('/', request.url)
-	url.searchParams.set('error', 'unauthorized_admin')
+	// For web routes, redirect to forbidden page
+	const url = new URL('/forbidden', request.url)
 	return NextResponse.redirect(url)
 }
 
@@ -407,7 +406,10 @@ function handleAuthResponse(
 	}
 
 	// Admin route but not admin
-	if (routeType === 'admin' && !authResult.isAdmin) {
+	if (
+		(routeType === 'admin' || routeType === 'admin-api') &&
+		!authResult.isAdmin
+	) {
 		return generateAdminUnauthorizedResponse(routeType, request)
 	}
 
