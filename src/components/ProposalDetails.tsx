@@ -20,7 +20,7 @@ import {
 	TooltipProvider,
 	TooltipTrigger,
 } from '@/components/ui/tooltip'
-import { useFundingRounds } from '@/hooks/use-funding-rounds'
+import { useAvailableFundingRounds } from '@/hooks/use-available-funding-rounds'
 import type { UserMetadata } from '@/services/UserService'
 import { ProposalComments } from '@/components/ProposalComments'
 import type { CategorizedComments } from '@/types/deliberation'
@@ -83,7 +83,7 @@ export function ProposalDetails({ proposalId }: Props) {
 	const [loadingComments, setLoadingComments] = useState(true)
 	const [selectFundingRoundOpen, setSelectFundingRoundOpen] = useState(false)
 	const [viewFundingRoundOpen, setViewFundingRoundOpen] = useState(false)
-	const { loading: checkingRounds, hasAvailableRounds } = useFundingRounds()
+	const { loading: checkingRounds, hasAvailableRounds } = useAvailableFundingRounds()
 
 	const { handleAction } = useActionFeedback({
 		successMessage: 'Action will be implemented soon',

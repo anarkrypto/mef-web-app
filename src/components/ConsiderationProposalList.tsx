@@ -15,7 +15,6 @@ import { Badge } from '@/components/ui/badge'
 import { ChevronRight, ChevronDown } from 'lucide-react'
 import { useConsiderationPhase } from '@/hooks/use-consideration-phase'
 import { useConsiderationVote } from '@/hooks/use-consideration-vote'
-import Link from 'next/link'
 import { cn } from '@/lib/utils'
 import { Label } from '@/components/ui/label'
 import type { ConsiderationProposal } from '@/types/consideration'
@@ -30,7 +29,6 @@ import {
 interface Props {
 	fundingRoundId: string
 	fundingRoundMEFId: number
-	fundingRoundName: string
 }
 
 type ReviewState = 'initial' | 'decided' | 'editing'
@@ -195,7 +193,6 @@ function VoterAddress({ address }: { address: string }) {
 export function ConsiderationProposalList({
 	fundingRoundId,
 	fundingRoundMEFId,
-	fundingRoundName,
 }: Props) {
 	const { proposals, loading, setProposals } =
 		useConsiderationPhase(fundingRoundId)
@@ -344,7 +341,7 @@ export function ConsiderationProposalList({
 	const renderVoteButtons = (proposal: ConsiderationProposal) => {
 		if (!proposal.isReviewerEligible) {
 			return (
-				<div className="flex gap-2">
+				<div className="flex flex-col gap-2 md:flex-row">
 					<OCVVoteButton
 						proposalId={proposal.id.toString()}
 						useWallet={true}
@@ -537,11 +534,11 @@ export function ConsiderationProposalList({
 	}
 
 	return (
-		<div className="container mx-auto max-w-7xl p-6">
+		<div className="container mx-auto max-w-7xl px-2 md:px-6">
 			<div className="space-y-8">
 				<div>
-					<h1 className="text-3xl font-bold">
-						🤔 Consideration Phase: {fundingRoundName}
+					<h2 className="text-2xl font-bold">
+						🤔 Consideration Phase
 						<span className="ml-2 text-lg font-normal text-muted-foreground">
 							({proposals.length} proposals,{' '}
 							{
@@ -551,7 +548,11 @@ export function ConsiderationProposalList({
 							}{' '}
 							pending review)
 						</span>
-					</h1>
+					</h2>
+					<p>
+						Review submitted proposals and determine which ones you find
+						valuable enough to receive funding.
+					</p>
 				</div>
 
 				<div className="space-y-6">
@@ -581,7 +582,7 @@ export function ConsiderationProposalList({
 												<CardTitle className="text-2xl">
 													{proposal.proposalName}
 												</CardTitle>
-												<CardDescription>
+												<CardDescription className="break-all">
 													👤 Submitted by {proposal.submitter}
 												</CardDescription>
 												<div className="mt-4">
@@ -650,7 +651,7 @@ export function ConsiderationProposalList({
 																	</div>
 																</HoverCardTrigger>
 																<HoverCardContent
-																	className="w-[340px]"
+																	className="w-full max-w-[340px]"
 																	align="end"
 																	side="left"
 																>
@@ -1016,7 +1017,7 @@ export function ConsiderationProposalList({
 																		</div>
 																	</HoverCardTrigger>
 																	<HoverCardContent
-																		className="w-[340px]"
+																		className="w-full max-w-[340px]"
 																		align="end"
 																		side="left"
 																	>

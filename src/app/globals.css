@@ -10,18 +10,40 @@ body {
 	:root {
 		--background: 0 0% 100%;
 		--foreground: 240 10% 3.9%;
-		--card: 0 0% 100%;
+
+		--card: 0, 0%, 98%;
 		--card-foreground: 240 10% 3.9%;
+
 		--popover: 0 0% 100%;
 		--popover-foreground: 240 10% 3.9%;
-		--primary: 240 5.9% 10%;
-		--primary-foreground: 0 0% 98%;
-		--secondary: 240 4.8% 95.9%;
-		--secondary-foreground: 240 5.9% 10%;
-		--muted: 240 4.8% 95.9%;
-		--muted-foreground: 240 3.8% 46.1%;
+
+		/* Primary colors */
+		--primary: 11 100% 62%;
+		--primary-foreground: 0 0% 100%;
+
+		/* Auxiliar primary colors */
+		--primary-dark: #ff471c;
+		--primary-darker: #ff3a0c;
+		--primary-darkest: #dc2900;
+		--primary-light: #ff795a;
+		--primary-lighter: #ff866a;
+		--primary-lightest: #ffac99;
+
+		--secondary: 251 82% 69%;
+		--secondary-foreground: 0 0% 100%;
+
 		--accent: 240 4.8% 95.9%;
 		--accent-foreground: 240 5.9% 10%;
+
+		--accent-mint: 156.52 56.1% 75.88%;
+		--accent-mint-foreground: 0 0% 18%;
+
+		--dark: 0 0% 18%;
+		--dark-foreground: 0 0% 100%;
+
+		--muted: 0 0% 93%;
+		--muted-foreground: 0 0% 31%;
+
 		--destructive: 0 84.2% 60.2%;
 		--destructive-foreground: 0 0% 98%;
 		--border: 240 5.9% 90%;
@@ -33,7 +55,24 @@ body {
 		--chart-4: 43 74% 66%;
 		--chart-5: 27 87% 67%;
 		--radius: 0.5rem;
+
+		--brand-primary:
+			'rgba(255, 96, 59, 1)',
+			// Main action color (e.g., buttons, links)
+			--brand-secondary: 'rgba(159, 228, 201, 1)',
+			// Supporting color
+			--brand-accent: 'rgba(134, 111, 240, 1)',
+			// Highlight elements (e.g., badges)
+			--brand-foreground: 'rgba(45, 45, 45, 1)',
+			// Main text color
+			--brand-background: 'rgba(255, 255, 255, 1)',
+			// Page background
+			--brand-muted: 'rgba(217, 217, 217, 1)',
+			// Muted content (e.g., placeholders)
+			--brand-highlight: 'rgba(187, 253, 248, 1)',
+			// Special highlights;;
 	}
+
 	.dark {
 		--background: 240 10% 3.9%;
 		--foreground: 0 0% 98%;
@@ -66,6 +105,7 @@ body {
 	* {
 		@apply border-border;
 	}
+
 	body {
 		@apply bg-background text-foreground;
 	}

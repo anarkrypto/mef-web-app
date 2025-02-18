@@ -1,5 +1,4 @@
 import type { Metadata } from 'next'
-import localFont from 'next/font/local'
 import './globals.css'
 import Header from '@/components/Header'
 import { ThemeProvider } from '@/components/theme-provider'
@@ -9,23 +8,21 @@ import { AuthProvider } from '@/contexts/AuthContext'
 import { WalletProvider } from '@/contexts/WalletContext'
 import { Suspense } from 'react'
 import { FeedbackDialog } from '@/components/feedback/FeedbackDialog'
-
-const geistSans = localFont({
-	src: './fonts/GeistVF.woff',
-	variable: '--font-geist-sans',
-	weight: '100 900',
-})
-const geistMono = localFont({
-	src: './fonts/GeistMonoVF.woff',
-	variable: '--font-geist-mono',
-	weight: '100 900',
-})
+import { IBM_Plex_Sans as FontSans } from 'next/font/google'
+import { QueryClientProvider } from '@/contexts/QueryClientProvider'
+import { NuqsAdapter } from 'nuqs/adapters/next/app'
 
 export const metadata: Metadata = {
 	title: 'Home | MEF',
 	description:
 		'A platform for managing and coordinating funding rounds for community proposals. Create, submit, and review proposals in a transparent and organized way.',
 }
+
+const fontSans = FontSans({
+	subsets: ['latin'],
+	variable: '--font-sans',
+	weight: ['100', '200', '300', '400', '500', '600', '700'],
+})
 
 export default function RootLayout({
 	children,
@@ -34,27 +31,29 @@ export default function RootLayout({
 }>) {
 	return (
 		<html lang="en" suppressHydrationWarning>
-			<body
-				className={`${geistSans.variable} ${geistMono.variable} antialiased`}
-			>
+			<body className={`${fontSans.className} antialiased`}>
 				<ThemeProvider
 					attribute="class"
 					defaultTheme="light"
 					enableSystem={false}
 					disableTransitionOnChange
 				>
-					<FeedbackProvider>
-						<Suspense fallback={<div>Loading...</div>}>
-							<AuthProvider>
-								<WalletProvider>
-									<Header />
-									<main>{children}</main>
-									<Toaster />
-									<FeedbackDialog />
-								</WalletProvider>
-							</AuthProvider>
-						</Suspense>
-					</FeedbackProvider>
+					<NuqsAdapter>
+						<FeedbackProvider>
+							<QueryClientProvider>
+								<Suspense fallback={<div>Loading...</div>}>
+									<AuthProvider>
+										<WalletProvider>
+											<Header />
+											<main>{children}</main>
+											<Toaster />
+											<FeedbackDialog />
+										</WalletProvider>
+									</AuthProvider>
+								</Suspense>
+							</QueryClientProvider>
+						</FeedbackProvider>
+					</NuqsAdapter>
 				</ThemeProvider>
 			</body>
 		</html>

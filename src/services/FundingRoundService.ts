@@ -1,27 +1,27 @@
 import {
-	PrismaClient,
-	FundingRound as PrismaFundingRound,
+	FundingRoundPhase,
+	FundingRoundPhases,
 	FundingRoundStatus,
-} from '@prisma/client'
+	FundingRoundWithPhases,
+} from '@/types/funding-round'
+import { Prisma, PrismaClient } from '@prisma/client'
+import { z } from 'zod'
 
-interface FundingRoundWithPhases extends PrismaFundingRound {
-	submissionPhase: {
-		startDate: Date
-		endDate: Date
-	}
-	considerationPhase: {
-		startDate: Date
-		endDate: Date
-	}
-	deliberationPhase: {
-		startDate: Date
-		endDate: Date
-	}
-	votingPhase: {
-		startDate: Date
-		endDate: Date
-	}
-}
+export const getPublicFundingRoundsOptionsSchema = z.object({
+	filterName: z.string().optional().nullable(),
+	sortBy: z.enum(['totalBudget', 'startDate', 'status']).optional().nullable(),
+	sortOrder: z.enum(['asc', 'desc']).optional().nullable(),
+})
+
+export type GetPublicFundingRoundOptions = z.infer<
+	typeof getPublicFundingRoundsOptionsSchema
+>
+
+const DEFAULT_ORDER_BY: Prisma.FundingRoundOrderByWithRelationInput[] = [
+	{ status: 'desc' },
+	{ startDate: 'desc' },
+	{ totalBudget: 'desc' },
+]
 
 export class FundingRoundService {
 	private prisma: PrismaClient
@@ -30,16 +30,75 @@ export class FundingRoundService {
 		this.prisma = prisma
 	}
 
-	async getAllFundingRounds() {
-		return await this.prisma.fundingRound.findMany({
+	async getPublicFundingRounds(
+		options: GetPublicFundingRoundOptions,
+	): Promise<FundingRoundWithPhases[]> {
+		const buildOrderBy = (
+			userGetPublicFundingRoundOptions?: GetPublicFundingRoundOptions,
+		): Prisma.FundingRoundOrderByWithRelationInput[] => {
+			if (!userGetPublicFundingRoundOptions?.sortBy) {
+				return DEFAULT_ORDER_BY
+			}
+
+			// If there is a user sort, put it first, then follow with the default array.
+			const filteredDefault = DEFAULT_ORDER_BY.filter(orderItem => {
+				const key = Object.keys(orderItem)[0]
+				return key !== userGetPublicFundingRoundOptions.sortBy
+			})
+
+			return [
+				{
+					[userGetPublicFundingRoundOptions.sortBy]:
+						userGetPublicFundingRoundOptions.sortOrder,
+				},
+				...filteredDefault,
+			]
+		}
+
+		if (options) {
+			getPublicFundingRoundsOptionsSchema.parse(options)
+		}
+
+		const rounds = await this.prisma.fundingRound.findMany({
+			where: {
+				status: {
+					in: ['ACTIVE', 'COMPLETED'],
+				},
+				...(options.filterName
+					? {
+							name: {
+								contains: options.filterName,
+								mode: 'insensitive',
+							},
+						}
+					: {}),
+			},
 			include: {
-				proposals: true,
+				_count: {
+					select: { proposals: true },
+				},
 				submissionPhase: true,
 				considerationPhase: true,
 				deliberationPhase: true,
 				votingPhase: true,
+				topic: true,
 			},
-			orderBy: { startDate: 'asc' },
+			orderBy: buildOrderBy(options.sortBy ? options : undefined),
+		})
+
+		return rounds.map(({ _count, ...round }) => {
+			const phases = this.buildPhases(round)
+
+			return {
+				...round,
+				totalBudget: round.totalBudget.toString(),
+				proposalsCount: _count.proposals,
+				status: round.status as FundingRoundStatus,
+				startDate: round.startDate.toDateString(),
+				endDate: round.endDate.toDateString(),
+				phase: this.getCurrentPhase(round.endDate.toDateString(), phases),
+				phases,
+			}
 		})
 	}
 
@@ -62,59 +121,134 @@ export class FundingRoundService {
 		})
 	}
 
-	async getFundingRoundById(id: string) {
-		return await this.prisma.fundingRound.findUnique({
-			where: { id },
+	async getFundingRoundById(
+		id: string,
+	): Promise<FundingRoundWithPhases | null> {
+		const round = await this.prisma.fundingRound.findUnique({
+			where: {
+				id,
+			},
 			include: {
-				proposals: true,
+				_count: {
+					select: { proposals: true },
+				},
 				submissionPhase: true,
 				considerationPhase: true,
 				deliberationPhase: true,
 				votingPhase: true,
+				topic: true,
 			},
 		})
+
+		if (!round) {
+			return null
+		}
+
+		const phases = this.buildPhases(round)
+
+		return {
+			...round,
+			proposalsCount: round._count.proposals,
+			totalBudget: round.totalBudget.toString(),
+			status: round.status as FundingRoundStatus,
+			startDate: round.startDate.toDateString(),
+			endDate: round.endDate.toDateString(),
+			phase: this.getCurrentPhase(round.endDate.toDateString(), phases),
+			phases,
+		}
 	}
 
-	getCurrentPhase(fundingRound: FundingRoundWithPhases) {
+	private buildPhases(
+		round: Record<
+			| 'submissionPhase'
+			| 'considerationPhase'
+			| 'deliberationPhase'
+			| 'votingPhase',
+			{
+				id: string
+				startDate: Date
+				endDate: Date
+			} | null
+		>,
+	): FundingRoundPhases {
+		if (
+			!round.submissionPhase ||
+			!round.considerationPhase ||
+			!round.deliberationPhase ||
+			!round.votingPhase
+		) {
+			throw new Error('Missing phase data')
+		}
+
+		return {
+			submission: {
+				id: round.submissionPhase.id,
+				startDate: round.submissionPhase.startDate.toISOString(),
+				endDate: round.submissionPhase.endDate.toISOString(),
+			},
+			consideration: {
+				id: round.considerationPhase.id,
+				startDate: round.considerationPhase.startDate.toISOString(),
+				endDate: round.considerationPhase.endDate.toISOString(),
+			},
+			deliberation: {
+				id: round.deliberationPhase.id,
+				startDate: round.deliberationPhase.startDate.toISOString(),
+				endDate: round.deliberationPhase.endDate.toISOString(),
+			},
+			voting: {
+				id: round.votingPhase.id,
+				startDate: round.votingPhase.startDate.toISOString(),
+				endDate: round.votingPhase.endDate.toISOString(),
+			},
+		}
+	}
+
+	getCurrentPhase(
+		endDate: string,
+		phases: FundingRoundPhases,
+	): FundingRoundPhase {
+		// TODO: Check if we can improve this one by relying on the database directly
+
 		const now = new Date()
 
-		if (now < new Date(fundingRound.startDate)) {
-			return 'upcoming'
+		if (now < new Date(phases.submission.startDate)) {
+			return 'UPCOMING'
 		}
 
 		if (
-			now >= new Date(fundingRound.submissionPhase.startDate) &&
-			now <= new Date(fundingRound.submissionPhase.endDate)
+			now >= new Date(phases.submission.startDate) &&
+			now <= new Date(phases.submission.endDate)
 		) {
-			return 'submission'
+			return 'SUBMISSION'
 		}
 
 		if (
-			now >= new Date(fundingRound.considerationPhase.startDate) &&
-			now <= new Date(fundingRound.considerationPhase.endDate)
+			now >= new Date(phases.consideration.startDate) &&
+			now <= new Date(phases.consideration.endDate)
 		) {
-			return 'consideration'
+			return 'CONSIDERATION'
 		}
 
 		if (
-			now >= new Date(fundingRound.deliberationPhase.startDate) &&
-			now <= new Date(fundingRound.deliberationPhase.endDate)
+			now >= new Date(phases.deliberation.startDate) &&
+			now <= new Date(phases.deliberation.endDate)
 		) {
-			return 'deliberation'
+			return 'DELIBERATION'
 		}
 
 		if (
-			now >= new Date(fundingRound.votingPhase.startDate) &&
-			now <= new Date(fundingRound.votingPhase.endDate)
+			now >= new Date(phases.voting.startDate) &&
+			now <= new Date(phases.voting.endDate)
 		) {
-			return 'voting'
+			return 'VOTING'
 		}
 
-		if (now > new Date(fundingRound.endDate)) {
-			return 'completed'
+		if (now >= new Date(endDate)) {
+			return 'COMPLETED'
 		}
 
-		return 'unknown'
+		return 'BETWEEN_PHASES'
 	}
 
 	getTimeRemaining(date: Date): string {

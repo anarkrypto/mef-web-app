@@ -1,62 +1,30 @@
-'use client'
+import logger from '@/logging'
+import { GetPublicFundingRoundOptions } from '@/services'
+import { FundingRoundWithPhases } from '@/types/funding-round'
+import { useQuery } from '@tanstack/react-query'
 
-import { useState, useEffect, useCallback } from 'react'
-import { useToast } from '@/hooks/use-toast'
+export function useFundingRounds({
+	filterName,
+	sortBy,
+	sortOrder,
+}: GetPublicFundingRoundOptions) {
+	const searchParams = new URLSearchParams()
 
-interface FundingRound {
-	id: string
-	name: string
-	description: string
-	status: 'DRAFT' | 'ACTIVE'
-	submissionPhase: {
-		startDate: string
-		endDate: string
-	}
-	considerationPhase: {
-		startDate: string
-		endDate: string
-	}
-}
+	if (filterName) searchParams.set('filterName', filterName)
+	if (sortBy) searchParams.set('sortBy', sortBy)
+	if (sortOrder) searchParams.set('sortOrder', sortOrder)
 
-export function useFundingRounds() {
-	const [loading, setLoading] = useState(true)
-	const [availableRounds, setAvailableRounds] = useState<FundingRound[]>([])
-	const { toast } = useToast()
+	const url = `/api/funding-rounds?${searchParams.toString()}`
 
-	const fetchAvailableRounds = useCallback(async () => {
-		try {
-			setLoading(true)
-			const response = await fetch('/api/funding-rounds/active')
-			if (!response.ok) throw new Error('Failed to fetch funding rounds')
-			const data = await response.json()
-
-			// Filter rounds that are in submission phase
-			const now = new Date()
-			const activeRounds = data.filter((round: FundingRound) => {
-				const startDate = new Date(round.submissionPhase.startDate)
-				const endDate = new Date(round.submissionPhase.endDate)
-				return startDate <= now && now <= endDate
-			})
-
-			setAvailableRounds(activeRounds)
-		} catch (error) {
-			toast({
-				title: 'Error',
-				description: 'Failed to check available funding rounds',
-				variant: 'destructive',
-			})
-		} finally {
-			setLoading(false)
-		}
-	}, [toast])
-
-	useEffect(() => {
-		fetchAvailableRounds()
-	}, [fetchAvailableRounds])
-
-	return {
-		loading,
-		hasAvailableRounds: availableRounds.length > 0,
-		refresh: fetchAvailableRounds,
-	}
+	return useQuery<FundingRoundWithPhases[]>({
+		queryKey: [url],
+		queryFn: async () => {
+			const response = await fetch(url)
+			if (!response.ok) {
+				logger.error('Failed to fetch funding rounds', response)
+				throw new Error('Failed to fetch funding rounds')
+			}
+			return response.json()
+		},
+	})
 }
