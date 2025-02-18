@@ -159,14 +159,14 @@ export class ConsiderationVotingService {
 
 		// Ensure all required phases exist and have proper dates
 		if (
-			!fundingRound.submissionPhase?.startDate ||
-			!fundingRound.submissionPhase?.endDate ||
-			!fundingRound.considerationPhase?.startDate ||
-			!fundingRound.considerationPhase?.endDate ||
-			!fundingRound.deliberationPhase?.startDate ||
-			!fundingRound.deliberationPhase?.endDate ||
-			!fundingRound.votingPhase?.startDate ||
-			!fundingRound.votingPhase?.endDate
+			!fundingRound.phases.submission?.startDate ||
+			!fundingRound.phases.submission?.endDate ||
+			!fundingRound.phases.consideration?.startDate ||
+			!fundingRound.phases.consideration?.endDate ||
+			!fundingRound.phases.deliberation?.startDate ||
+			!fundingRound.phases.deliberation?.endDate ||
+			!fundingRound.phases.voting?.startDate ||
+			!fundingRound.phases.voting?.endDate
 		) {
 			return {
 				eligible: false,
@@ -175,25 +175,10 @@ export class ConsiderationVotingService {
 		}
 
 		// Now we can safely pass the funding round with its phases
-		const currentPhase = this.fundingRoundService.getCurrentPhase({
-			...fundingRound,
-			submissionPhase: {
-				startDate: fundingRound.submissionPhase.startDate,
-				endDate: fundingRound.submissionPhase.endDate,
-			},
-			considerationPhase: {
-				startDate: fundingRound.considerationPhase.startDate,
-				endDate: fundingRound.considerationPhase.endDate,
-			},
-			deliberationPhase: {
-				startDate: fundingRound.deliberationPhase.startDate,
-				endDate: fundingRound.deliberationPhase.endDate,
-			},
-			votingPhase: {
-				startDate: fundingRound.votingPhase.startDate,
-				endDate: fundingRound.votingPhase.endDate,
-			},
-		})
+		const currentPhase = this.fundingRoundService.getCurrentPhase(
+			fundingRound.endDate,
+			fundingRound.phases,
+		)
 
 		// Check current phase
 		if (currentPhase.toUpperCase() !== ProposalStatus.CONSIDERATION) {
