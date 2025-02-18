@@ -238,15 +238,13 @@ function FundingRoundPhaseComponent({
 			data.phases,
 		)
 
-		if (nextPhase) {
-			return (
-				<BetweenPhases
-					currentPhase={previousPhase?.name ?? null}
-					nextPhaseStart={nextPhase ? nextPhase.startDate : data.endDate}
-					nextPhaseName={nextPhase.name}
-				/>
-			)
-		}
+		return (
+			<BetweenPhases
+				currentPhase={previousPhase?.name ?? null}
+				nextPhaseStart={nextPhase ? nextPhase.startDate : data.endDate}
+				nextPhaseName={nextPhase?.name || 'COMPLETED'}
+			/>
+		)
 	}
 
 	// Regular phase rendering
