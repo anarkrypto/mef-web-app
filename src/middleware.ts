@@ -256,14 +256,16 @@ export async function middleware(request: NextRequest) {
 	if (accessToken) {
 		try {
 			await verifyToken(accessToken)
-			const isAdmin = await checkAdminAccess(accessToken)
 
 			// Token is valid, create response and proceed
 			const response = NextResponse.next()
 
 			// For admin routes, check permissions
-			if (routeType === 'admin' && !isAdmin) {
-				return generateAdminUnauthorizedResponse(routeType, request)
+			if (routeType === 'admin') {
+				const isAdmin = await checkAdminAccess(accessToken)
+				if (!isAdmin) {
+					return generateAdminUnauthorizedResponse(routeType, request)
+				}
 			}
 
 			return response
@@ -313,9 +315,6 @@ export async function middleware(request: NextRequest) {
 				headers: requestHeaders,
 			})
 
-			// Verify admin status with new token
-			const isAdmin = await checkAdminAccess(newAccessToken)
-
 			// Create response with the new tokens
 			const response = NextResponse.next({ request: modifiedRequest })
 
@@ -325,8 +324,12 @@ export async function middleware(request: NextRequest) {
 			})
 
 			// For admin routes, check permissions
-			if (routeType === 'admin' && !isAdmin) {
-				return generateAdminUnauthorizedResponse(routeType, request)
+			if (routeType === 'admin') {
+				// Verify admin status with new token
+				const isAdmin = await checkAdminAccess(newAccessToken)
+				if (!isAdmin) {
+					return generateAdminUnauthorizedResponse(routeType, request)
+				}
 			}
 
 			return response
