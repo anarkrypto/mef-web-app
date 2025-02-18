@@ -314,11 +314,11 @@ const getPreviousAndNextForBetweenPhase = (
 	const now = new Date()
 
 	const destructuredPhases = Object.entries(phases).map(
-		([name, { startDate }], index) => ({
+		([name, { startDate, endDate }], index) => ({
 			index,
 			name,
 			startDate,
-			endDate: phases[name as keyof FundingRoundPhases].endDate,
+			endDate,
 		}),
 	)
 
@@ -335,14 +335,14 @@ const getPreviousAndNextForBetweenPhase = (
 		nextPhase: nextPhase
 			? {
 					name: nextPhase.name,
-					startDate: nextPhase?.startDate,
+					startDate: nextPhase.startDate,
 					endDate: nextPhase.endDate,
 				}
 			: null,
 		previousPhase: previousPhase
 			? {
 					name: previousPhase.name,
-					startDate: previousPhase?.startDate,
+					startDate: previousPhase.startDate,
 					endDate: previousPhase.endDate,
 				}
 			: null,
