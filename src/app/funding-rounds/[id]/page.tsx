@@ -111,11 +111,26 @@ function FundingRoundStatusOverviewCards({
 }: {
 	data: StartedFundingRoundWithPhases
 }) {
-	const { nextPhase } = getPreviousAndNextForBetweenPhase(data.phases)
+	const { nextPhase, previousPhase } = getPreviousAndNextForBetweenPhase(
+		data.phases,
+	)
+
+	// TODO: When finished or started funding round, bring a custom overview
+
+	const startedDate =
+		data.phase === 'BETWEEN_PHASES'
+			? new Date(previousPhase ? previousPhase.endDate : data.startDate) // If there's no previous phase, it means the funding round is just starting
+			: data.phase === 'COMPLETED'
+				? new Date(data.endDate)
+				: new Date(
+						data.phases[
+							data.phase.toLowerCase() as keyof FundingRoundPhases
+						].startDate,
+					)
 
 	const endDate =
 		data.phase === 'BETWEEN_PHASES'
-			? new Date(nextPhase ? nextPhase.startDate : data.endDate)
+			? new Date(nextPhase ? nextPhase.startDate : data.endDate) // If there's no next phase, it means the funding round is completed
 			: data.phase === 'COMPLETED'
 				? new Date(data.endDate)
 				: new Date(
@@ -142,7 +157,7 @@ function FundingRoundStatusOverviewCards({
 		},
 		{
 			label: 'In Phase',
-			value: getTimeSince(endDate),
+			value: getTimeSince(startedDate),
 			icon: TimerIcon,
 		},
 	]
