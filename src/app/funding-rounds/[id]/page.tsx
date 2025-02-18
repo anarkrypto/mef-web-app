@@ -185,58 +185,66 @@ function FundingRoundStatusOverviewCards({
 }
 
 function PhaseTimeline({ data }: { data: StartedFundingRoundWithPhases }) {
+	const timelinePhases = STARTED_PHASES.filter(
+		phase => phase !== 'BETWEEN_PHASES',
+	)
+
+	const previousOrCurrentActivePhase =
+		data.phase === 'BETWEEN_PHASES'
+			? getPreviousAndNextForBetweenPhase(data.phases).previousPhase?.name
+			: data.phase
+
 	return (
 		<div className="space-y-4">
-			{STARTED_PHASES.filter(phase => phase !== 'BETWEEN_PHASES').map(
-				(phase, index) => {
-					const isActive = data.phase === phase
-					const isCompleted =
-						data.phase === 'COMPLETED' ||
-						index < STARTED_PHASES.indexOf(data.phase)
+			{timelinePhases.map((phase, index) => {
+				const isActive = data.phase === phase
+				const isCompleted =
+					data.phase === 'COMPLETED' ||
+					(previousOrCurrentActivePhase &&
+						index < STARTED_PHASES.indexOf(previousOrCurrentActivePhase))
 
-					return (
-						<div key={phase as string} className="relative">
-							{/* Timeline connector */}
-							{index > 0 && (
-								<div
-									className={cn(
-										'absolute -top-4 left-4 h-4 w-0.5',
-										isCompleted ? 'bg-secondary' : 'bg-muted-foreground/20',
-									)}
-								/>
-							)}
-
+				return (
+					<div key={phase as string} className="relative">
+						{/* Timeline connector */}
+						{index > 0 && (
 							<div
 								className={cn(
-									'relative rounded-md p-3 font-medium capitalize',
-									isCompleted && 'bg-secondary/10 text-secondary',
-									isActive && 'bg-secondary text-secondary-foreground',
-									!isActive && !isCompleted && 'text-muted-foreground',
+									'absolute -top-4 left-4 h-4 w-0.5',
+									isCompleted ? 'bg-secondary' : 'bg-muted-foreground/20',
 								)}
-							>
-								{/* Phase icon */}
-								<span className="mr-2">
-									{phase === 'SUBMISSION' && '📝'}
-									{phase === 'CONSIDERATION' && '🤔'}
-									{phase === 'DELIBERATION' && '💭'}
-									{phase === 'VOTING' && '🗳️'}
-									{phase === 'COMPLETED' && '🏁'}
+							/>
+						)}
+
+						<div
+							className={cn(
+								'relative rounded-md p-3 font-medium capitalize',
+								isCompleted && 'bg-secondary/10 text-secondary',
+								isActive && 'bg-secondary text-secondary-foreground',
+								!isActive && !isCompleted && 'text-muted-foreground',
+							)}
+						>
+							{/* Phase icon */}
+							<span className="mr-2">
+								{phase === 'SUBMISSION' && '📝'}
+								{phase === 'CONSIDERATION' && '🤔'}
+								{phase === 'DELIBERATION' && '💭'}
+								{phase === 'VOTING' && '🗳️'}
+								{phase === 'COMPLETED' && '🏁'}
+							</span>
+
+							{/* Phase name */}
+							{phase}
+
+							{/* Completion indicator */}
+							{isCompleted && (
+								<span className="absolute right-2 top-1/2 -translate-y-1/2 text-secondary">
+									✓
 								</span>
-
-								{/* Phase name */}
-								{phase}
-
-								{/* Completion indicator */}
-								{isCompleted && (
-									<span className="absolute right-2 top-1/2 -translate-y-1/2 text-secondary">
-										✓
-									</span>
-								)}
-							</div>
+							)}
 						</div>
-					)
-				},
-			)}
+					</div>
+				)
+			})}
 		</div>
 	)
 }
@@ -258,7 +266,7 @@ function FundingRoundPhaseComponent({
 				currentPhase={previousPhase?.name ?? null}
 				nextPhaseStart={
 					new Date(nextPhase ? nextPhase.startDate : data.endDate)
-				} // If there's no next phase, it means the funding round is completed
+				} // If there's no next phase, it means the next funding round is completed
 				nextPhaseName={nextPhase?.name || 'COMPLETED'}
 			/>
 		)
@@ -323,8 +331,12 @@ function getTimeSince(date: Date): string {
 const getPreviousAndNextForBetweenPhase = (
 	phases: FundingRoundPhases,
 ): {
-	nextPhase: { name: string; startDate: string; endDate: string } | null
-	previousPhase: { name: string; startDate: string; endDate: string } | null
+	nextPhase: { name: StartedPhase; startDate: string; endDate: string } | null
+	previousPhase: {
+		name: StartedPhase
+		startDate: string
+		endDate: string
+	} | null
 } => {
 	const now = new Date()
 
@@ -349,14 +361,14 @@ const getPreviousAndNextForBetweenPhase = (
 	return {
 		nextPhase: nextPhase
 			? {
-					name: nextPhase.name,
+					name: nextPhase.name as StartedPhase,
 					startDate: nextPhase.startDate,
 					endDate: nextPhase.endDate,
 				}
 			: null,
 		previousPhase: previousPhase
 			? {
-					name: previousPhase.name,
+					name: previousPhase.name as StartedPhase,
 					startDate: previousPhase.startDate,
 					endDate: previousPhase.endDate,
 				}
