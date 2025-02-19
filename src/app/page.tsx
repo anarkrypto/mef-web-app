@@ -116,9 +116,9 @@ async function ActiveFunds() {
 	return (
 		<section className="space-y-8 bg-gray-50 py-12 md:py-24">
 			{activeFundingRounds.map(fund => (
-				<div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-					<div className="grid grid-cols-1 overflow-hidden rounded-xl border border-border md:grid-cols-2">
-						<div className="bg-secondary p-12 text-white">
+				<div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
+					<div className="flex overflow-hidden rounded-xl border border-border">
+						<div className="md:max-w-1/2 w-full bg-secondary p-12 text-white">
 							<div className="mb-6 flex items-center space-x-2">
 								<div className="h-5 w-5 animate-pulse rounded-full bg-green-400" />
 								<span className="text-xl font-medium">ACTIVE</span>
@@ -142,11 +142,11 @@ async function ActiveFunds() {
 								</Button>
 							</Link>
 						</div>
-						<div className="relative hidden md:block">
+						<div className="hidden bg-muted md:block">
 							<Image
 								src={RoundsTableImage}
 								alt="Community collaboration"
-								className="h-full w-full object-cover"
+								className="aspect-4/3 h-auto min-h-full w-full object-cover"
 							/>
 						</div>
 					</div>
@@ -239,7 +239,7 @@ function Community() {
 						key={index}
 						className="flex w-full flex-col items-center overflow-hidden rounded-2xl border border-border md:h-[340px] md:grid-cols-2 md:flex-row md:odd:flex-row-reverse"
 					>
-						<div className="max-w-sm p-8 lg:max-w-lg">
+						<div className="md:max-w-1/2 w-full p-8">
 							<h3 className="mb-4 text-3xl font-bold">{card.title}</h3>
 							<p className="mb-6 text-gray-600">{card.description}</p>
 							<div className="flex space-x-4">
@@ -250,11 +250,11 @@ function Community() {
 								))}
 							</div>
 						</div>
-						<div className="relative hidden h-full w-full md:block">
+						<div className="hidden h-full w-full bg-muted md:block">
 							<Image
 								src={card.image}
 								alt="Community collaboration"
-								className="absolute left-1/2 top-1/2 h-auto min-h-full w-full -translate-x-1/2 -translate-y-1/2"
+								className="aspect-4/3 h-auto min-h-full w-full object-cover"
 								quality={100}
 							/>
 						</div>
