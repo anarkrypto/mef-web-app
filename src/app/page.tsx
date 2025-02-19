@@ -38,8 +38,8 @@ function Hero() {
 				/>
 				<div className="absolute inset-0 bg-black/40" />
 			</div>
-			<div className="relative z-10 mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
-				<h1 className="mb-6 text-5xl font-bold text-white sm:text-6xl lg:text-7xl">
+			<div className="relative z-10 mx-auto max-w-4xl px-4 text-center sm:px-6 md:text-left lg:px-8">
+				<h1 className="mb-6 text-6xl font-bold text-white lg:text-7xl">
 					MEF: Mina Ecosystem Funding
 				</h1>
 				<p className="mb-8 max-w-2xl text-lg text-white/90 sm:text-xl">
@@ -56,9 +56,9 @@ function Hero() {
 
 function WhatIsMEF() {
 	return (
-		<section className="py-24">
+		<section className="py-12 md:py-24">
 			<div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-				<div className="grid grid-cols-1 items-start gap-16 md:grid-cols-2">
+				<div className="grid grid-cols-1 items-start gap-8 md:grid-cols-2 md:gap-12">
 					<Image
 						src={CoinsBottleImage}
 						alt="Community gathering"
@@ -100,7 +100,7 @@ function WhatIsMEF() {
 
 function ActiveFund() {
 	return (
-		<section className="bg-gray-50 py-24">
+		<section className="bg-gray-50 py-12 md:py-24">
 			<div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
 				<div className="grid grid-cols-1 overflow-hidden rounded-xl border border-border md:grid-cols-2">
 					<div className="bg-secondary p-12 text-white">
@@ -124,7 +124,7 @@ function ActiveFund() {
 							I want to participate!
 						</Button>
 					</div>
-					<div className="relative">
+					<div className="relative hidden md:block">
 						<Image
 							src={RoundsTableImage}
 							alt="Community collaboration"
@@ -163,7 +163,7 @@ function Community() {
 			image: CommunityMembersImage,
 			buttons: [
 				{
-					label: 'Consider or Vote on a Proposal',
+					label: 'Vote on a Proposal',
 					variant: 'secondary',
 				},
 				{ label: 'Learn more', variant: 'outline' },
@@ -172,8 +172,8 @@ function Community() {
 	]
 
 	return (
-		<section className="py-24">
-			<div className="mx-auto flex max-w-5xl flex-col gap-y-16 px-4 sm:px-6 lg:px-8">
+		<section className="py-12 md:py-24">
+			<div className="mx-auto flex max-w-5xl flex-col gap-y-8 px-4 sm:px-6 md:gap-y-16 lg:px-8">
 				<div>
 					<h2 className="mb-4 text-center text-4xl font-bold text-gray-900">
 						Empowering the Community to Shape the Future
@@ -190,9 +190,9 @@ function Community() {
 				{communityCards.map((card, index) => (
 					<div
 						key={index}
-						className="flex w-full flex-row items-center overflow-hidden rounded-2xl border border-border odd:flex-row-reverse md:h-[340px] md:grid-cols-2"
+						className="flex w-full flex-col items-center overflow-hidden rounded-2xl border border-border md:h-[340px] md:grid-cols-2 md:flex-row md:odd:flex-row-reverse"
 					>
-						<div className="max-w-lg p-8">
+						<div className="max-w-sm p-8 lg:max-w-lg">
 							<h3 className="mb-4 text-3xl font-bold">{card.title}</h3>
 							<p className="mb-6 text-gray-600">{card.description}</p>
 							<div className="flex space-x-4">
@@ -203,7 +203,7 @@ function Community() {
 								))}
 							</div>
 						</div>
-						<div className="relative h-full w-full">
+						<div className="relative hidden h-full w-full md:block">
 							<Image
 								src={card.image}
 								alt="Community collaboration"
@@ -220,7 +220,7 @@ function Community() {
 
 function ContactSection() {
 	return (
-		<section className="bg-gray-900 py-24 text-white">
+		<section className="bg-gray-900 py-12 text-white md:py-24">
 			<div className="mx-auto max-w-7xl px-4 text-center sm:px-6 lg:px-8">
 				<h2 className="mb-8 text-3xl font-bold">Contact Us</h2>
 				<p className="mx-auto mb-8 max-w-2xl text-gray-300">
