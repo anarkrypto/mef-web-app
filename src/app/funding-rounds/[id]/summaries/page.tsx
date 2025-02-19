@@ -186,6 +186,22 @@ const PhaseSummaryDashboard = async ({ params }: Props) => {
 		defaultDates,
 	)
 
+	// Post-voting phase starts when voting phase ends and continues indefinitely
+	const postVotingPhaseInfo = fundingRound.votingPhase
+		? {
+				startDate: fundingRound.votingPhase.endDate,
+				endDate: new Date('9999-12-31T23:59:59.999Z'), // Effectively infinite
+				status:
+					new Date() > fundingRound.votingPhase.endDate
+						? ('ongoing' as const)
+						: ('not-started' as const),
+			}
+		: {
+				startDate: defaultDates.endDate, // If no voting phase, start after default end
+				endDate: new Date('9999-12-31T23:59:59.999Z'),
+				status: 'not-started' as const,
+			}
+
 	const phases: PhaseInfo[] = [
 		{
 			title: 'Submission Phase',
@@ -209,11 +225,18 @@ const PhaseSummaryDashboard = async ({ params }: Props) => {
 			href: `/funding-rounds/${id}/deliberation/summary`,
 		},
 		{
-			title: 'Voting Phase',
-			description: 'Final voting results and funding distribution',
-			icon: <CoinsIcon className="h-5 w-5 text-amber-500" />,
+			title: 'Voting Phase Ranked Results',
+			description: 'Overview of the ranked voting results',
+			icon: <VoteIcon className="h-5 w-5 text-emerald-500" />,
 			...votingPhaseInfo,
 			href: `/funding-rounds/${id}/voting/summary`,
+		},
+		{
+			title: 'Voting Phase Funds Distribution',
+			description: 'Funds distribution for the voting phase',
+			icon: <CoinsIcon className="h-5 w-5 text-amber-500" />,
+			...postVotingPhaseInfo,
+			href: `/funding-rounds/${id}/voting-funds/summary`,
 		},
 	]
 

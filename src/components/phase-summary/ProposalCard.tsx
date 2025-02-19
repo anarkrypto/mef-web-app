@@ -14,6 +14,7 @@ import {
 	CoinsIcon,
 	CalendarIcon,
 	UsersIcon,
+	VoteIcon,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { format } from 'date-fns'
@@ -23,6 +24,7 @@ import {
 	type CommunityVoteStats,
 	type SubmissionProposalVote,
 	type VotingProposalVote,
+	type RankedVotingProposalVote,
 } from '@/types/phase-summary'
 
 type ProposalVote =
@@ -32,6 +34,7 @@ type ProposalVote =
 	  })
 	| SubmissionProposalVote
 	| VotingProposalVote
+	| RankedVotingProposalVote
 
 interface Props {
 	proposal: ProposalVote
@@ -58,55 +61,78 @@ const getEmojiRank = (position: number): string => {
 }
 
 const getProposalStatus = (proposal: ProposalVote) => {
-  const isSubmissionPhase = 'submissionDate' in proposal;
-  const isVotingPhase = 'isFunded' in proposal;
-  const isDraft = proposal.status === 'DRAFT';
-  
-  if (isVotingPhase) {
-    return (proposal as VotingProposalVote).isFunded ? {
-      label: 'Funded',
-      bgColor: 'bg-emerald-50/50 hover:bg-emerald-50/80',
-      borderColor: 'border-emerald-200/50',
-      textColor: 'text-emerald-600'
-    } : {
-      label: 'Not Funded',
-      bgColor: 'bg-rose-50/50 hover:bg-rose-50/80',
-      borderColor: 'border-rose-200/50',
-      textColor: 'text-rose-600'
-    };
-  }
-  
-  if (isSubmissionPhase) {
-    return {
-      label: 'Submitted',
-      bgColor: 'bg-blue-50/50 hover:bg-blue-50/80',
-      borderColor: 'border-blue-200/50',
-      textColor: 'text-blue-600'
-    };
-  }
-  
-  if (isDraft) {
-    return {
-      label: 'Draft',
-      bgColor: 'bg-gray-50/50 hover:bg-gray-50/80',
-      borderColor: 'border-gray-200/50',
-      textColor: 'text-gray-600'
-    };
-  }
-  
-  const hasMovedForward = ['DELIBERATION', 'VOTING', 'APPROVED'].includes(proposal.status);
-  return hasMovedForward ? {
-    label: 'Approved',
-    bgColor: 'bg-emerald-50/50 hover:bg-emerald-50/80',
-    borderColor: 'border-emerald-200/50',
-    textColor: 'text-emerald-600'
-  } : {
-    label: 'Rejected',
-    bgColor: 'bg-rose-50/50 hover:bg-rose-50/80',
-    borderColor: 'border-rose-200/50',
-    textColor: 'text-rose-600'
-  };
-};
+	const isSubmissionPhase = 'submissionDate' in proposal
+	const isVotingPhase = 'isFunded' in proposal
+	const isRankedVoting = 'hasVotes' in proposal
+	const isDraft = proposal.status === 'DRAFT'
+
+	if (isRankedVoting) {
+		return proposal.status === 'NO_VOTES'
+			? {
+					label: 'No OCV Votes',
+					bgColor: 'bg-gray-50/50 hover:bg-gray-50/80',
+					borderColor: 'border-gray-200/50',
+					textColor: 'text-gray-600',
+				}
+			: {
+					label: 'Ranked',
+					bgColor: 'bg-blue-50/50 hover:bg-blue-50/80',
+					borderColor: 'border-blue-200/50',
+					textColor: 'text-blue-600',
+				}
+	}
+
+	if (isVotingPhase) {
+		return (proposal as VotingProposalVote).isFunded
+			? {
+					label: 'Funded',
+					bgColor: 'bg-emerald-50/50 hover:bg-emerald-50/80',
+					borderColor: 'border-emerald-200/50',
+					textColor: 'text-emerald-600',
+				}
+			: {
+					label: 'Not Funded',
+					bgColor: 'bg-rose-50/50 hover:bg-rose-50/80',
+					borderColor: 'border-rose-200/50',
+					textColor: 'text-rose-600',
+				}
+	}
+
+	if (isSubmissionPhase) {
+		return {
+			label: 'Submitted',
+			bgColor: 'bg-blue-50/50 hover:bg-blue-50/80',
+			borderColor: 'border-blue-200/50',
+			textColor: 'text-blue-600',
+		}
+	}
+
+	if (isDraft) {
+		return {
+			label: 'Draft',
+			bgColor: 'bg-gray-50/50 hover:bg-gray-50/80',
+			borderColor: 'border-gray-200/50',
+			textColor: 'text-gray-600',
+		}
+	}
+
+	const hasMovedForward = ['DELIBERATION', 'VOTING', 'APPROVED'].includes(
+		proposal.status,
+	)
+	return hasMovedForward
+		? {
+				label: 'Approved',
+				bgColor: 'bg-emerald-50/50 hover:bg-emerald-50/80',
+				borderColor: 'border-emerald-200/50',
+				textColor: 'text-emerald-600',
+			}
+		: {
+				label: 'Rejected',
+				bgColor: 'bg-rose-50/50 hover:bg-rose-50/80',
+				borderColor: 'border-rose-200/50',
+				textColor: 'text-rose-600',
+			}
+}
 
 export const ProposalCard: FC<Props> = ({
 	proposal,
@@ -116,6 +142,7 @@ export const ProposalCard: FC<Props> = ({
 	const status = getProposalStatus(proposal)
 	const isSubmissionPhase = 'submissionDate' in proposal
 	const isVotingPhase = 'isFunded' in proposal
+	const isRankedVoting = 'hasVotes' in proposal
 
 	return (
 		<Link href={`/proposals/${proposal.id}`} className="block">
@@ -206,6 +233,15 @@ export const ProposalCard: FC<Props> = ({
 										/>
 									</>
 								)}
+							</div>
+						) : isRankedVoting ? (
+							<div className="flex items-center gap-1 text-primary">
+								<VoteIcon className="h-3 w-3" />
+								<span className="text-xs font-medium">
+									{(proposal as RankedVotingProposalVote).hasVotes
+										? 'Ranked in OCV'
+										: 'No OCV Votes'}
+								</span>
 							</div>
 						) : (
 							<>

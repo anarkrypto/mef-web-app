@@ -2,7 +2,7 @@ import { type FC } from 'react'
 import { notFound } from 'next/navigation'
 import { VotingService } from '@/services/VotingService'
 import { prisma } from '@/lib/prisma'
-import { VotingPhaseSummary } from '@/components/phase-summary/VotingPhaseSummary'
+import { VotingPhaseRankedSummary } from '@/components/phase-summary/VotingPhaseRankedSummary'
 
 type Props = {
 	params: Promise<{
@@ -10,17 +10,16 @@ type Props = {
 	}>
 }
 
-const VotingPhaseSummaryPage = async ({ params }: Props) => {
+const VotingPhaseRankedSummaryPage = async ({ params }: Props) => {
 	const { id } = await params
 	const votingService = new VotingService(prisma)
 
 	try {
-		const summary = await votingService.getVotingPhaseSummary(id)
-		console.log(summary)
+		const summary = await votingService.getVotingPhaseRankedSummary(id)
 
 		return (
 			<div className="container mx-auto max-w-7xl py-6">
-				<VotingPhaseSummary summary={summary} fundingRoundId={id} />
+				<VotingPhaseRankedSummary summary={summary} fundingRoundId={id} />
 			</div>
 		)
 	} catch (error) {
@@ -28,4 +27,4 @@ const VotingPhaseSummaryPage = async ({ params }: Props) => {
 	}
 }
 
-export default VotingPhaseSummaryPage
+export default VotingPhaseRankedSummaryPage

@@ -20,7 +20,7 @@ import type {
 } from '@/types/wallet'
 import { WalletAuthDialog } from '@/components/web3/WalletAuthDialog'
 
-// Define target network - can be toggled between 'mainnet' and 'testnet'
+// Define target network - can be toggled between 'mainnet', 'devnet' and 'testnet'
 export const TARGET_NETWORK: NetworkID = 'devnet'
 
 const initialState: WalletState = {
