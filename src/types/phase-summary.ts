@@ -1,5 +1,7 @@
 import { Decimal } from '@prisma/client/runtime/library'
-import { ProposalStatus } from '@prisma/client'
+import { ProposalStatus as BaseProposalStatus } from '@prisma/client'
+
+export type ProposalStatus = BaseProposalStatus | 'NO_VOTES'
 
 export interface PhaseTimeInfo {
 	startDate: Date
@@ -87,6 +89,30 @@ export interface VotingPhaseFundsDistributionSummary extends BasePhaseSummary {
 	notFundedProposals: number
 	totalBudget: number
 	remainingBudget: number
+}
+
+export type RankedVotingProposalVote = ProposalVoteBase & {
+	reviewerVotes: {
+		yesVotes: number
+		noVotes: number
+		total: number
+		requiredReviewerApprovals: number
+		reviewerEligible: boolean
+	}
+	hasVotes: boolean
+}
+
+export interface VotingPhaseRankedSummary {
+	fundingRoundName: string
+	phaseTimeInfo: PhaseTimeInfo
+	totalProposals: number
+	totalVotes: number
+	budgetBreakdown: {
+		small: number
+		medium: number
+		large: number
+	}
+	proposalVotes: RankedVotingProposalVote[]
 }
 
 export type PhaseStatus = 'not-started' | 'ongoing' | 'ended'
