@@ -13,7 +13,7 @@ import { QueryClientProvider } from '@/contexts/QueryClientProvider'
 import { NuqsAdapter } from 'nuqs/adapters/next/app'
 
 export const metadata: Metadata = {
-	title: 'Home | MEF',
+	title: 'MEF | Mina Ecosystem Funding',
 	description:
 		'A platform for managing and coordinating funding rounds for community proposals. Create, submit, and review proposals in a transparent and organized way.',
 }
