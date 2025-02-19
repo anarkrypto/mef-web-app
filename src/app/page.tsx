@@ -166,9 +166,9 @@ async function ActiveFundsSkeleton() {
 							<div className="h-5 w-5 animate-pulse rounded-full bg-muted" />
 							<div className="h-6 w-40 animate-pulse rounded-lg bg-muted" />
 						</div>
-						<div className="mb-4 h-10 w-full animate-pulse rounded-lg bg-muted" />
+						<div className="mb-4 h-20 w-full animate-pulse rounded-lg bg-muted md:h-10" />
 						<div className="mb-8 h-5 w-full animate-pulse rounded-lg bg-muted" />
-						<div className="mb-8 h-16 animate-pulse rounded-lg bg-muted" />
+						<div className="mb-8 h-32 animate-pulse rounded-lg bg-muted lg:h-16" />
 						<div className="h-10 w-56 animate-pulse rounded-md bg-muted" />
 					</div>
 					<div className="relative hidden md:block">
