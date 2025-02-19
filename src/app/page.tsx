@@ -69,16 +69,18 @@ function Hero() {
 function WhatIsMEF() {
 	return (
 		<section className="py-12 md:py-24">
-			<div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-				<div className="grid grid-cols-1 items-start gap-8 md:grid-cols-2 md:gap-12">
-					<Image
-						src={CoinsBottleImage}
-						alt="Community gathering"
-						className="rounded-2xl object-cover"
-						quality={100}
-					/>
-					<div>
-						<h2 className="mb-8 text-4xl font-bold text-gray-900">
+			<div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
+				<div className="flex flex-col gap-6 md:flex-row-reverse md:gap-12">
+					<div className="md:w-1/2">
+						<Image
+							src={CoinsBottleImage}
+							alt="Community gathering"
+							className="rounded-2xl object-cover"
+							quality={100}
+						/>
+					</div>
+					<div className="w-full md:w-1/2">
+						<h2 className="mb-4 text-4xl font-bold text-gray-900">
 							What is MEF
 						</h2>
 						<div className="space-y-6 text-gray-600">
@@ -120,7 +122,14 @@ async function ActiveFunds() {
 			{activeFundingRounds.map(fund => (
 				<div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
 					<div className="flex overflow-hidden rounded-xl border border-border">
-						<div className="md:max-w-1/2 w-full bg-secondary p-12 text-white">
+						<div className="hidden bg-muted md:block md:w-1/2">
+							<Image
+								src={RoundsTableImage}
+								alt="Community collaboration"
+								className="aspect-4/3 h-auto min-h-full w-full object-cover"
+							/>
+						</div>
+						<div className="w-full bg-secondary p-12 text-white md:w-1/2">
 							<div className="mb-6 flex items-center space-x-2">
 								<div className="h-5 w-5 animate-pulse rounded-full bg-green-400" />
 								<span className="text-xl font-medium">ACTIVE</span>
@@ -144,13 +153,6 @@ async function ActiveFunds() {
 								</Button>
 							</Link>
 						</div>
-						<div className="hidden bg-muted md:block">
-							<Image
-								src={RoundsTableImage}
-								alt="Community collaboration"
-								className="aspect-4/3 h-auto min-h-full w-full object-cover"
-							/>
-						</div>
 					</div>
 				</div>
 			))}
@@ -161,19 +163,19 @@ async function ActiveFunds() {
 async function ActiveFundsSkeleton() {
 	return (
 		<section className="space-y-8 bg-gray-50 py-12 md:py-24">
-			<div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-				<div className="grid grid-cols-1 overflow-hidden rounded-xl border border-border md:grid-cols-2">
-					<div className="bg-secondary p-12 text-white">
-						<div className="mb-6 flex items-center space-x-2">
+			<div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
+				<div className="flex overflow-hidden rounded-xl border border-border md:flex-row-reverse">
+					<div className="w-full bg-secondary p-12 text-white md:w-1/2">
+						<div className="mb-8 flex items-center space-x-2">
 							<div className="h-5 w-5 animate-pulse rounded-full bg-muted" />
 							<div className="h-6 w-40 animate-pulse rounded-lg bg-muted" />
 						</div>
 						<div className="mb-4 h-20 w-full animate-pulse rounded-lg bg-muted md:h-10" />
 						<div className="mb-8 h-5 w-full animate-pulse rounded-lg bg-muted" />
-						<div className="mb-8 h-32 animate-pulse rounded-lg bg-muted lg:h-16" />
+						<div className="mb-8 h-36 animate-pulse rounded-lg bg-muted lg:h-20" />
 						<div className="h-10 w-56 animate-pulse rounded-md bg-muted" />
 					</div>
-					<div className="relative hidden md:block">
+					<div className="relative hidden w-1/2 md:block">
 						<Image
 							src={RoundsTableImage}
 							alt="Community collaboration"
@@ -222,12 +224,12 @@ function Community() {
 
 	return (
 		<section className="py-12 md:py-24">
-			<div className="mx-auto flex max-w-5xl flex-col gap-y-8 px-4 sm:px-6 md:gap-y-16 lg:px-8">
+			<div className="mx-auto flex max-w-6xl flex-col gap-y-8 px-4 sm:px-6 md:gap-y-16 lg:px-8">
 				<div>
 					<h2 className="mb-4 text-center text-4xl font-bold text-gray-900">
 						Empowering the Community to Shape the Future
 					</h2>
-					<p className="mx-auto max-w-5xl text-center text-lg text-gray-600">
+					<p className="text-center text-lg text-gray-600">
 						You have the opportunity to participate in the funding process in a
 						way that aligns with your interests. Whether it's proposing new
 						initiatives, reviewing and refining ideas, voting on projects,
@@ -239,9 +241,9 @@ function Community() {
 				{communityCards.map((card, index) => (
 					<div
 						key={index}
-						className="flex w-full flex-col items-center overflow-hidden rounded-2xl border border-border md:h-[340px] md:grid-cols-2 md:flex-row md:odd:flex-row-reverse"
+						className="flex w-full flex-col items-center gap-6 text-lg md:h-[260px] md:grid-cols-2 md:flex-row md:odd:flex-row-reverse lg:gap-10"
 					>
-						<div className="md:max-w-1/2 w-full p-8">
+						<div className="w-full py-8 md:w-3/5">
 							<h3 className="mb-4 text-3xl font-bold">{card.title}</h3>
 							<p className="mb-6 text-gray-600">{card.description}</p>
 							<div className="flex space-x-4">
@@ -252,7 +254,7 @@ function Community() {
 								))}
 							</div>
 						</div>
-						<div className="hidden h-full w-full bg-muted md:block">
+						<div className="hidden h-full w-2/5 overflow-hidden rounded-2xl bg-muted md:block">
 							<Image
 								src={card.image}
 								alt="Community collaboration"
@@ -270,7 +272,7 @@ function Community() {
 function ContactSection() {
 	return (
 		<section className="bg-gray-900 py-12 text-white md:py-24">
-			<div className="mx-auto max-w-7xl px-4 text-center sm:px-6 lg:px-8">
+			<div className="mx-auto max-w-6xl px-4 text-center sm:px-6 lg:px-8">
 				<h2 className="mb-8 text-3xl font-bold">Contact Us</h2>
 				<p className="mx-auto mb-8 max-w-2xl text-gray-300">
 					Join the Mina Foundation's Protocol Governance Discord channel and be
