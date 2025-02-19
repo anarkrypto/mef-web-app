@@ -7,6 +7,8 @@ import RoundsTableImage from '@/images/rounds-table-1000x750.jpg'
 import CoinsBottleImage from '@/images/coins-bottle-1000x750.jpg'
 import ColleagesMeetingImage from '@/images/colleagues-meeting-1000x750.jpg'
 import CommunityMembersImage from '@/images/community-members-1000x750.jpg'
+import { FundingRoundService } from '@/services'
+import prisma from '@/lib/prisma'
 
 export const metadata: Metadata = {
 	title: 'MEF | Get Involved',
@@ -14,12 +16,17 @@ export const metadata: Metadata = {
 		'Join the movement and help shape the future of the Mina Protocol. Submit a proposal to drive community growth and innovation.',
 }
 
+const getActiveFundingRounds = async () => {
+	const fundingRoundService = new FundingRoundService(prisma)
+	return await fundingRoundService.getActiveFundingRounds()
+}
+
 export default function LandingPage() {
 	return (
 		<div className="divide-y divide-border">
 			<Hero />
 			<WhatIsMEF />
-			<ActiveFund />
+			<ActiveFunds />
 			<Community />
 			<ContactSection />
 		</div>
@@ -98,41 +105,50 @@ function WhatIsMEF() {
 	)
 }
 
-function ActiveFund() {
+async function ActiveFunds() {
+	const activeFundingRounds = await getActiveFundingRounds()
+	const formatDate = (date: Date) =>
+		`${date.toLocaleString('default', { month: 'short' })} ${date.getDate()}, ${date.getFullYear()}`
+
 	return (
-		<section className="bg-gray-50 py-12 md:py-24">
-			<div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-				<div className="grid grid-cols-1 overflow-hidden rounded-xl border border-border md:grid-cols-2">
-					<div className="bg-secondary p-12 text-white">
-						<div className="mb-6 flex items-center space-x-2">
-							<div className="h-5 w-5 animate-pulse rounded-full bg-green-400" />
-							<span className="text-xl font-medium">ACTIVE</span>
+		<section className="space-y-8 bg-gray-50 py-12 md:py-24">
+			{activeFundingRounds.map(fund => (
+				<div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+					<div className="grid grid-cols-1 overflow-hidden rounded-xl border border-border md:grid-cols-2">
+						<div className="bg-secondary p-12 text-white">
+							<div className="mb-6 flex items-center space-x-2">
+								<div className="h-5 w-5 animate-pulse rounded-full bg-green-400" />
+								<span className="text-xl font-medium">ACTIVE</span>
+							</div>
+							<h3 className="mb-4 text-3xl font-bold">{fund.name}</h3>
+							<p className="mb-6 text-white/80">
+								From <b>{formatDate(fund.startDate)}</b> to{' '}
+								<b>{formatDate(fund.endDate)}</b>
+							</p>
+							<p className="mb-8 text-lg">
+								Be a driving force in unlocking new opportunities and resources
+								to empower the growth and success of the Mina ecosystem.
+							</p>
+							<Link href={`/funding-rounds/${fund.id}`}>
+								<Button
+									variant="secondary"
+									size="lg"
+									className="bg-white px-6 text-lg text-secondary hover:bg-gray-100"
+								>
+									I want to participate!
+								</Button>
+							</Link>
 						</div>
-						<h3 className="mb-4 text-3xl font-bold">&lt;MEF Fund 1&gt;</h3>
-						<p className="mb-6 text-white/80">
-							&lt;From XX/2025 to XX/2025&gt;
-						</p>
-						<p className="mb-8 text-lg">
-							Be a driving force in unlocking new opportunities and resources to
-							empower the growth and success of the Mina ecosystem.
-						</p>
-						<Button
-							variant="secondary"
-							size="lg"
-							className="bg-white px-6 text-lg text-secondary hover:bg-gray-100"
-						>
-							I want to participate!
-						</Button>
-					</div>
-					<div className="relative hidden md:block">
-						<Image
-							src={RoundsTableImage}
-							alt="Community collaboration"
-							className="h-full w-full object-cover"
-						/>
+						<div className="relative hidden md:block">
+							<Image
+								src={RoundsTableImage}
+								alt="Community collaboration"
+								className="h-full w-full object-cover"
+							/>
+						</div>
 					</div>
 				</div>
-			</div>
+			))}
 		</section>
 	)
 }
