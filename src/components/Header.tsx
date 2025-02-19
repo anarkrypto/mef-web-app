@@ -21,7 +21,7 @@ export default function Header() {
 	const [isLoading, setIsLoading] = useState(true)
 
 	const navigation = [
-		{ name: 'Home', href: '/', emoji: '🏠' },
+		{ name: 'Get Involved', href: '/', emoji: '🏠' },
 		{
 			name: 'Funding Rounds',
 			href: '/funding-rounds',
