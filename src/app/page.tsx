@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import Image from 'next/image'
+import Image, { StaticImageData } from 'next/image'
 import { Metadata } from 'next'
 import { Button } from '@/components/ui/button'
 import HeroOverlayImage from '@/images/hero-overlay-3000x2000.jpg'
@@ -120,7 +120,7 @@ async function ActiveFunds() {
 	return (
 		<section className="space-y-8 bg-gray-50 py-12 md:py-24">
 			{activeFundingRounds.map(fund => (
-				<div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
+				<div key={fund.id} className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
 					<div className="flex overflow-hidden rounded-xl border border-border">
 						<div className="hidden bg-muted md:block md:w-1/2">
 							<Image
@@ -189,7 +189,12 @@ async function ActiveFundsSkeleton() {
 }
 
 function Community() {
-	const communityCards = [
+	const communityCards: {
+		title: string
+		description: string
+		image: StaticImageData
+		buttons: { label: string; variant: 'secondary' | 'outline' }[]
+	}[] = [
 		{
 			title: 'Reviewer',
 			description: `
@@ -231,7 +236,7 @@ function Community() {
 					</h2>
 					<p className="text-center text-lg text-gray-600">
 						You have the opportunity to participate in the funding process in a
-						way that aligns with your interests. Whether it's proposing new
+						way that aligns with your interests. Whether it&apos;s proposing new
 						initiatives, reviewing and refining ideas, voting on projects,
 						ensuring transparency, or influencing key decisions, your
 						involvement plays a crucial role in ensuring a fair and effective
@@ -247,8 +252,8 @@ function Community() {
 							<h3 className="mb-4 text-3xl font-bold">{card.title}</h3>
 							<p className="mb-6 text-gray-600">{card.description}</p>
 							<div className="flex space-x-4">
-								{card.buttons.map(button => (
-									<Button variant={button.variant as any}>
+								{card.buttons.map((button, index) => (
+									<Button key={index} variant={button.variant}>
 										{button.label}
 									</Button>
 								))}
@@ -275,8 +280,8 @@ function ContactSection() {
 			<div className="mx-auto max-w-6xl px-4 text-center sm:px-6 lg:px-8">
 				<h2 className="mb-8 text-3xl font-bold">Contact Us</h2>
 				<p className="mx-auto mb-8 max-w-2xl text-gray-300">
-					Join the Mina Foundation's Protocol Governance Discord channel and be
-					part of the conversation shaping Mina's future.
+					Join the Mina Foundation&apos;s Protocol Governance Discord channel
+					and be part of the conversation shaping Mina&apos;s future.
 				</p>
 				<a
 					href="https://discord.com/channels/1229012241710448640/1328303180701761618"
