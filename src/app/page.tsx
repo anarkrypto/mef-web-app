@@ -9,6 +9,7 @@ import ColleagesMeetingImage from '@/images/colleagues-meeting-1000x750.jpg'
 import CommunityMembersImage from '@/images/community-members-1000x750.jpg'
 import { FundingRoundService } from '@/services'
 import prisma from '@/lib/prisma'
+import { Suspense } from 'react'
 
 export const metadata: Metadata = {
 	title: 'MEF | Get Involved',
@@ -26,7 +27,9 @@ export default function LandingPage() {
 		<div className="divide-y divide-border">
 			<Hero />
 			<WhatIsMEF />
-			<ActiveFunds />
+			<Suspense fallback={<ActiveFundsSkeleton />}>
+				<ActiveFunds />
+			</Suspense>
 			<Community />
 			<ContactSection />
 		</div>
@@ -149,6 +152,34 @@ async function ActiveFunds() {
 					</div>
 				</div>
 			))}
+		</section>
+	)
+}
+
+async function ActiveFundsSkeleton() {
+	return (
+		<section className="space-y-8 bg-gray-50 py-12 md:py-24">
+			<div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+				<div className="grid grid-cols-1 overflow-hidden rounded-xl border border-border md:grid-cols-2">
+					<div className="bg-secondary p-12 text-white">
+						<div className="mb-6 flex items-center space-x-2">
+							<div className="h-5 w-5 animate-pulse rounded-full bg-muted" />
+							<div className="h-6 w-40 animate-pulse rounded-lg bg-muted" />
+						</div>
+						<div className="mb-4 h-10 w-full animate-pulse rounded-lg bg-muted" />
+						<div className="mb-8 h-5 w-full animate-pulse rounded-lg bg-muted" />
+						<div className="mb-8 h-16 animate-pulse rounded-lg bg-muted" />
+						<div className="h-10 w-56 animate-pulse rounded-md bg-muted" />
+					</div>
+					<div className="relative hidden md:block">
+						<Image
+							src={RoundsTableImage}
+							alt="Community collaboration"
+							className="h-full w-full animate-pulse object-cover blur-xl"
+						/>
+					</div>
+				</div>
+			</div>
 		</section>
 	)
 }
