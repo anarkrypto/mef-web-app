@@ -209,11 +209,11 @@ const PhaseSummaryDashboard = async ({ params }: Props) => {
 			href: `/funding-rounds/${id}/deliberation/summary`,
 		},
 		{
-			title: 'Voting Phase',
-			description: 'Final voting results and funding distribution',
+			title: 'Voting Phase Funds Distribution',
+			description: 'Funds distribution for the voting phase',
 			icon: <CoinsIcon className="h-5 w-5 text-amber-500" />,
 			...votingPhaseInfo,
-			href: `/funding-rounds/${id}/voting/summary`,
+			href: `/funding-rounds/${id}/voting-funds/summary`,
 		},
 	]
 

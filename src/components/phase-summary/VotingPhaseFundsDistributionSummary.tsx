@@ -1,7 +1,7 @@
 import { type FC } from 'react'
 import { CoinsIcon } from 'lucide-react'
 import { TooltipProvider } from '@/components/ui/tooltip'
-import { type VotingPhaseSummary as VotingPhaseSummaryType } from '@/types/phase-summary'
+import { type VotingPhaseFundsDistributionSummary as VotingPhaseFundsDistributionSummaryType } from '@/types/phase-summary'
 import {
 	getPhaseStatus,
 	getPhaseProgress,
@@ -13,15 +13,16 @@ import { StatsCard } from './StatsCard'
 import { ProposalList } from './ProposalList'
 import { BudgetDistributionChart } from '../funding-rounds/BudgetDistributionChart'
 import { formatMINA } from '@/lib/format'
-import { Badge } from '@/components/ui/badge'
-import { cn } from '@/lib/utils'
 
 interface Props {
-	summary: VotingPhaseSummaryType
+	summary: VotingPhaseFundsDistributionSummaryType
 	fundingRoundId: string
 }
 
-export const VotingPhaseSummary: FC<Props> = ({ summary, fundingRoundId }) => {
+export const VotingPhaseFundsDistributionSummary: FC<Props> = ({
+	summary,
+	fundingRoundId,
+}) => {
 	const phaseStatus = getPhaseStatus(summary.phaseTimeInfo)
 	const progress = getPhaseProgress(summary.phaseTimeInfo)
 	const progressColor = getProgressColor(progress)
@@ -41,8 +42,8 @@ export const VotingPhaseSummary: FC<Props> = ({ summary, fundingRoundId }) => {
 	return (
 		<TooltipProvider>
 			<BasePhaseSummary
-				title={`${summary.fundingRoundName}'s Voting Phase Summary`}
-				description="Overview of the voting phase results and funding distribution"
+				title={`${summary.fundingRoundName}'s Funds Distribution Summary`}
+				description="Overview of the funding distribution"
 				phaseStatus={phaseStatus}
 				stats={
 					<div className="flex items-center gap-4">

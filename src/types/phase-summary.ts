@@ -81,7 +81,7 @@ export interface VotingProposalVote extends ProposalVoteBase {
 	missingAmount?: number
 }
 
-export interface VotingPhaseSummary extends BasePhaseSummary {
+export interface VotingPhaseFundsDistributionSummary extends BasePhaseSummary {
 	proposalVotes: VotingProposalVote[]
 	fundedProposals: number
 	notFundedProposals: number

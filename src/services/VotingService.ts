@@ -1,6 +1,6 @@
 import { PrismaClient } from '@prisma/client'
 import { OCVApiService } from './OCVApiService'
-import { type VotingPhaseSummary } from '@/types/phase-summary'
+import { type VotingPhaseFundsDistributionSummary } from '@/types/phase-summary'
 import { UserMetadata } from '.'
 import logger from '@/logging'
 
@@ -10,9 +10,9 @@ export class VotingService {
 		private readonly ocvService: OCVApiService = new OCVApiService(),
 	) {}
 
-	async getVotingPhaseSummary(
+	async getVotingPhaseFundsDistributionSummary(
 		fundingRoundId: string,
-	): Promise<VotingPhaseSummary> {
+	): Promise<VotingPhaseFundsDistributionSummary> {
 		const fundingRound = await this.prisma.fundingRound.findUnique({
 			where: { id: fundingRoundId },
 			include: {
@@ -48,13 +48,18 @@ export class VotingService {
 		let fundedProposals = 0
 		let notFundedProposals = 0
 
-		// Process proposals in ranked order
+		// Use a set to track processed proposals to avoid duplicates
+		const processedProposals = new Set<string>()
+		// Process proposals from OCV in the order provided, ensuring each proposal is processed once
 		for (const winnerId of voteData.winners) {
-			const proposal = fundingRound.proposals.find(p => p.id == winnerId)
+			const idStr = String(winnerId)
+			if (processedProposals.has(idStr)) continue
+			const proposal = fundingRound.proposals.find(p => String(p.id) === idStr)
 			if (!proposal) {
-				logger.warn(`[VotingService] Proposal with id ${winnerId} not found`)
+				logger.warn(`[VotingService] Proposal with id ${idStr} not found`)
 				continue
 			}
+			processedProposals.add(idStr)
 
 			const budgetRequest = proposal.budgetRequest.toNumber()
 			const isFunded = budgetRequest <= remainingBudget
@@ -77,6 +82,26 @@ export class VotingService {
 				isFunded,
 				missingAmount: isFunded ? undefined : budgetRequest - remainingBudget,
 			})
+		}
+
+		// Process remaining proposals not referenced by OCV
+		for (const proposal of fundingRound.proposals) {
+			const idStr = String(proposal.id)
+			if (!processedProposals.has(idStr)) {
+				processedProposals.add(idStr)
+				notFundedProposals++
+				proposalVotes.push({
+					id: proposal.id,
+					proposalName: proposal.proposalName,
+					proposer: this.getUserDisplayName(
+						proposal.user.metadata as UserMetadata,
+					),
+					status: proposal.status,
+					budgetRequest: proposal.budgetRequest,
+					isFunded: false,
+					missingAmount: proposal.budgetRequest.toNumber(),
+				})
+			}
 		}
 
 		// Calculate budget breakdown

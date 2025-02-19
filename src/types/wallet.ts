@@ -1,6 +1,10 @@
 export type WalletProvider = 'auro' | 'pallard' | 'clorio'
 
-export type NetworkID = 'mainnet' | 'devnet' | 'berkeley'
+/*
+ * Auro used to use 'testnet', now uses 'devnet'.
+ * Minascan public graphql endpoint uses 'testnet'
+ */
+export type NetworkID = 'mainnet' | 'devnet' | 'berkeley' | 'testnet'
 
 // Wallet event types
 export type WalletEventType =
