@@ -94,7 +94,7 @@ export class FundingRoundService {
 				...round,
 				totalBudget: round.totalBudget.toString(),
 				proposalsCount: _count.proposals,
-				status: round.status as FundingRoundStatus,
+				status: this.fixFundingRoundStatus(round.status, round.startDate),
 				startDate: round.startDate.toDateString(),
 				endDate: round.endDate.toDateString(),
 				phase: this.getCurrentPhase(round.endDate.toDateString(), phases),
@@ -151,7 +151,7 @@ export class FundingRoundService {
 			...round,
 			proposalsCount: round._count.proposals,
 			totalBudget: round.totalBudget.toString(),
-			status: round.status as FundingRoundStatus,
+			status: this.fixFundingRoundStatus(round.status, round.startDate),
 			startDate: round.startDate.toDateString(),
 			endDate: round.endDate.toDateString(),
 			phase: this.getCurrentPhase(round.endDate.toDateString(), phases),
@@ -227,7 +227,7 @@ export class FundingRoundService {
 			id: round.id,
 			name: round.name,
 			description: round.description,
-			status: round.status as FundingRoundStatus,
+			status: this.fixFundingRoundStatus(round.status, round.startDate),
 			phase: this.getCurrentPhase(
 				round.endDate.toDateString(),
 				this.buildPhases(round),
@@ -238,6 +238,19 @@ export class FundingRoundService {
 			proposalsCount: round._count.proposals,
 			mefId: round.mefId,
 		}
+	}
+
+	private fixFundingRoundStatus(
+		status: string,
+		startDate: Date | string,
+	): FundingRoundStatus {
+		if (status === 'ACTIVE') {
+			if (new Date(startDate) > new Date()) {
+				return 'UPCOMING'
+			}
+			return 'ACTIVE'
+		}
+		return status as FundingRoundStatus
 	}
 
 	private buildPhases(
