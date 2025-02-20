@@ -17,9 +17,9 @@ export const metadata: Metadata = {
 		'Join the movement and help shape the future of the Mina Protocol. Submit a proposal to drive community growth and innovation.',
 }
 
-const getActiveFundingRounds = async () => {
+const getLastFundingRound = async () => {
 	const fundingRoundService = new FundingRoundService(prisma)
-	return await fundingRoundService.getActiveFundingRounds()
+	return await fundingRoundService.getLastPublicFundingRound()
 }
 
 export default function LandingPage() {
@@ -113,13 +113,13 @@ function WhatIsMEF() {
 }
 
 async function ActiveFunds() {
-	const activeFundingRounds = await getActiveFundingRounds()
+	const fund = await getLastFundingRound()
 	const formatDate = (date: Date) =>
 		`${date.toLocaleString('default', { month: 'short' })} ${date.getDate()}, ${date.getFullYear()}`
 
 	return (
 		<section className="space-y-8 bg-gray-50 py-12 md:py-24">
-			{activeFundingRounds.map(fund => (
+			{fund && (
 				<div key={fund.id} className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
 					<div className="flex overflow-hidden rounded-xl border border-border">
 						<div className="hidden bg-muted md:block md:w-1/2">
@@ -136,8 +136,8 @@ async function ActiveFunds() {
 							</div>
 							<h3 className="mb-4 text-3xl font-bold">{fund.name}</h3>
 							<p className="mb-6 text-white/80">
-								From <b>{formatDate(fund.startDate)}</b> to{' '}
-								<b>{formatDate(fund.endDate)}</b>
+								From <b>{formatDate(new Date(fund.startDate))}</b> to{' '}
+								<b>{formatDate(new Date(fund.endDate))}</b>
 							</p>
 							<p className="mb-8 text-lg">
 								Be a driving force in unlocking new opportunities and resources
@@ -155,7 +155,7 @@ async function ActiveFunds() {
 						</div>
 					</div>
 				</div>
-			))}
+			)}
 		</section>
 	)
 }
