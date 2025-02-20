@@ -55,11 +55,6 @@ export default function Header() {
 					</nav>
 				</div>
 				<div className="ml-auto flex items-center gap-4">
-					<Button variant="ghost" size="icon" className="relative">
-						<Bell className="h-4 w-4" />
-						<span className="sr-only">Notifications</span>
-						<span className="absolute right-0 top-0 h-2 w-2 rounded-full bg-red-500" />
-					</Button>
 					{isAdmin && (
 						<TooltipProvider>
 							<Tooltip>
