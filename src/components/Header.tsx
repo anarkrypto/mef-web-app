@@ -21,14 +21,11 @@ export default function Header() {
 	const [isLoading, setIsLoading] = useState(true)
 
 	const navigation = [
-		{ name: 'Get Involved', href: '/', emoji: '🏠' },
-		{
-			name: 'Funding Rounds',
-			href: '/funding-rounds',
-			emoji: '💰',
-		},
-		{ name: 'Start Here', href: '/start-here', emoji: '🚀' },
-		{ name: 'My Proposals', href: '/proposals', emoji: '📝' },
+		{ name: 'Get Involved', href: '/' },
+		{ name: 'How it Works', href: '/how-it-works' },
+		{ name: 'Funding Rounds', href: '/funding-rounds' },
+		{ name: 'Proposals', href: '/proposals' },
+		{ name: 'About Us', href: '/about-us' },
 	]
 
 	useEffect(() => {
@@ -79,7 +76,6 @@ export default function Header() {
 										: 'text-foreground/60',
 								)}
 							>
-								<span className="text-base">{item.emoji}</span>
 								<span>{item.name}</span>
 							</Link>
 						))}
