@@ -1,10 +1,8 @@
 'use client'
 
 import Link from 'next/link'
-import { Bell, Settings } from 'lucide-react'
+import { Settings } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { UserStatus } from './auth/UserStatus'
-import { WalletConnector } from './web3/WalletConnector'
 import { usePathname } from 'next/navigation'
 import { cn } from '@/lib/utils'
 import {
@@ -14,6 +12,8 @@ import {
 	TooltipTrigger,
 } from '@/components/ui/tooltip'
 import { useAdminStatus } from '@/hooks/use-admin-status'
+import { useAuth } from '@/contexts/AuthContext'
+import { UserStatus } from './auth/UserStatus'
 
 export default function Header() {
 	const pathname = usePathname()
@@ -27,6 +27,7 @@ export default function Header() {
 	]
 
 	const { isAdmin } = useAdminStatus()
+	const { user, isLoading: isAuthLoading } = useAuth()
 
 	return (
 		<header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -72,10 +73,15 @@ export default function Header() {
 							</Tooltip>
 						</TooltipProvider>
 					)}
-					<div className="flex items-center gap-4">
-						<WalletConnector />
+					{user ? (
 						<UserStatus />
-					</div>
+					) : (
+						<Link href="/auth">
+							<Button className="button-3d" loading={isAuthLoading}>
+								Sign In
+							</Button>
+						</Link>
+					)}
 				</div>
 			</div>
 		</header>
