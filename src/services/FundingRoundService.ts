@@ -1,4 +1,5 @@
 import {
+	FundingRound,
 	FundingRoundPhase,
 	FundingRoundPhases,
 	FundingRoundStatus,
@@ -155,6 +156,87 @@ export class FundingRoundService {
 			endDate: round.endDate.toDateString(),
 			phase: this.getCurrentPhase(round.endDate.toDateString(), phases),
 			phases,
+		}
+	}
+
+	async getLastPublicFundingRound(): Promise<FundingRound | null> {
+		const now = new Date()
+		// 1. Try to find a round that has started but not ended
+		let round = await this.prisma.fundingRound.findFirst({
+			where: {
+				startDate: { lte: now },
+				endDate: { gte: now },
+				status: {
+					in: ['ACTIVE'],
+				},
+			},
+			include: {
+				_count: { select: { proposals: true } },
+				topic: true,
+				submissionPhase: true,
+				considerationPhase: true,
+				deliberationPhase: true,
+				votingPhase: true,
+			},
+			orderBy: { startDate: 'asc' },
+		})
+
+		// 2. If none found, try to find an upcoming round (not yet started)
+		if (!round) {
+			round = await this.prisma.fundingRound.findFirst({
+				where: {
+					startDate: { gt: now },
+					status: { in: ['ACTIVE'] },
+				},
+				include: {
+					_count: { select: { proposals: true } },
+					topic: true,
+					submissionPhase: true,
+					considerationPhase: true,
+					deliberationPhase: true,
+					votingPhase: true,
+				},
+				orderBy: { startDate: 'asc' },
+			})
+		}
+
+		// 3. If none found, fallback to ended rounds
+		if (!round) {
+			round = await this.prisma.fundingRound.findFirst({
+				where: {
+					endDate: { lt: now },
+					status: { in: ['ACTIVE', 'COMPLETED'] },
+				},
+				include: {
+					_count: { select: { proposals: true } },
+					topic: true,
+					submissionPhase: true,
+					considerationPhase: true,
+					deliberationPhase: true,
+					votingPhase: true,
+				},
+				orderBy: { endDate: 'desc' },
+			})
+		}
+
+		if (!round) {
+			return null
+		}
+
+		return {
+			id: round.id,
+			name: round.name,
+			description: round.description,
+			status: round.status as FundingRoundStatus,
+			phase: this.getCurrentPhase(
+				round.endDate.toDateString(),
+				this.buildPhases(round),
+			),
+			startDate: round.startDate.toDateString(),
+			endDate: round.endDate.toDateString(),
+			totalBudget: round.totalBudget.toString(),
+			proposalsCount: round._count.proposals,
+			mefId: round.mefId,
 		}
 	}
 
