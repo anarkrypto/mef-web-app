@@ -16,7 +16,7 @@ import {
 import { useAdminStatus } from '@/hooks/use-admin-status'
 
 export default function Header() {
-	const pathname = usePathname() || ''
+	const pathname = usePathname()
 
 	const navigation = [
 		{ name: 'Get Involved', href: '/' },
