@@ -7,18 +7,16 @@ import { UserStatus } from './auth/UserStatus'
 import { WalletConnector } from './web3/WalletConnector'
 import { usePathname } from 'next/navigation'
 import { cn } from '@/lib/utils'
-import { useEffect, useState } from 'react'
 import {
 	Tooltip,
 	TooltipContent,
 	TooltipProvider,
 	TooltipTrigger,
 } from '@/components/ui/tooltip'
+import { useAdminStatus } from '@/hooks/use-admin-status'
 
 export default function Header() {
 	const pathname = usePathname() || ''
-	const [isAdmin, setIsAdmin] = useState(false)
-	const [isLoading, setIsLoading] = useState(true)
 
 	const navigation = [
 		{ name: 'Get Involved', href: '/' },
@@ -28,22 +26,7 @@ export default function Header() {
 		{ name: 'About Us', href: '/about-us' },
 	]
 
-	useEffect(() => {
-		async function checkAdminStatus() {
-			try {
-				const response = await fetch('/api/admin/check')
-				const data = await response.json()
-				setIsAdmin(data.isAdmin)
-			} catch (error) {
-				console.error('Failed to check admin status:', error)
-				setIsAdmin(false)
-			} finally {
-				setIsLoading(false)
-			}
-		}
-
-		checkAdminStatus()
-	}, [])
+	const { isAdmin } = useAdminStatus()
 
 	return (
 		<header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -77,7 +60,7 @@ export default function Header() {
 						<span className="sr-only">Notifications</span>
 						<span className="absolute right-0 top-0 h-2 w-2 rounded-full bg-red-500" />
 					</Button>
-					{!isLoading && isAdmin && (
+					{isAdmin && (
 						<TooltipProvider>
 							<Tooltip>
 								<TooltipTrigger asChild>
