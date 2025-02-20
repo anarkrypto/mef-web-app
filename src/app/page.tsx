@@ -193,7 +193,7 @@ function Community() {
 		title: string
 		description: string
 		image: StaticImageData
-		buttons: { label: string; variant: 'secondary' | 'outline' }[]
+		buttons: { label: string; variant: 'secondary' | 'outline'; href: string }[]
 	}[] = [
 		{
 			title: 'Reviewer',
@@ -204,8 +204,16 @@ function Community() {
 							fairness, and alignment with the community's funding objectives.`,
 			image: ColleagesMeetingImage,
 			buttons: [
-				{ label: 'Check our team', variant: 'secondary' },
-				{ label: 'Learn more', variant: 'outline' },
+				{
+					label: 'Enroll via web form',
+					variant: 'secondary',
+					href: 'https://docs.google.com/forms/d/e/1FAIpQLSevCzfZczeLsJkoPcwyCukvz1Af0xHjxcahYa4HFbOadJfdkw/viewform',
+				},
+				{
+					label: 'Learn more',
+					variant: 'outline',
+					href: '/how-it-works#reviewers',
+				},
 			],
 		},
 		{
@@ -221,8 +229,13 @@ function Community() {
 				{
 					label: 'Vote on a Proposal',
 					variant: 'secondary',
+					href: '/funding-rounds',
 				},
-				{ label: 'Learn more', variant: 'outline' },
+				{
+					label: 'Learn more',
+					variant: 'outline',
+					href: '/how-it-works#community-member',
+				},
 			],
 		},
 	]
@@ -253,9 +266,11 @@ function Community() {
 							<p className="mb-6 text-gray-600">{card.description}</p>
 							<div className="flex space-x-4">
 								{card.buttons.map((button, index) => (
-									<Button key={index} variant={button.variant}>
-										{button.label}
-									</Button>
+									<Link href={button.href} key={index}>
+										<Button key={index} variant={button.variant}>
+											{button.label}
+										</Button>
+									</Link>
 								))}
 							</div>
 						</div>
