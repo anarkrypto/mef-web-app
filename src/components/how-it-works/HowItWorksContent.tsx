@@ -43,7 +43,7 @@ interface FundingRoundWithPhases extends FundingRound {
 	}
 }
 
-export function StartHereContent() {
+export function HowItWorksContent() {
 	const router = useRouter()
 	const [activeFundingRounds, setActiveFundingRounds] = useState<
 		FundingRoundWithPhases[]
@@ -140,7 +140,7 @@ export function StartHereContent() {
 			{/* Header Section */}
 			<div className="space-y-6 text-center">
 				<div className="space-y-4">
-					<h1 className="text-4xl font-bold tracking-tight">Start Here</h1>
+					<h1 className="text-4xl font-bold tracking-tight">How It Works</h1>
 					<p className="mx-auto max-w-2xl text-lg text-muted-foreground">
 						Welcome to the MINA Ecosystem Funding process. Here you can learn
 						about the different phases and get started with your proposal

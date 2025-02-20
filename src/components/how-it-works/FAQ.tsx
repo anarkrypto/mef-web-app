@@ -7,6 +7,7 @@ import {
 } from '@/components/ui/accordion'
 import type { FundingRound } from '@prisma/client'
 
+// TODO: refactor to rely on default funding rounds types in @/types
 export type FundingRoundWithPhases = FundingRound & {
 	submissionPhase: {
 		startDate: Date

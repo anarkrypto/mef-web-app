@@ -1,16 +1,16 @@
 import { Metadata } from 'next'
-import { StartHereContent } from '@/components/start-here/StartHereContent'
+import { HowItWorksContent } from '@/components/how-it-works/HowItWorksContent'
 
 export const metadata: Metadata = {
-	title: 'Start Here - MINA Ecosystem Funding',
+	title: 'How it Works - MINA Ecosystem Funding',
 	description:
 		'Learn about the MINA Ecosystem Funding proposal process and get started with your proposal journey.',
 }
 
-export default function StartHerePage() {
+export default function HowItWorksPage() {
 	return (
 		<div className="container mx-auto min-h-[calc(100vh-4rem)] max-w-6xl px-4 py-8">
-			<StartHereContent />
+			<HowItWorksContent />
 		</div>
 	)
 }

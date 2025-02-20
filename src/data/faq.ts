@@ -1,7 +1,7 @@
 import type {
 	FAQSection,
 	FundingRoundWithPhases,
-} from '@/components/start-here/FAQ'
+} from '@/components/how-it-works/FAQ'
 
 const formatDate = (date: Date): string => {
 	return new Intl.DateTimeFormat('en-US', {
