@@ -19,11 +19,11 @@ export default function Header() {
 	const pathname = usePathname()
 
 	const navigation = [
-		{ name: 'Get Involved', href: '/' },
-		{ name: 'How it Works', href: '/how-it-works' },
-		{ name: 'Funding Rounds', href: '/funding-rounds' },
-		{ name: 'Proposals', href: '/proposals' },
-		{ name: 'About Us', href: '/about-us' },
+		{ label: 'Get Involved', href: '/' },
+		{ label: 'How it Works', href: '/how-it-works' },
+		{ label: 'Funding Rounds', href: '/funding-rounds' },
+		{ label: 'Proposals', href: '/proposals' },
+		{ label: 'About Us', href: '/about-us' },
 	]
 
 	const { isAdmin } = useAdminStatus()
@@ -38,17 +38,17 @@ export default function Header() {
 						</span>
 					</Link>
 					<nav className="absolute top-[1px] hidden h-14 items-center space-x-4 px-4 text-base font-medium md:ml-12 md:flex lg:px-8 xl:px-16">
-						{navigation.map(item => (
-							<Link key={item.href} href={item.href}>
+						{navigation.map(tab => (
+							<Link key={tab.href} href={tab.href}>
 								<div
 									className={cn(
 										'flex h-14 items-center space-x-2 px-4 transition-colors hover:text-secondary',
-										pathname === item.href
+										pathname === tab.href
 											? 'border-b-4 border-secondary font-semibold text-secondary'
 											: 'text-foreground/60',
 									)}
 								>
-									{item.name}
+									{tab.label}
 								</div>
 							</Link>
 						))}
