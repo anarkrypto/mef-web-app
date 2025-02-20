@@ -10,6 +10,8 @@ import CommunityMembersImage from '@/images/community-members-1000x750.jpg'
 import { FundingRoundService } from '@/services'
 import prisma from '@/lib/prisma'
 import { Suspense } from 'react'
+import { FundingRound } from '@/types/funding-round'
+import { CheckCheckIcon } from 'lucide-react'
 
 export const metadata: Metadata = {
 	title: 'MEF | Get Involved',
@@ -17,7 +19,7 @@ export const metadata: Metadata = {
 		'Join the movement and help shape the future of the Mina Protocol. Submit a proposal to drive community growth and innovation.',
 }
 
-const getLastFundingRound = async () => {
+const getLastFundingRound = async (): Promise<FundingRound | null> => {
 	const fundingRoundService = new FundingRoundService(prisma)
 	return await fundingRoundService.getLastPublicFundingRound()
 }
@@ -114,8 +116,51 @@ function WhatIsMEF() {
 
 async function ActiveFunds() {
 	const fund = await getLastFundingRound()
+
+	if (!fund) {
+		return null
+	}
+
 	const formatDate = (date: Date) =>
 		`${date.toLocaleString('default', { month: 'short' })} ${date.getDate()}, ${date.getFullYear()}`
+
+	const STATUSES = [
+		{
+			status: 'UPCOMING',
+			label: 'Upcoming',
+			indicator: (
+				<div className="h-5 w-5 animate-pulse rounded-full bg-yellow-400" />
+			),
+			button: {
+				label: 'View Details',
+				href: `/funding-rounds/${fund.id}`,
+			},
+		},
+		{
+			status: 'ACTIVE',
+			label: 'Active',
+			indicator: (
+				<div className="h-5 w-5 animate-pulse rounded-full bg-green-400" />
+			),
+			button: {
+				label: 'I want to participate!',
+				href: `/funding-rounds/${fund.id}`,
+			},
+		},
+		{
+			status: 'COMPLETED',
+			label: 'Completed',
+			indicator: (
+				<CheckCheckIcon className="h-6 w-6 animate-pulse rounded-full text-white" />
+			),
+			button: {
+				label: 'View Summary',
+				href: `/funding-rounds/${fund.id}/summaries`,
+			},
+		},
+	]
+
+	const currentStatus = STATUSES.find(s => s.status === fund.status)!
 
 	return (
 		<section className="space-y-8 bg-gray-50 py-12 md:py-24">
@@ -131,8 +176,10 @@ async function ActiveFunds() {
 						</div>
 						<div className="w-full bg-secondary p-12 text-white md:w-1/2">
 							<div className="mb-6 flex items-center space-x-2">
-								<div className="h-5 w-5 animate-pulse rounded-full bg-green-400" />
-								<span className="text-xl font-medium">ACTIVE</span>
+								{currentStatus.indicator}
+								<span className="text-xl font-medium">
+									{currentStatus.label}
+								</span>
 							</div>
 							<h3 className="mb-4 text-3xl font-bold">{fund.name}</h3>
 							<p className="mb-6 text-white/80">
@@ -143,13 +190,13 @@ async function ActiveFunds() {
 								Be a driving force in unlocking new opportunities and resources
 								to empower the growth and success of the Mina ecosystem.
 							</p>
-							<Link href={`/funding-rounds/${fund.id}`}>
+							<Link href={currentStatus.button.href}>
 								<Button
 									variant="secondary"
 									size="lg"
 									className="bg-white px-6 text-lg text-secondary hover:bg-gray-100"
 								>
-									I want to participate!
+									{currentStatus.button.label}
 								</Button>
 							</Link>
 						</div>
