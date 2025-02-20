@@ -13,6 +13,8 @@ import { Suspense } from 'react'
 import { FundingRound } from '@/types/funding-round'
 import { CheckCheckIcon } from 'lucide-react'
 
+export const dynamic = 'force-dynamic'
+
 export const metadata: Metadata = {
 	title: 'MEF | Get Involved',
 	description:
