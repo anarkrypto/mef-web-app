@@ -47,36 +47,26 @@ export default function Header() {
 
 	return (
 		<header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-			<div className="container mx-auto flex h-14 items-center px-4 sm:px-6 lg:px-8">
-				<div className="flex flex-1 items-center justify-between md:justify-start">
+			<div className="mx-auto flex h-14 w-full max-w-7xl items-center px-4 sm:px-6 lg:px-8">
+				<div className="relative flex h-14 flex-1 items-center justify-between md:justify-start">
 					<Link href="/" className="flex items-center space-x-2">
-						<svg
-							xmlns="http://www.w3.org/2000/svg"
-							viewBox="0 0 24 24"
-							fill="none"
-							stroke="currentColor"
-							strokeWidth="2"
-							strokeLinecap="round"
-							strokeLinejoin="round"
-							className="h-6 w-6"
-						>
-							<path d="M15 6v12a3 3 0 1 0 3-3H6a3 3 0 1 0 3 3V6a3 3 0 1 0-3 3h12a3 3 0 1 0-3-3" />
-						</svg>
-						<span className="hidden font-bold sm:inline-block">MEF</span>
+						<span className="hidden text-xl font-bold sm:inline-block">
+							MEF
+						</span>
 					</Link>
-					<nav className="hidden items-center space-x-8 text-sm font-medium md:ml-12 md:flex">
+					<nav className="absolute top-[1px] hidden h-14 items-center space-x-4 px-4 text-base font-medium md:ml-12 md:flex lg:px-8 xl:px-16">
 						{navigation.map(item => (
-							<Link
-								key={item.href}
-								href={item.href}
-								className={cn(
-									'flex items-center space-x-2 transition-colors hover:text-foreground/80',
-									pathname === item.href
-										? 'font-semibold text-foreground'
-										: 'text-foreground/60',
-								)}
-							>
-								<span>{item.name}</span>
+							<Link key={item.href} href={item.href}>
+								<div
+									className={cn(
+										'flex h-14 items-center space-x-2 px-4 transition-colors hover:text-secondary',
+										pathname === item.href
+											? 'border-b-4 border-secondary font-semibold text-secondary'
+											: 'text-foreground/60',
+									)}
+								>
+									{item.name}
+								</div>
 							</Link>
 						))}
 					</nav>
