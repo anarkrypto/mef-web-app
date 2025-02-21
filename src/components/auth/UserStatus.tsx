@@ -76,7 +76,7 @@ export function UserStatus() {
 					) : (
 						<>
 							<ProviderIcon className="h-4 w-4" />
-							<span className="hidden text-sm text-muted-foreground md:inline-block">
+							<span className="inline-block text-sm text-muted-foreground">
 								{username}
 							</span>
 						</>
