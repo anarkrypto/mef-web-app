@@ -29,7 +29,7 @@ const AUTH_PROVIDER_NAMES = {
 } as const satisfies Record<AuthSource['type'], string>
 
 export function UserStatus() {
-	const { user, isLoading, login, logout, refresh } = useAuth()
+	const { user, logout, refresh } = useAuth()
 	const [isLoggingOut, setIsLoggingOut] = useState(false)
 
 	const handleLogout = async () => {
@@ -42,42 +42,9 @@ export function UserStatus() {
 		}
 	}
 
-	if (isLoading) {
-		return (
-			<Button variant="ghost" size="icon" disabled>
-				<Loader2 className="h-4 w-4 animate-spin" />
-				<span className="sr-only">Loading</span>
-			</Button>
-		)
-	}
-
 	if (!user) {
-		return (
-			<DropdownMenu>
-				<DropdownMenuTrigger asChild>
-					<Button variant="ghost" size="icon">
-						<User className="h-4 w-4" />
-						<span className="sr-only">User menu</span>
-					</Button>
-				</DropdownMenuTrigger>
-				<DropdownMenuContent align="end" className="w-56">
-					<DropdownMenuLabel>Sign In</DropdownMenuLabel>
-					<DropdownMenuSeparator />
-					<DropdownMenuItem onClick={() => login('discord')}>
-						<DiscordLogoIcon className="mr-2 h-4 w-4 text-[#5865F2]" />
-						Login with Discord
-					</DropdownMenuItem>
-					<DropdownMenuItem onClick={() => login('telegram')}>
-						<ChatBubbleIcon className="mr-2 h-4 w-4 text-[#0088cc]" />
-						Login with Telegram
-					</DropdownMenuItem>
-					<DropdownMenuItem onClick={() => login('wallet')}>
-						<Wallet className="mr-2 h-4 w-4 text-orange-500" />
-						Login with Wallet
-					</DropdownMenuItem>
-				</DropdownMenuContent>
-			</DropdownMenu>
-		)
+		// Ensure only to call this component after user is loaded
+		return null
 	}
 
 	// Get auth info from user metadata
@@ -97,7 +64,7 @@ export function UserStatus() {
 				<Button
 					variant="ghost"
 					className={cn(
-						'flex h-auto items-center gap-2 px-3 py-2',
+						'flex h-auto items-center gap-2 border border-border px-3 py-2',
 						authSource.type === 'discord' && 'text-[#5865F2]',
 						authSource.type === 'telegram' && 'text-[#0088cc]',
 						authSource.type === 'wallet' && 'text-orange-500',
@@ -109,7 +76,7 @@ export function UserStatus() {
 					) : (
 						<>
 							<ProviderIcon className="h-4 w-4" />
-							<span className="hidden text-sm text-muted-foreground md:inline-block">
+							<span className="inline-block text-sm text-muted-foreground">
 								{username}
 							</span>
 						</>

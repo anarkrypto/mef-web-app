@@ -94,11 +94,11 @@ export default function FundingRoundDashboard({
 				{/* Help Link */}
 				<footer className="flex justify-end">
 					<Link
-						href="/start-here"
+						href="/how-it-works"
 						className="flex items-center gap-1 text-secondary hover:underline"
 					>
-						<CircleHelpIcon className="h-4 w-4" /> Feeling lost? Check Start
-						Here Section
+						<CircleHelpIcon className="h-4 w-4" /> Feeling lost? Check How it
+						Works
 					</Link>
 				</footer>
 			</div>

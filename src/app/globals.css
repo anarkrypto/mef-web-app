@@ -110,3 +110,32 @@ body {
 		@apply bg-background text-foreground;
 	}
 }
+
+.button-3d {
+	position: relative;
+	border-radius: 4px 1px !important;
+	border: 1px solid hsl(var(--dark));
+	transform-style: preserve-3d;
+}
+
+.button-3d:after {
+	content: '';
+	position: absolute;
+	border: 1px solid hsl(var(--dark));
+	border-radius: 4px 1px;
+	inset: 0.25rem -0.25rem -0.25rem 0.25rem;
+	transform: translateZ(-1px);
+	transition:
+		transform 0.2s ease-in 0ms,
+		border 50ms ease-in 0.1s;
+	pointer-events: none;
+}
+
+.button-3d:hover:after {
+	border: 0 solid transparent;
+	transform: translate(-0.25rem, -0.25rem);
+}
+
+.button-3d:disabled:after {
+	border: 0 solid transparent;
+}
