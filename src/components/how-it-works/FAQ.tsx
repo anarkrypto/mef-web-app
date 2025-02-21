@@ -53,29 +53,26 @@ export const FAQ: FC<FAQProps> = ({ sections, selectedFundingRound }) => {
 	}
 
 	return (
-		<div className="space-y-8">
+		<Accordion type="single" collapsible className="w-full">
 			{sections.map((section, sectionIndex) => (
-				<div key={sectionIndex} className="space-y-4">
-					<h2 className="text-2xl font-semibold tracking-tight">
+				<AccordionItem key={sectionIndex} value={`item-${sectionIndex}`}>
+					<AccordionTrigger className="text-dark text-left text-xl font-semibold hover:text-primary md:text-2xl">
 						{section.title}
-					</h2>
-					<Accordion type="single" collapsible className="w-full">
-						{section.items.map((item, itemIndex) => (
-							<AccordionItem
-								key={itemIndex}
-								value={`item-${sectionIndex}-${itemIndex}`}
-							>
-								<AccordionTrigger className="text-left hover:text-primary">
-									{item.question}
-								</AccordionTrigger>
-								<AccordionContent className="text-muted-foreground">
-									{getAnswer(item.answer)}
-								</AccordionContent>
-							</AccordionItem>
-						))}
-					</Accordion>
-				</div>
+					</AccordionTrigger>
+					<AccordionContent>
+						<ul className="text-dark divide-y divide-muted">
+							{section.items.map((item, itemIndex) => (
+								<li key={itemIndex} className="list-disc p-4">
+									<h4 className="text-lg font-semibold text-muted-foreground md:text-xl">
+										{item.question}
+									</h4>
+									<p>{getAnswer(item.answer)}</p>
+								</li>
+							))}
+						</ul>
+					</AccordionContent>
+				</AccordionItem>
 			))}
-		</div>
+		</Accordion>
 	)
 }
