@@ -133,6 +133,22 @@ export default function Header() {
 							</Button>
 						</Link>
 					)}
+					{isAdmin && (
+						<Link href="/admin">
+							<Button
+								variant="outline"
+								size="icon"
+								className={cn(
+									'w-full',
+									pathname.startsWith('/admin') &&
+										'border-secondary/50 text-secondary',
+								)}
+							>
+								<Settings className="h-4 w-4" />
+								Admin Settings
+							</Button>
+						</Link>
+					)}
 					{navigation.map(tab => (
 						<Link key={tab.href} href={tab.href}>
 							<div
