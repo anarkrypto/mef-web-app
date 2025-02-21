@@ -42,7 +42,7 @@ export default function LandingPage() {
 
 function Hero() {
 	return (
-		<div className="relative flex min-h-screen items-center">
+		<div className="relative flex h-[480px] items-center md:h-[420px]">
 			<div className="absolute inset-0 z-0">
 				<Image
 					src={HeroOverlayImage}
