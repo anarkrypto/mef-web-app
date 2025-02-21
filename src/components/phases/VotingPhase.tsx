@@ -129,16 +129,12 @@ export function VotingPhase({ fundingRoundId }: VotingPhaseProps) {
 		}
 	}, [fundingRoundId, toast])
 
-	// Fetch vote data when wallet is connected
+	// Fetch vote data regardless of wallet connection
 	useEffect(() => {
 		let ignore = false
 
-		const fetchAndUpdateVoteData = async () => {
-			if (
-				!state.wallet?.address ||
-				!proposals?.fundingRound.mefId ||
-				!proposals.fundingRound.votingPhase
-			)
+		const fetchVoteData = async () => {
+			if (!proposals?.fundingRound.mefId || !proposals.fundingRound.votingPhase)
 				return
 
 			try {
@@ -150,21 +146,6 @@ export function VotingPhase({ fundingRoundId }: VotingPhaseProps) {
 				const startTime = startTimeDate.getTime()
 				const endTime = endTimeDate.getTime()
 
-				// Try to get cached data first
-				const cacheKey = LocalStorageCache.getKey(
-					VOTE_DATA_CACHE_PREFIX,
-					proposals.fundingRound.mefId,
-				)
-				const cachedData =
-					LocalStorageCache.get<OCVRankedVoteResponse>(cacheKey)
-
-				// If we have cached data, use it immediately
-				if (cachedData && !ignore) {
-					setVoteData(cachedData)
-					updateSelectedProposals(cachedData, proposals)
-				}
-
-				// Always fetch fresh data
 				const response = await fetch(
 					`/api/voting/ranked-votes?roundId=${proposals.fundingRound.mefId}&startTime=${startTime}&endTime=${endTime}`,
 				)
@@ -175,31 +156,44 @@ export function VotingPhase({ fundingRoundId }: VotingPhaseProps) {
 
 				const data = await response.json()
 
-				// Only update state if this effect is still valid
 				if (!ignore) {
 					setVoteData(data)
 					// Cache the fresh data
+					const cacheKey = LocalStorageCache.getKey(
+						VOTE_DATA_CACHE_PREFIX,
+						proposals.fundingRound.mefId,
+					)
 					LocalStorageCache.set(cacheKey, data)
-					updateSelectedProposals(data, proposals)
 				}
 			} catch (error) {
 				if (!ignore) {
 					toast({
 						title: 'Warning',
-						description:
-							'Failed to load vote data. You may still submit a new vote.',
+						description: 'Failed to load vote data. Please try again later.',
 						variant: 'default',
 					})
 				}
 			}
 		}
 
-		const updateSelectedProposals = (
-			voteData: OCVRankedVoteResponse,
-			proposals: GetRankedEligibleProposalsAPIResponse,
-		) => {
+		fetchVoteData()
+
+		return () => {
+			ignore = true
+		}
+	}, [
+		proposals?.fundingRound.mefId,
+		proposals?.fundingRound.votingPhase,
+		toast,
+	])
+
+	// Handle user-specific vote data when wallet is connected
+	useEffect(() => {
+		if (!state.wallet?.address || !voteData || !proposals) return
+
+		const updateSelectedProposals = () => {
 			const userVote = voteData.votes.find(
-				(vote: OCVRankedVoteResponse['votes'][0]) =>
+				vote =>
 					vote.account.toLowerCase() === state.wallet!.address.toLowerCase(),
 			)
 
@@ -217,19 +211,8 @@ export function VotingPhase({ fundingRoundId }: VotingPhaseProps) {
 			}
 		}
 
-		fetchAndUpdateVoteData()
-
-		return () => {
-			ignore = true
-		}
-	}, [
-		state.wallet?.address,
-		proposals?.fundingRound.mefId,
-		proposals?.fundingRound.votingPhase,
-		toast,
-		proposals,
-		state.wallet,
-	])
+		updateSelectedProposals()
+	}, [state.wallet, voteData, proposals])
 
 	const handleSubmit = (
 		selectedProposals: GetRankedEligibleProposalsAPIResponse,
