@@ -14,7 +14,7 @@ export const config = {
 }
 
 // Route definitions
-const PUBLIC_PATHS = ['/', '/auth'] as const
+const PUBLIC_PATHS = ['/', '/auth', '/how-it-works', '/about-us'] as const
 const AUTH_PATHS = [
 	'/api/auth/exchange',
 	'/api/auth/refresh',
