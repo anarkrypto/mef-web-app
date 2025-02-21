@@ -16,7 +16,7 @@ const formatDate = (date: Date): string => {
 
 export const faqData: FAQSection[] = [
 	{
-		title: 'FAQs for Proposal Creation and Submission',
+		title: 'Proposal Creation and Submission',
 		items: [
 			{
 				question: 'What is the purpose of this funding round?',
@@ -112,7 +112,7 @@ export const faqData: FAQSection[] = [
 		],
 	},
 	{
-		title: 'FAQs for the Proposal Consideration Phase',
+		title: 'Proposal Consideration Phase',
 		items: [
 			{
 				question: 'What is the purpose of the proposal consideration phase?',
@@ -147,7 +147,7 @@ export const faqData: FAQSection[] = [
 		],
 	},
 	{
-		title: 'FAQs for Proposal Deliberation during a Funding Round',
+		title: 'Proposal Deliberation during a Funding Round',
 		items: [
 			{
 				question: 'What is the purpose of the proposal Deliberation Phase?',
@@ -254,7 +254,7 @@ export const faqData: FAQSection[] = [
 		],
 	},
 	{
-		title: 'FAQs for Proposal Voting during a Funding Round',
+		title: 'Proposal Voting during a Funding Round',
 		items: [
 			{
 				question: 'What is the purpose of the Voting Phase?',
