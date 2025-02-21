@@ -89,6 +89,7 @@ export interface VotingPhaseFundsDistributionSummary extends BasePhaseSummary {
 	notFundedProposals: number
 	totalBudget: number
 	remainingBudget: number
+	votes: Vote[]
 }
 
 export type RankedVotingProposalVote = ProposalVoteBase & {
@@ -100,6 +101,17 @@ export type RankedVotingProposalVote = ProposalVoteBase & {
 		reviewerEligible: boolean
 	}
 	hasVotes: boolean
+}
+export type VoteStatus = 'Pending' | 'Canonical' | 'Orphaned'
+
+export interface Vote {
+	account: string
+	hash: string
+	memo: string
+	height: number
+	status: VoteStatus
+	timestamp: number
+	nonce: number
 }
 
 export interface VotingPhaseRankedSummary {
@@ -113,6 +125,7 @@ export interface VotingPhaseRankedSummary {
 		large: number
 	}
 	proposalVotes: RankedVotingProposalVote[]
+	votes: Vote[]
 }
 
 export type PhaseStatus = 'not-started' | 'ongoing' | 'ended'

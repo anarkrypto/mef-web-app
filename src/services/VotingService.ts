@@ -1,6 +1,7 @@
 import { PrismaClient } from '@prisma/client'
 import { OCVApiService } from './OCVApiService'
 import {
+	VoteStatus,
 	type VotingPhaseFundsDistributionSummary,
 	type VotingPhaseRankedSummary,
 } from '@/types/phase-summary'
@@ -132,6 +133,15 @@ export class VotingService {
 			remainingBudget,
 			budgetBreakdown,
 			proposalVotes,
+			votes: voteData.votes.map(ocvVote => ({
+				account: ocvVote.account,
+				hash: ocvVote.hash,
+				memo: ocvVote.memo,
+				height: ocvVote.height,
+				status: ocvVote.status as VoteStatus, // if necessary, cast status to VoteStatus type
+				timestamp: ocvVote.timestamp,
+				nonce: ocvVote.nonce,
+			})),
 		}
 	}
 
@@ -165,6 +175,7 @@ export class VotingService {
 
 		// Get ranked votes from OCV API
 		const voteData = await this.ocvService.getRankedVotes(fundingRound.mefId)
+		console.log('votes', voteData.votes, fundingRound.mefId)
 
 		// Calculate budget breakdown
 		const budgetBreakdown = fundingRound.proposals.reduce(
@@ -247,6 +258,15 @@ export class VotingService {
 			totalVotes: voteData.total_votes,
 			budgetBreakdown,
 			proposalVotes,
+			votes: voteData.votes.map(ocvVote => ({
+				account: ocvVote.account,
+				hash: ocvVote.hash,
+				memo: ocvVote.memo,
+				height: ocvVote.height,
+				status: ocvVote.status as VoteStatus,
+				timestamp: ocvVote.timestamp,
+				nonce: ocvVote.nonce,
+			})),
 		}
 	}
 
