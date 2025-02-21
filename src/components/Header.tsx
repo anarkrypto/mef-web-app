@@ -22,8 +22,12 @@ export default function Header() {
 	const navigation = [
 		{ label: 'Get Involved', href: '/' },
 		{ label: 'How it Works', href: '/how-it-works' },
-		{ label: 'Funding Rounds', href: '/funding-rounds' },
-		{ label: 'Proposals', href: '/proposals' },
+		{
+			label: 'Funding Rounds',
+			href: '/funding-rounds',
+			authenticatedOnly: true,
+		},
+		{ label: 'Proposals', href: '/proposals', authenticatedOnly: true },
 		{ label: 'About Us', href: '/about-us' },
 	]
 
@@ -34,6 +38,8 @@ export default function Header() {
 	const handleOpenMobileNav = () => {
 		setOpenMobileNav(!openMobileNav)
 	}
+
+	const isAuthenticated = !!user
 
 	return (
 		<header
@@ -50,20 +56,24 @@ export default function Header() {
 						<div className="text-xl font-bold">MEF</div>
 					</Link>
 					<nav className="absolute top-[1px] hidden h-14 items-center space-x-4 px-4 text-base font-medium lg:ml-12 lg:flex lg:px-8 xl:px-16">
-						{navigation.map(tab => (
-							<Link key={tab.href} href={tab.href}>
-								<div
-									className={cn(
-										'flex h-14 items-center space-x-2 px-4 transition-colors hover:text-secondary',
-										pathname === tab.href
-											? 'border-b-4 border-secondary font-semibold text-secondary'
-											: 'text-foreground/60',
-									)}
-								>
-									{tab.label}
-								</div>
-							</Link>
-						))}
+						{navigation
+							.filter(({ authenticatedOnly }) =>
+								authenticatedOnly ? isAuthenticated : true,
+							)
+							.map(tab => (
+								<Link key={tab.href} href={tab.href}>
+									<div
+										className={cn(
+											'flex h-14 items-center space-x-2 px-4 transition-colors hover:text-secondary',
+											pathname === tab.href
+												? 'border-b-4 border-secondary font-semibold text-secondary'
+												: 'text-foreground/60',
+										)}
+									>
+										{tab.label}
+									</div>
+								</Link>
+							))}
 					</nav>
 				</div>
 				<div className="ml-auto hidden items-center gap-4 lg:flex">
