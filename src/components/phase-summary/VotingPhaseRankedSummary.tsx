@@ -93,7 +93,7 @@ export const VotingPhaseRankedSummary: FC<Props> = ({
 						showCommunityVotes={false}
 					/>
 				}
-				votesList={<VotesTable title="Casted Votes" votes={summary.votes} />}
+				votesTable={<VotesTable title="Casted Votes" votes={summary.votes} />}
 			/>
 		</TooltipProvider>
 	)
