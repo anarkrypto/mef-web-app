@@ -12,6 +12,7 @@ import { PhaseTimeCard } from './PhaseTimeCard'
 import { StatsCard } from './StatsCard'
 import { ProposalList } from './ProposalList'
 import { BudgetDistributionChart } from '../funding-rounds/BudgetDistributionChart'
+import { VotesTable } from './VotesTable'
 
 interface Props {
 	summary: VotingPhaseRankedSummaryType
@@ -92,6 +93,7 @@ export const VotingPhaseRankedSummary: FC<Props> = ({
 						showCommunityVotes={false}
 					/>
 				}
+				votesList={<VotesTable title="Casted Votes" votes={summary.votes} />}
 			/>
 		</TooltipProvider>
 	)

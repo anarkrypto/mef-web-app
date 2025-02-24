@@ -11,6 +11,7 @@ interface Props {
 	leftColumn: ReactNode
 	rightColumn: ReactNode
 	proposalList: ReactNode
+	votesList: ReactNode
 	stats?: ReactNode
 }
 
@@ -21,6 +22,7 @@ export const BasePhaseSummary: FC<Props> = ({
 	leftColumn,
 	rightColumn,
 	proposalList,
+	votesList,
 	stats,
 }) => {
 	return (
@@ -53,6 +55,7 @@ export const BasePhaseSummary: FC<Props> = ({
 			</div>
 
 			{proposalList}
+			{votesList}
 		</div>
 	)
 }
