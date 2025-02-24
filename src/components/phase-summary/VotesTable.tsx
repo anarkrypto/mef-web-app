@@ -1,6 +1,8 @@
-import type { ForwardRefExoticComponent, RefAttributes } from 'react'
-import { Badge } from '@/components/ui/badge'
-import { cn } from '@/lib/utils'
+import {
+	useState,
+	type ForwardRefExoticComponent,
+	type RefAttributes,
+} from 'react'
 import {
 	CheckCircledIcon,
 	CheckIcon,
@@ -30,11 +32,6 @@ interface VotesTableStatus {
 	icon: ForwardRefExoticComponent<IconProps & RefAttributes<SVGSVGElement>>
 }
 
-interface VotesTableDirection {
-	value: 'FOR' | 'AGAINST'
-	icon: ForwardRefExoticComponent<IconProps & RefAttributes<SVGSVGElement>>
-}
-
 export const votesTableStatuses = [
 	{
 		value: 'Pending',
@@ -49,17 +46,6 @@ export const votesTableStatuses = [
 		icon: CheckCircledIcon,
 	},
 ] satisfies VotesTableStatus[]
-
-export const votesTableDirections = [
-	{
-		value: 'FOR',
-		icon: CheckIcon,
-	},
-	{
-		value: 'AGAINST',
-		icon: Cross2Icon,
-	},
-] satisfies VotesTableDirection[]
 
 export const VotesTable = ({ votes, title }: Props) => {
 	return (
@@ -90,26 +76,24 @@ export const VotesTable = ({ votes, title }: Props) => {
 									<div className="flex items-center gap-2">
 										<span>{vote.timestamp}</span>
 									</div>
-									{/* {topic.reviewerGroups.map(rg => (
-										<Badge key={rg.reviewerGroup.id} variant="outline">
-											{rg.reviewerGroup.name}
-										</Badge>
-									))} */}
 								</TableCell>
 								<TableCell className="font-medium">
 									<div className="flex flex-wrap gap-1">
-										<span>
-											{vote.account.slice(0, 12) +
-												'...' +
-												vote.account.slice(-6)}
-										</span>
+										<span>{vote.account}</span>
 									</div>
 								</TableCell>
 								<TableCell className="font-medium">
 									<div className="flex flex-wrap gap-1">
-										<span>
-											{vote.hash.slice(0, 12) + '...' + vote.hash.slice(-6)}
-										</span>
+										<a
+											href={`https://minascan.io/devnet/tx/${vote.hash}/txInfo`}
+											target="_blank"
+											rel="noopener noreferrer"
+											className="text-xs text-blue-600 underline transition-colors hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300"
+										>
+											<span>
+												{vote.hash.slice(0, 12) + '...' + vote.hash.slice(-6)}
+											</span>
+										</a>
 									</div>
 								</TableCell>
 								<TableCell className="font-medium">
