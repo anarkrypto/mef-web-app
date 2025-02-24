@@ -57,7 +57,7 @@ export const VotesTable = ({ votes, title }: Props) => {
 				<Table>
 					<TableHeader>
 						<TableRow>
-							<TableHead className="w-[300px]">Height</TableHead>
+							<TableHead>Height</TableHead>
 							<TableHead>Timestap</TableHead>
 							<TableHead>Account</TableHead>
 							<TableHead>Hash</TableHead>
