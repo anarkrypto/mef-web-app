@@ -19,6 +19,8 @@ import Link from 'next/link'
 import { HowItWorksPhasesContent } from '@/components/how-it-works/HowItWorksPhasesContent'
 import { Suspense } from 'react'
 
+export const dynamic = 'force-dynamic'
+
 export const metadata: Metadata = {
 	title: 'How it Works - MINA Ecosystem Funding',
 	description:
