@@ -136,7 +136,7 @@ function BlogSection() {
 						</CardHeader>
 						<CardFooter className="flex justify-end p-2">
 							<a href={post.link} target="_blank" className="text-blue-500">
-								<Button className="button-3d bg-dark">
+								<Button className="button-3d bg-dark hover:bg-dark/90">
 									Read More <MoveRightIcon className="h-5 w-5" />
 								</Button>
 							</a>
