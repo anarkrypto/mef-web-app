@@ -9,6 +9,12 @@ import {
 	CardHeader,
 	CardTitle,
 } from '@/components/ui/card'
+import { Metadata } from 'next'
+
+export const metadata: Metadata = {
+	title: 'About Us | MEF',
+	description: 'About Mina Protocol and Mina Ecosystem Fund',
+}
 
 const blogPosts: {
 	title: string
