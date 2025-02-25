@@ -15,6 +15,7 @@ import { cn } from '@/lib/utils'
 import { FAQ } from './FAQ'
 import { faqData } from '@/data/faq'
 import Link from 'next/link'
+import { HowItWorksPhasesContent } from './HowItWorksPhasesContent'
 
 export function HowItWorksContent() {
 	const router = useRouter()
@@ -22,23 +23,32 @@ export function HowItWorksContent() {
 	const selectedRound = '' as unknown
 
 	return (
-		<div className="space-y-12">
-			{/* Header Section */}
-			<div className="space-y-6 text-center">
-				<div className="space-y-4">
-					<h1 className="text-4xl font-bold tracking-tight">How It Works</h1>
-					<p className="mx-auto max-w-2xl text-lg text-muted-foreground">
-						Welcome to the MINA Ecosystem Funding process. Here you can learn
-						about the different phases and get started with your proposal
-						journey.
+		<div className="mx-auto max-w-4xl space-y-12">
+			<article className="space-y-6">
+				{/* Header Section */}
+				<section className="space-y-4 border-b border-muted pb-6">
+					<h1 className="text-3xl font-bold">How it works</h1>
+					<p>
+						MEF is a community-led funding process that empowers community
+						members to collectively decide how resources are allocated. This
+						inclusive and transparent approach ensures that funding reflects the
+						community's priorities and values.
 					</p>
-				</div>
-			</div>
+					<p>
+						The Mina foundation & funding rounds moderators will provide the
+						rounds schedule. Once a round is open anyone can participate. The
+						Funding round process follows these key Phases:
+					</p>
+				</section>
 
-			{/* Process Visualization */}
-			<div className="rounded-xl border bg-card p-8 shadow-sm">
-				<ProcessVisualization />
-			</div>
+				{/* Phases Content */}
+				<HowItWorksPhasesContent />
+
+				{/* Process Visualization */}
+				<div className="rounded-xl border bg-card p-8 shadow-sm">
+					<ProcessVisualization />
+				</div>
+			</article>
 
 			{/* Action Cards */}
 			<div className="grid grid-cols-1 gap-6 md:grid-cols-3">
@@ -108,11 +118,11 @@ export function HowItWorksContent() {
 
 			{/* FAQ Section */}
 			<div className="mt-16">
-				<div className="mb-12 space-y-4 text-center">
+				<div className="mb-6 space-y-2">
 					<h2 className="text-4xl font-bold tracking-tight">
 						Frequently asked questions
 					</h2>
-					<p className="mx-auto max-w-2xl text-lg text-muted-foreground">
+					<p className="max-w-2xl text-lg text-muted-foreground">
 						Quick answers to common questions about the proposal process.
 					</p>
 				</div>
